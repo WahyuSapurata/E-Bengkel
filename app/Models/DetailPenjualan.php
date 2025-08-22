@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Ramsey\Uuid\Uuid;
+
+class DetailPenjualan extends Model
+{
+    protected $table = 'detail_penjualans';
+    protected $primaryKey = 'id';
+    protected $fillable = [
+        'uuid',
+        'uuid_penjualans',
+        'uuid_produk',
+        'qty',
+        'total_harga',
+    ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Event listener untuk membuat UUID sebelum menyimpan
+        static::creating(function ($model) {
+            $model->uuid = Uuid::uuid4()->toString();
+        });
+    }
+}
