@@ -78,3 +78,10 @@ body {
     z-index: 99;
     gap: 10px;
 }
+
+tr.selected {
+    background-color: #f0f8ff !important;
+    /* biru muda */
+    font-weight: bold;
+    cursor: pointer;
+}

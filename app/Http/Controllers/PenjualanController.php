@@ -6,6 +6,7 @@ use App\Http\Requests\StorePenjualanRequest;
 use App\Http\Requests\UpdatePenjualanRequest;
 use App\Models\Costumer;
 use App\Models\DetailPenjualan;
+use App\Models\Jasa;
 use App\Models\KasirOutlet;
 use App\Models\Outlet;
 use App\Models\Penjualan;
@@ -13,6 +14,7 @@ use App\Models\Produk;
 use App\Models\ProdukPrice;
 use App\Models\Wirehouse;
 use App\Models\WirehouseStock;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -46,6 +48,19 @@ class PenjualanController extends Controller
         return view('outlet.kasir.index', compact('module', 'kasir_login', 'nomor_urut', 'data_outlet'));
     }
 
+    public function get_jasa()
+    {
+        $jamLalu = Carbon::now()->subHour();
+
+        $jasa = Jasa::whereNotIn('uuid', function ($q) use ($jamLalu) {
+            $q->select('uuid_jasa')
+                ->from('penjualans')
+                ->where('created_at', '>=', $jamLalu);
+        })
+            ->get();
+        return response()->json($jasa);
+    }
+
     public function get_produk(Request $request)
     {
         $kasir = KasirOutlet::where('uuid_user', Auth::user()->uuid)->first();
@@ -58,6 +73,7 @@ class PenjualanController extends Controller
             'produks.hrg_modal',
             'produks.profit',
             'produks.kode',
+            'produks.satuan',
             'produks.foto',
             DB::raw('COALESCE(SUM(dtb.qty),0) as stock_toko'),
             DB::raw('(produks.hrg_modal + (produks.hrg_modal * produks.profit / 100)) as harga_jual_default')
@@ -72,6 +88,7 @@ class PenjualanController extends Controller
                 'produks.hrg_modal',
                 'produks.profit',
                 'produks.kode',
+                'produks.satuan',
                 'produks.foto'
             )
             ->havingRaw('stock_toko > 0')
@@ -99,7 +116,10 @@ class PenjualanController extends Controller
     public function store(Request $request)
     {
         try {
-            DB::transaction(function () use ($request) {
+            $penjualan = null; // untuk disimpan keluar closure
+            $details   = [];
+
+            DB::transaction(function () use ($request, &$penjualan, &$details) {
                 // Validasi produk
                 $produk = Produk::whereIn('uuid', $request->uuid_produk)->get();
                 if ($produk->count() !== count($request->uuid_produk)) {
@@ -120,24 +140,20 @@ class PenjualanController extends Controller
                 // Ambil outlet dari kasir
                 $kasir = KasirOutlet::where('uuid_user', Auth::user()->uuid)->firstOrFail();
 
-                // costumer
-                if (
-                    $request->nama &&
-                    $request->alamat &&
-                    $request->nomor &&
-                    $request->plat
-                ) {
+                // costumer (opsional)
+                if ($request->nama && $request->alamat && $request->nomor && $request->plat) {
                     Costumer::create([
-                        'nama' => $request->nama,
+                        'nama'   => $request->nama,
                         'alamat' => $request->alamat,
-                        'nomor' => $request->nomor,
-                        'plat' => $request->plat,
+                        'nomor'  => $request->nomor,
+                        'plat'   => $request->plat,
                     ]);
                 }
 
                 // Simpan header penjualan
                 $penjualan = Penjualan::create([
                     'uuid_outlet'       => $kasir->uuid_outlet,
+                    'uuid_jasa'       => $request->uuid_jasa,
                     'no_bukti'          => $no_bukti,
                     'tanggal_transaksi' => now()->format('d-m-Y'),
                     'pembayaran'        => $request->pembayaran,
@@ -151,7 +167,6 @@ class PenjualanController extends Controller
 
                 if (!$warehouseToko) {
                     $namaOutlet = Outlet::where('uuid_user', $penjualan->uuid_outlet)->value('nama_outlet');
-
                     $warehouseToko = Wirehouse::create([
                         'uuid_user'  => $penjualan->uuid_outlet,
                         'tipe'       => 'toko',
@@ -165,7 +180,7 @@ class PenjualanController extends Controller
                     $qty = $request->qty[$i];
                     $total_harga = $request->total_harga[$i];
 
-                    DetailPenjualan::create([
+                    $detail = DetailPenjualan::create([
                         'uuid_penjualans'  => $penjualan->uuid,
                         'uuid_produk'      => $uuid_produk,
                         'qty'              => $qty,
@@ -175,18 +190,36 @@ class PenjualanController extends Controller
                     // Catat keluar stok dari toko
                     WirehouseStock::create([
                         'uuid_warehouse' => $warehouseToko->uuid,
-                        'uuid_produk'   => $uuid_produk,
-                        'qty'           => $qty,
-                        'jenis'         => 'keluar',
-                        'sumber'        => 'penjualan',
-                        'keterangan'    => 'Penjualan kasir',
+                        'uuid_produk'    => $uuid_produk,
+                        'qty'            => $qty,
+                        'jenis'          => 'keluar',
+                        'sumber'         => 'penjualan',
+                        'keterangan'     => 'Penjualan kasir',
                     ]);
+
+                    // simpan detail untuk dikirim ke frontend
+                    $produkInfo = $produk->where('uuid', $uuid_produk)->first();
+                    $details[] = [
+                        'nama'     => $produkInfo->nama_barang ?? 'Produk',
+                        'qty'      => $qty,
+                        'harga'    => $produkInfo->hrg_modal + ($produkInfo->hrg_modal * $produkInfo->profit / 100) ?? 0,
+                        'subtotal' => $total_harga,
+                    ];
                 }
             });
 
             return response()->json([
                 'status'  => 'success',
-                'message' => 'Transaksi penjualan berhasil disimpan.'
+                'message' => 'Transaksi penjualan berhasil disimpan.',
+                'data'    => [
+                    'no_bukti'   => $penjualan['no_bukti'],
+                    'tanggal'    => $penjualan['tanggal_transaksi'],
+                    'kasir'      => $penjualan['created_by'],
+                    'pembayaran' => $penjualan['pembayaran'],
+                    'items'      => $details,
+                    'grandTotal' => collect($details)->sum('subtotal'),
+                    'totalItem'  => collect($details)->sum('qty'),
+                ]
             ]);
         } catch (\Exception $e) {
             return response()->json([
