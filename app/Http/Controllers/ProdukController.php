@@ -66,6 +66,36 @@ class ProdukController extends Controller
         return view('pages.produk.opname_stock', compact('module', 'produk'));
     }
 
+    public function opname_stock_outlet($params)
+    {
+        $produk = Produk::where('uuid', $params)->first();
+
+        // Hitung total pengiriman
+        $total_pengiriman = DB::table('detail_pengiriman_barangs as dk')
+            ->join('pengiriman_barangs as pk', 'pk.uuid', '=', 'dk.uuid_pengiriman_barang')
+            ->where('pk.uuid_outlet', Auth::user()->uuid)
+            ->where('dk.uuid_produk', $produk->uuid)
+            ->sum('dk.qty');
+
+        $total_transfer = DB::table('detail_transfer_barangs as dt')
+            ->join('transfer_barangs as tb', 'tb.uuid', '=', 'dt.uuid_transfer_barangs')
+            ->where('tb.uuid_outlet', Auth::user()->uuid)
+            ->where('dt.uuid_produk', $produk->uuid)
+            ->sum('dt.qty');
+
+        // Hitung total opname
+        $total_opname = DB::table('opnames')
+            ->where('uuid_user', Auth::user()->uuid)
+            ->where('uuid_produk', $produk->uuid)
+            ->sum('stock');
+
+        // Rumus stok akhir
+        $total_stok = $total_pengiriman - $total_transfer + $total_opname;
+
+        $module = 'Opname Stock ' . $produk->nama_barang . ' (' . $total_stok . ')';
+        return view('outlet.produk.opname_stock', compact('module', 'produk'));
+    }
+
     public function get_price_history(Request $request, $params)
     {
         $produk = Produk::where('uuid', $params)->first();
@@ -168,21 +198,62 @@ class ProdukController extends Controller
 
             // total stok dihitung dari 3 sumber
             DB::raw("(
-            (SELECT COALESCE(SUM(dp.qty),0)
-             FROM detail_pembelians dp
-             JOIN pembelians pb ON pb.uuid = dp.uuid_pembelian
-             WHERE dp.uuid_produk = produks.uuid)
-            -
-            (SELECT COALESCE(SUM(dk.qty),0)
-             FROM detail_pengiriman_barangs dk
-             JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
-             WHERE dk.uuid_produk = produks.uuid)
-            +
-            (SELECT COALESCE(SUM(o.stock),0)
-             FROM opnames o
-             WHERE o.uuid_user = '" . Auth::user()->uuid . "'
-             AND o.uuid_produk = produks.uuid)
-        ) as total_stok")
+                        CASE
+                            WHEN EXISTS (
+                                SELECT 1 FROM opnames o
+                                WHERE o.uuid_user = '" . Auth::user()->uuid . "'
+                                AND o.uuid_produk = produks.uuid
+                            )
+                            THEN (
+                                -- ambil stock terakhir + transaksi setelah opname
+                                (SELECT o.stock
+                                FROM opnames o
+                                WHERE o.uuid_user = '" . Auth::user()->uuid . "'
+                                AND o.uuid_produk = produks.uuid
+                                ORDER BY o.created_at DESC
+                                LIMIT 1
+                                )
+                                +
+                                (
+                                    SELECT COALESCE(SUM(dp.qty),0)
+                                    FROM detail_pembelians dp
+                                    JOIN pembelians pb ON pb.uuid = dp.uuid_pembelian
+                                    WHERE dp.uuid_produk = produks.uuid
+                                    AND pb.created_at > (
+                                        SELECT o2.created_at FROM opnames o2
+                                        WHERE o2.uuid_user = '" . Auth::user()->uuid . "'
+                                        AND o2.uuid_produk = produks.uuid
+                                        ORDER BY o2.created_at DESC LIMIT 1
+                                    )
+                                )
+                                -
+                                (
+                                    SELECT COALESCE(SUM(dk.qty),0)
+                                    FROM detail_pengiriman_barangs dk
+                                    JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
+                                    WHERE dk.uuid_produk = produks.uuid
+                                    AND pk.created_at > (
+                                        SELECT o2.created_at FROM opnames o2
+                                        WHERE o2.uuid_user = '" . Auth::user()->uuid . "'
+                                        AND o2.uuid_produk = produks.uuid
+                                        ORDER BY o2.created_at DESC LIMIT 1
+                                    )
+                                )
+                            )
+                            ELSE (
+                                -- kalau belum ada opname, hitung normal
+                                (SELECT COALESCE(SUM(dp.qty),0)
+                                FROM detail_pembelians dp
+                                JOIN pembelians pb ON pb.uuid = dp.uuid_pembelian
+                                WHERE dp.uuid_produk = produks.uuid)
+                                -
+                                (SELECT COALESCE(SUM(dk.qty),0)
+                                FROM detail_pengiriman_barangs dk
+                                JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
+                                WHERE dk.uuid_produk = produks.uuid)
+                            )
+                        END
+                    ) as total_stok")
         ]))
             ->leftJoin('kategoris', 'kategoris.uuid', '=', 'produks.uuid_kategori')
             ->leftJoin('sub_kategoris', 'sub_kategoris.uuid', '=', 'produks.uuid_sub_kategori')
@@ -315,6 +386,63 @@ class ProdukController extends Controller
         return response()->json(['status' => 'success']);
     }
 
+    public function store_opname_outlet(StoreOpnameRequest $store)
+    {
+        return DB::transaction(function () use ($store) {
+            $produk = Produk::where('uuid', $store->uuid_produk)->first();
+
+            if (!$produk) {
+                return response()->json(['status' => 'error', 'message' => 'Produk tidak ditemukan'], 404);
+            }
+
+            // Ambil outlet langsung dari request
+            $uuid_user = Auth::user()->uuid;
+
+            if (!$uuid_user) {
+                return response()->json(['status' => 'error', 'message' => 'UUID Outlet harus diisi'], 422);
+            }
+
+            // Ambil warehouse GUDANG OUTLET
+            $warehouseOutlet = Wirehouse::where('uuid_user', $uuid_user)
+                ->where('tipe', 'gudang')
+                ->first();
+
+            if (!$warehouseOutlet) {
+                return response()->json(['status' => 'error', 'message' => 'Gudang outlet tidak ditemukan'], 404);
+            }
+
+            // Hitung stok sistem saat ini (masuk - keluar)
+            $stok_sistem = WirehouseStock::where('uuid_warehouse', $warehouseOutlet->uuid)
+                ->where('uuid_produk', $produk->uuid)
+                ->sum(DB::raw("CASE WHEN jenis='masuk' THEN qty ELSE -qty END"));
+
+            // Simpan data opname
+            $opname = Opname::create([
+                'uuid_produk'  => $produk->uuid,
+                'uuid_outlet'  => $uuid_user,
+                'uuid_user'    => Auth::user()->uuid,
+                'stock'        => $store->stock,
+                'keterangan'   => $store->keterangan,
+            ]);
+
+            // Hitung selisih stok
+            $selisih = $store->stock - $stok_sistem;
+
+            if ($selisih != 0) {
+                WirehouseStock::create([
+                    'uuid_warehouse' => $warehouseOutlet->uuid,
+                    'uuid_produk'    => $produk->uuid,
+                    'qty'            => abs($selisih),
+                    'jenis'          => $selisih > 0 ? 'masuk' : 'keluar',
+                    'sumber'         => 'opname',
+                    'keterangan'     => 'Penyesuaian stok opname #' . $opname->id,
+                ]);
+            }
+
+            return response()->json(['status' => 'success']);
+        });
+    }
+
     public function edit($params)
     {
         return response()->json(Produk::where('uuid', $params)->first());
@@ -417,17 +545,16 @@ class ProdukController extends Controller
         $totalData = Produk::count();
 
         $query = Produk::select(array_merge($columns, [
-            // total pembelian
-            DB::raw("(SELECT COALESCE(SUM(dp.qty),0)
-                  FROM detail_pembelians dp
-                  JOIN pembelians pb ON pb.uuid = dp.uuid_pembelian
-                  WHERE dp.uuid_produk = produks.uuid) as total_pembelian"),
-
             // total pengiriman (barang keluar pusat)
             DB::raw("(SELECT COALESCE(SUM(dk.qty),0)
                   FROM detail_pengiriman_barangs dk
                   JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
                   WHERE dk.uuid_produk = produks.uuid) as total_pengiriman"),
+
+            DB::raw("(SELECT COALESCE(SUM(dt.qty),0)
+                  FROM detail_transfer_barangs dt
+                  JOIN transfer_barangs tb ON tb.uuid = dt.uuid_transfer_barangs
+                  WHERE dt.uuid_produk = produks.uuid) as total_transfer"),
 
             // total opname
             DB::raw("(SELECT COALESCE(SUM(o.stock),0)
@@ -437,21 +564,68 @@ class ProdukController extends Controller
 
             // total stok dihitung dari 3 sumber
             DB::raw("(
-            (SELECT COALESCE(SUM(dp.qty),0)
-             FROM detail_pembelians dp
-             JOIN pembelians pb ON pb.uuid = dp.uuid_pembelian
-             WHERE dp.uuid_produk = produks.uuid)
-            -
-            (SELECT COALESCE(SUM(dk.qty),0)
-             FROM detail_pengiriman_barangs dk
-             JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
-             WHERE dk.uuid_produk = produks.uuid)
-            +
-            (SELECT COALESCE(SUM(o.stock),0)
-             FROM opnames o
-             WHERE o.uuid_user = '" . Auth::user()->uuid . "'
-             AND o.uuid_produk = produks.uuid)
-        ) as total_stok")
+                        CASE
+                            WHEN EXISTS (
+                                SELECT 1 FROM opnames o
+                                WHERE o.uuid_user = '" . Auth::user()->uuid . "'
+                                AND o.uuid_produk = produks.uuid
+                            )
+                            THEN (
+                                -- ambil stock opname terakhir
+                                (SELECT o.stock
+                                FROM opnames o
+                                WHERE o.uuid_user = '" . Auth::user()->uuid . "'
+                                AND o.uuid_produk = produks.uuid
+                                ORDER BY o.created_at DESC
+                                LIMIT 1
+                                )
+                                +
+                                -- tambah pengiriman setelah opname
+                                (
+                                    SELECT COALESCE(SUM(dk.qty),0)
+                                    FROM detail_pengiriman_barangs dk
+                                    JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
+                                    WHERE dk.uuid_produk = produks.uuid
+                                    AND pk.uuid_outlet = '" . Auth::user()->uuid . "'
+                                    AND pk.created_at > (
+                                        SELECT o2.created_at FROM opnames o2
+                                        WHERE o2.uuid_user = '" . Auth::user()->uuid . "'
+                                        AND o2.uuid_produk = produks.uuid
+                                        ORDER BY o2.created_at DESC LIMIT 1
+                                    )
+                                )
+                                -
+                                -- kurangi transfer setelah opname
+                                (
+                                    SELECT COALESCE(SUM(dt.qty),0)
+                                    FROM detail_transfer_barangs dt
+                                    JOIN transfer_barangs tb ON tb.uuid = dt.uuid_transfer_barangs
+                                    WHERE dt.uuid_produk = produks.uuid
+                                    AND tb.uuid_outlet = '" . Auth::user()->uuid . "'
+                                    AND tb.created_at > (
+                                        SELECT o2.created_at FROM opnames o2
+                                        WHERE o2.uuid_user = '" . Auth::user()->uuid . "'
+                                        AND o2.uuid_produk = produks.uuid
+                                        ORDER BY o2.created_at DESC LIMIT 1
+                                    )
+                                )
+                            )
+                            ELSE (
+                                -- kalau belum ada opname, hitung normal
+                                (SELECT COALESCE(SUM(dk.qty),0)
+                                FROM detail_pengiriman_barangs dk
+                                JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
+                                WHERE dk.uuid_produk = produks.uuid
+                                AND pk.uuid_outlet = '" . Auth::user()->uuid . "')
+                                -
+                                (SELECT COALESCE(SUM(dt.qty),0)
+                                FROM detail_transfer_barangs dt
+                                JOIN transfer_barangs tb ON tb.uuid = dt.uuid_transfer_barangs
+                                WHERE dt.uuid_produk = produks.uuid
+                                AND tb.uuid_outlet = '" . Auth::user()->uuid . "')
+                            )
+                        END
+                    ) as total_stok")
         ]))
             ->leftJoin('kategoris', 'kategoris.uuid', '=', 'produks.uuid_kategori')
             ->leftJoin('sub_kategoris', 'sub_kategoris.uuid', '=', 'produks.uuid_sub_kategori')

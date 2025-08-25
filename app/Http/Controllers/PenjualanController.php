@@ -48,6 +48,37 @@ class PenjualanController extends Controller
         return view('outlet.kasir.index', compact('module', 'kasir_login', 'nomor_urut', 'data_outlet'));
     }
 
+    public function get_stock()
+    {
+        $kasir_login = KasirOutlet::where('uuid_user', Auth::user()->uuid)->first();
+        $query = Produk::select(array_merge(['kode', 'nama_barang', 'satuan'], [
+            DB::raw("(SELECT COALESCE(SUM(dt.qty),0)
+                  FROM detail_transfer_barangs dt
+                  JOIN transfer_barangs tb ON tb.uuid = dt.uuid_transfer_barangs
+                  WHERE dt.uuid_produk = produks.uuid) as total_transfer"),
+
+            DB::raw("(SELECT COALESCE(SUM(dp.qty),0)
+                  FROM detail_penjualans dp
+                  JOIN penjualans pj ON pj.uuid = dp.uuid_penjualans
+                  WHERE dp.uuid_produk = produks.uuid) as total_pejualan"),
+
+            // total stok dihitung dari 3 sumber
+            DB::raw("(
+            (SELECT COALESCE(SUM(dt.qty),0)
+             FROM detail_transfer_barangs dt
+             JOIN transfer_barangs tb ON tb.uuid = dt.uuid_transfer_barangs
+             WHERE tb.uuid_outlet = '" . $kasir_login->uuid_outlet . "' AND dt.uuid_produk = produks.uuid)
+            -
+            (SELECT COALESCE(SUM(dp.qty),0)
+             FROM detail_penjualans dp
+             JOIN penjualans pj ON pj.uuid = dp.uuid_penjualans
+             WHERE pj.uuid_outlet = '" . $kasir_login->uuid_outlet . "' AND dp.uuid_produk = produks.uuid)
+        ) as total_stok")
+        ]))->get();
+
+        return response()->json($query);
+    }
+
     public function get_jasa()
     {
         $jamLalu = Carbon::now()->subHour();
@@ -66,7 +97,7 @@ class PenjualanController extends Controller
         $kasir = KasirOutlet::where('uuid_user', Auth::user()->uuid)->first();
         $kode  = $request->kode; // kode/barcode hasil scan
 
-        // Ambil produk
+        // Ambil produk dengan perhitungan stok yang benar
         $produk = Produk::select(
             'produks.uuid',
             'produks.nama_barang',
@@ -75,22 +106,26 @@ class PenjualanController extends Controller
             'produks.kode',
             'produks.satuan',
             'produks.foto',
-            DB::raw('COALESCE(SUM(dtb.qty),0) as stock_toko'),
+            DB::raw("(
+            COALESCE((
+                SELECT SUM(dtb.qty)
+                FROM detail_transfer_barangs dtb
+                JOIN transfer_barangs tb ON tb.uuid = dtb.uuid_transfer_barangs
+                WHERE tb.uuid_outlet = '{$kasir->uuid_outlet}'
+                  AND dtb.uuid_produk = produks.uuid
+            ),0)
+            -
+            COALESCE((
+                SELECT SUM(dp.qty)
+                FROM detail_penjualans dp
+                JOIN penjualans pj ON pj.uuid = dp.uuid_penjualans
+                WHERE pj.uuid_outlet = '{$kasir->uuid_outlet}'
+                  AND dp.uuid_produk = produks.uuid
+            ),0)
+        ) as stock_toko"),
             DB::raw('(produks.hrg_modal + (produks.hrg_modal * produks.profit / 100)) as harga_jual_default')
         )
-            ->join('detail_transfer_barangs as dtb', 'produks.uuid', '=', 'dtb.uuid_produk')
-            ->join('transfer_barangs as tb', 'tb.uuid', '=', 'dtb.uuid_transfer_barangs')
-            ->where('tb.uuid_outlet', $kasir->uuid_outlet)
             ->where('produks.kode', $kode)
-            ->groupBy(
-                'produks.uuid',
-                'produks.nama_barang',
-                'produks.hrg_modal',
-                'produks.profit',
-                'produks.kode',
-                'produks.satuan',
-                'produks.foto'
-            )
             ->havingRaw('stock_toko > 0')
             ->first();
 

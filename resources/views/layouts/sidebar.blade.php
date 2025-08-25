@@ -109,7 +109,7 @@
                     </li>
                 </ul>
             @endif
-            <div class="card text-center">
+            {{-- <div class="card text-center">
                 <div class="card-body">
                     <i class="feather-sunrise fs-4 text-dark"></i>
                     <h6 class="mt-4 text-dark fw-bolder">Downloading Center</h6>
@@ -117,7 +117,7 @@
                         easily.</p>
                     <a href="javascript:void(0);" class="btn btn-primary text-dark w-100">Download Now</a>
                 </div>
-            </div>
+            </div> --}}
         </div>
     </div>
 </nav>

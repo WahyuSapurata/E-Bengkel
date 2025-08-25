@@ -85,6 +85,7 @@
                                             <th class="text-capitalize">merek</th>
                                             <th class="text-capitalize">hrg modal</th>
                                             <th class="text-capitalize">profit</th>
+                                            <th class="text-capitalize">stock</th>
                                             <th class="text-capitalize">minstock</th>
                                             <th class="text-capitalize">maxstock</th>
                                             <th class="text-capitalize">satuan</th>
@@ -392,6 +393,10 @@
                         class: 'mb-kolom-tanggal text-left align-content-center'
                     },
                     {
+                        data: 'total_stok',
+                        class: 'mb-kolom-tanggal text-left align-content-center'
+                    },
+                    {
                         data: 'minstock',
                         class: 'mb-kolom-tanggal text-left align-content-center'
                     },
@@ -437,7 +442,7 @@
                     render: function(data, type, row) {
 
                         let urlOpname =
-                            "{{ route('superadmin.opname-stock', ['params' => ':id']) }}";
+                            "{{ route('outlet.opname-stock', ['params' => ':id']) }}";
                         urlOpname = urlOpname.replace(':id', data);
                         return `
                                 <div class="hstack gap-2 justify-content-end">

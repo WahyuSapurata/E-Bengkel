@@ -130,8 +130,8 @@ Route::group([
     Route::get('/produk', [App\Http\Controllers\ProdukController::class, 'vw_outlet'])->name('produk');
     Route::get('/produk-get', [App\Http\Controllers\ProdukController::class, 'get_outlet'])->name('produk-get');
 
-    Route::get('/opname-stock/{params}', [App\Http\Controllers\ProdukController::class, 'opname_stock'])->name('opname-stock');
-    Route::post('/store_opname', [App\Http\Controllers\ProdukController::class, 'store_opname'])->name('store_opname');
+    Route::get('/opname-stock/{params}', [App\Http\Controllers\ProdukController::class, 'opname_stock_outlet'])->name('opname-stock');
+    Route::post('/store_opname', [App\Http\Controllers\ProdukController::class, 'store_opname_outlet'])->name('store_opname');
 
     Route::get('/kasir-outlet', [App\Http\Controllers\KasirOutletController::class, 'index'])->name('kasir-outlet');
     Route::get('/kasir-outlet-get', [App\Http\Controllers\KasirOutletController::class, 'get'])->name('kasir-outlet-get');
@@ -170,6 +170,7 @@ Route::group([
     Route::post('/penjualan-store', [App\Http\Controllers\PenjualanController::class, 'store'])->name('penjualan-store');
 
     Route::get('/get-jasa', [App\Http\Controllers\PenjualanController::class, 'get_jasa'])->name('get-jasa');
+    Route::get('/get-stock', [App\Http\Controllers\PenjualanController::class, 'get_stock'])->name('get-stock');
 });
 
 Route::get('/logout', [App\Http\Controllers\Auth::class, 'logout'])->name('logout');

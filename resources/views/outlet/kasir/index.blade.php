@@ -42,7 +42,8 @@
                     <div class="d-grid gap-2 mt-auto">
                         <button onclick="window.location.href = '{{ route('logout') }}'"
                             class="btn btn-outline-danger btn-sm">📤 Keluar</button>
-                        <button class="btn btn-outline-secondary btn-sm">📦 Stok Barang</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal"
+                            data-bs-target="#stockModal">📦 Stok Barang</button>
                     </div>
                 </div>
 
@@ -185,6 +186,42 @@
         </div>
     </div>
 
+    <div class="modal fade" id="stockModal" tabindex="-1" aria-labelledby="stockModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="stockModalLabel">List Produk</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="flex-grow-1 overflow-auto">
+                        <div class="table-wrapper mb-2">
+                            <div class="mb-2">
+                                <input type="text" id="searchInput" class="form-control"
+                                    placeholder="Cari produk (kode/nama barang)...">
+                            </div>
+
+                            <table class="table table-bordered table-striped table-sm mb-0" id="produkTable">
+                                <thead class="table-success sticky-top">
+                                    <tr>
+                                        <th>Kode</th>
+                                        <th>Nama Barang</th>
+                                        <th>Total Stock</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="{{ asset('assets/vendors/js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('assets/sweet-alert/sweetalert2.min.js') }}"></script>
     <script>
@@ -193,6 +230,9 @@
             const modalEl = document.getElementById("exampleModal");
             const kodeProdukInput = document.getElementById("kode-produk");
             const btnSaveProduk = document.getElementById("btn-save-produk");
+
+            const modalStock = document.getElementById("stockModal");
+            const search = document.getElementById("searchInput");
 
             // variabel penting
             const cartTable = document.getElementById("cartTable");
@@ -237,17 +277,37 @@
             // Fokus otomatis
             // ----------------
             function keepFocus() {
-                if (modalEl.classList.contains("show")) return; // kalau modal terbuka, biarkan
-                setTimeout(() => scanInput.focus(), 100);
+                // kalau ada modal utama terbuka, jangan paksa fokus ke scanInput
+                if (modalEl.classList.contains("show")) return;
+
+                // kalau ada modal stock terbuka, jangan paksa fokus ke scanInput
+                if (modalStock.classList.contains("show")) return;
+
+                // kalau tidak ada modal terbuka, kembalikan fokus ke scanInput
+                if (scanInput) {
+                    setTimeout(() => scanInput.focus(), 100);
+                }
             }
+
+            // pakai click saja (tidak keydown supaya tidak bentrok shortcut F2/F8)
             document.addEventListener("click", keepFocus);
-            // jangan pakai "keydown" untuk keepFocus biar gak bentrok F2/F8
+
+            // panggil sekali di awal
             keepFocus();
 
+            // Modal utama
             modalEl.addEventListener("shown.bs.modal", () => {
                 if (kodeProdukInput) kodeProdukInput.focus();
             });
             modalEl.addEventListener("hidden.bs.modal", () => {
+                if (scanInput) scanInput.focus();
+            });
+
+            // Modal stok
+            modalStock.addEventListener("shown.bs.modal", () => {
+                if (search) search.focus();
+            });
+            modalStock.addEventListener("hidden.bs.modal", () => {
                 if (scanInput) scanInput.focus();
             });
 
@@ -464,10 +524,16 @@
                 // default: hargaDefault * qty
                 // jika ada tier dengan qty PERSIS SAMA → jumlah = harga_jual (bundling)
                 let jumlah = hargaSatuanDefault * newQty;
-                const match = ps.find(p => p.qty === newQty);
+
+                // pastikan ps sudah diurutkan ascending berdasarkan qty
+                const match = ps
+                    .filter(p => newQty >= p.qty) // ambil semua harga yang berlaku untuk qty ini
+                    .pop(); // ambil harga terakhir (paling besar qty yg masih memenuhi)
+
                 if (match) {
                     jumlah = match.harga_jual;
                 }
+
 
                 // simpan ke DOM
                 qtyCell.innerText = newQty;
@@ -599,8 +665,12 @@
                         hitungTotal();
                     })
                     .catch(err => {
-                        console.warn('❌ Error fetch produk:', err.message);
-                        alert(err.message);
+                        Swal.fire({
+                            title: "Gagal!",
+                            text: err.message,
+                            icon: "error",
+                            confirmButtonText: "OK"
+                        });
                     });
             }
 
@@ -863,6 +933,78 @@
                 scanInput.value = "";
                 scanInput.focus();
             }
+
+
+            async function loadStok() {
+                try {
+                    const res = await fetch('/kasir/get-stock');
+                    const data = await res.json();
+
+                    const tbody = document.querySelector("#produkTable tbody");
+                    tbody.innerHTML = "";
+
+                    if (data.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="3" class="text-center">Belum ada produk</td></tr>`;
+                    } else {
+                        data.forEach(p => {
+                            tbody.innerHTML += `
+                    <tr>
+                        <td>${p.kode}</td>
+                        <td>${p.nama_barang}</td>
+                        <td>${p.total_stok} ${p.satuan}</td>
+                    </tr>
+                `;
+                        });
+
+                        // sisakan row untuk "tidak ada data hasil filter"
+                        tbody.innerHTML += `
+                <tr id="no-data" class="d-none">
+                    <td colspan="3" class="text-center">Tidak ada produk ditemukan</td>
+                </tr>
+            `;
+                    }
+                } catch (err) {
+                    console.error("Gagal ambil stok:", err);
+                }
+            }
+
+            // reload tiap 5 detik
+            setInterval(loadStok, 5000);
+
+            // panggil pertama kali
+            loadStok();
+
+            // ---------------------------
+            // Search filter
+            // ---------------------------
+            document.getElementById("searchInput").addEventListener("keyup", function() {
+                let value = this.value.toLowerCase();
+                let rows = document.querySelectorAll("#produkTable tbody tr:not(#no-data)");
+                let noData = document.getElementById("no-data");
+
+                let visibleCount = 0;
+
+                rows.forEach(function(row) {
+                    let kode = row.cells[0]?.textContent.toLowerCase() || "";
+                    let nama = row.cells[1]?.textContent.toLowerCase() || "";
+
+                    if (kode.includes(value) || nama.includes(value)) {
+                        row.style.display = "";
+                        visibleCount++;
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+
+                if (noData) {
+                    if (visibleCount === 0) {
+                        noData.classList.remove("d-none");
+                    } else {
+                        noData.classList.add("d-none");
+                    }
+                }
+            });
+
         });
     </script>
 
