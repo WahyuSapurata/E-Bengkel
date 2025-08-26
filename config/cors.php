@@ -6,20 +6,16 @@ return [
     |--------------------------------------------------------------------------
     | Paths
     |--------------------------------------------------------------------------
-    |
-    | Tentukan path mana saja yang akan di-handle CORS.
-    | Contoh: ['api/*'] untuk semua route API.
-    |
+    | Semua path yang mau di-handle CORS.
+    | ['*'] artinya semua route diizinkan.
     */
-    'paths' => ['api/*', 'superadmin/*', 'sanctum/csrf-cookie'],
+    'paths' => ['*'],
 
     /*
     |--------------------------------------------------------------------------
     | Allowed Methods
     |--------------------------------------------------------------------------
-    |
-    | Metode HTTP yang diizinkan. ['*'] artinya semua metode diizinkan.
-    |
+    | ['*'] artinya semua HTTP method diizinkan (GET, POST, PUT, DELETE, dll).
     */
     'allowed_methods' => ['*'],
 
@@ -27,10 +23,7 @@ return [
     |--------------------------------------------------------------------------
     | Allowed Origins
     |--------------------------------------------------------------------------
-    |
-    | Domain yang diizinkan mengakses resource. ['*'] artinya semua.
-    | Untuk lebih aman, ganti '*' dengan ['https://adsmotor.id'].
-    |
+    | ['*'] artinya semua domain (origin) diizinkan.
     */
     'allowed_origins' => ['*'],
 
@@ -40,9 +33,7 @@ return [
     |--------------------------------------------------------------------------
     | Allowed Headers
     |--------------------------------------------------------------------------
-    |
-    | Header yang diizinkan dalam request.
-    |
+    | ['*'] artinya semua header request diizinkan.
     */
     'allowed_headers' => ['*'],
 
@@ -50,9 +41,7 @@ return [
     |--------------------------------------------------------------------------
     | Exposed Headers
     |--------------------------------------------------------------------------
-    |
-    | Header apa saja yang boleh terlihat oleh browser.
-    |
+    | Header yang di-expose ke browser (biarkan kosong kalau tidak perlu).
     */
     'exposed_headers' => [],
 
@@ -60,9 +49,7 @@ return [
     |--------------------------------------------------------------------------
     | Max Age
     |--------------------------------------------------------------------------
-    |
-    | Waktu dalam detik untuk caching preflight request (OPTIONS).
-    |
+    | Lama (detik) browser boleh cache hasil preflight (OPTIONS).
     */
     'max_age' => 0,
 
@@ -70,9 +57,8 @@ return [
     |--------------------------------------------------------------------------
     | Supports Credentials
     |--------------------------------------------------------------------------
-    |
-    | Kalau butuh cookie/session, set ke true.
-    |
+    | Kalau butuh kirim cookie/session, set ke true.
+    | Kalau tidak perlu, biarkan false.
     */
     'supports_credentials' => false,
 
