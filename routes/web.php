@@ -3,6 +3,10 @@
 use App\Http\Controllers\Dashboard;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/test-cors', function () {
+    return response()->json(['message' => 'CORS OK']);
+});
+
 Route::get('/', [Dashboard::class, 'landing_page'])->name('landing_page');
 
 Route::group([

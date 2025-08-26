@@ -13,7 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         // Middleware global
         $middleware->use([
-            \Illuminate\Http\Middleware\HandleCors::class, // ✅ tambahkan ini
+            \Illuminate\Http\Middleware\HandleCors::class,
         ]);
         $middleware->alias([
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
