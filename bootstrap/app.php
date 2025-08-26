@@ -11,6 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Middleware global
+        $middleware->use([
+            \Illuminate\Http\Middleware\HandleCors::class, // ✅ tambahkan ini
+        ]);
         $middleware->alias([
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
             'ceklogin' => \App\Http\Middleware\CekLogin::class,
