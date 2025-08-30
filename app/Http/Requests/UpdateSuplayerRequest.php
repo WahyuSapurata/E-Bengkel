@@ -21,9 +21,7 @@ class UpdateSuplayerRequest extends FormRequest
      */
     public function rules(): array
     {
-        $params = $this->route('params');
         return [
-            'kode' => 'required|unique:suplayers,kode,' . $params . ',uuid',
             'nama' => 'required',
             'alamat' => 'required',
             'telepon' => 'required',
@@ -34,8 +32,6 @@ class UpdateSuplayerRequest extends FormRequest
     public function messages()
     {
         return [
-            'kode.required' => 'Kolom kode harus di isi.',
-            'kode.unique' => 'Kode sudah digunakan.',
             'nama.required' => 'Kolom nama harus di isi.',
             'alamat.required' => 'Kolom alamat harus di isi.',
             'telepon.required' => 'Kolom telepon harus di isi.',

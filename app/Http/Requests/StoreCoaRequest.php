@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreSuplayerRequest extends FormRequest
+class StoreCoaRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,20 +22,19 @@ class StoreSuplayerRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'kode' => 'required|unique:coas,kode',
             'nama' => 'required',
-            'alamat' => 'required',
-            'telepon' => 'required',
-            'kota' => 'required',
+            'tipe' => 'required',
         ];
     }
 
     public function messages()
     {
         return [
+            'kode.required' => 'Kolom kode harus di isi.',
+            'kode.unique' => 'Kode sudah digunakan.',
             'nama.required' => 'Kolom nama harus di isi.',
-            'alamat.required' => 'Kolom alamat harus di isi.',
-            'telepon.required' => 'Kolom telepon harus di isi.',
-            'kota.required' => 'Kolom kota harus di isi.',
+            'tipe.required' => 'Kolom tipe harus di isi.',
         ];
     }
 }

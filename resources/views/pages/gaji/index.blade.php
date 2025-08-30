@@ -4,7 +4,7 @@
         <div class="page-header">
             <div class="page-header-left d-flex align-items-center">
                 <div class="page-header-title">
-                    <h5 class="m-b-10 text-capitalize">Master Data</h5>
+                    <h5 class="m-b-10 text-capitalize">Accounting</h5>
                 </div>
                 <ul class="breadcrumb">
                     <li class="breadcrumb-item"><a href="/">Home</a></li>
@@ -64,8 +64,9 @@
                                     <thead>
                                         <tr>
                                             <th class="text-capitalize">No</th>
-                                            <th class="text-capitalize">Kode</th>
-                                            <th class="text-capitalize">Nama Kategori</th>
+                                            <th class="text-capitalize">karyawan</th>
+                                            <th class="text-capitalize">tanggal</th>
+                                            <th class="text-capitalize">jumlah</th>
                                             <th class="text-end">Actions</th>
                                         </tr>
                                     </thead>
@@ -82,7 +83,7 @@
     <!-- Modal Form -->
     <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <form id="formKategori">
+            <form id="form">
                 <input type="hidden" name="uuid" id="uuid">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -91,8 +92,24 @@
                     </div>
                     <div class="modal-body">
                         <div class="mb-2">
-                            <label class="text-capitalize form-label">Nama Kategori</label>
-                            <input type="text" name="nama_kategori" id="nama_kategori" class="form-control">
+                            <label for="uuid_karyawan" class="form-label text-capitalize">Karyawan</label>
+                            <select name="uuid_karyawan" id="uuid_karyawan" data-placeholder="Pilih inputan"
+                                class="form-select basic-usage">
+                                <option value=""></option>
+                                @foreach ($karyawan as $k)
+                                    <option value="{{ $k->uuid }}">{{ $k->nama }}</option>
+                                @endforeach
+                            </select>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="text-capitalize form-label">tanggal</label>
+                            <input type="text" name="tanggal" id="tanggal" class="form-control dateofBirth">
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="text-capitalize form-label">jumlah</label>
+                            <input type="text" name="jumlah" id="jumlah" class="form-control">
                             <div class="invalid-feedback"></div>
                         </div>
                     </div>
@@ -113,29 +130,73 @@
             }
         });
 
+        $('.basic-usage').each(function() {
+            $(this).select2({
+                theme: "bootstrap-5",
+                width: '100%',
+                placeholder: $(this).data('placeholder'),
+                dropdownParent: $(this).closest('.modal-body')
+            });
+        });
+
+        function parseRupiah(value) {
+            return parseInt(value.replace(/[^0-9]/g, ''), 10) || 0;
+        }
+
         $('#openModal').on('click', function() {
             // Buka modal
             $('#modal').modal('show');
             // Bersihkan form
-            $('#formKategori')[0].reset();
+            $('#form')[0].reset();
             $('#uuid').val('');
+
+            // Reset semua input dan select di seluruh form
+            $('#form').find('input').val('');
+            $('#form').find('select').val('');
+
+            // Kalau pakai select2, reset juga semua select2 di form
+            $('#form').find('select').each(function() {
+                $(this).val('').trigger('change');
+            });
+
             // Hapus error lama
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
         });
 
+        function formatRupiah(angka) {
+            let number_string = angka.replace(/[^,\d]/g, '').toString(),
+                split = number_string.split(','),
+                sisa = split[0].length % 3,
+                rupiah = split[0].substr(0, sisa),
+                ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+            if (ribuan) {
+                let separator = sisa ? '.' : '';
+                rupiah += separator + ribuan.join('.');
+            }
+
+            rupiah = split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
+            return rupiah ? 'Rp ' + rupiah : '';
+        }
+
+        $('#jumlah').on('input', function() {
+            $(this).val(formatRupiah(this.value));
+        });
+
+
         // Submit Form (Tambah / Edit)
-        $('#formKategori').on('submit', function(e) {
+        $('#form').on('submit', function(e) {
             e.preventDefault();
 
             let uuid = $('#uuid').val();
 
-            let updateUrl = `{{ route('superadmin.kategori-update', ':uuid') }}`;
+            let updateUrl = `{{ route('superadmin.gaji-update', ':uuid') }}`;
             updateUrl = updateUrl.replace(':uuid', uuid);
 
             let url = uuid ? updateUrl :
-                `{{ route('superadmin.kategori-store') }}`;
-            let method = uuid ? 'PUT' : 'POST';
+                `{{ route('superadmin.gaji-store') }}`;
+            let method = uuid ? 'POST' : 'POST';
 
             $.ajax({
                 url: url,
@@ -196,11 +257,22 @@
             $('.invalid-feedback').remove();
             $('#modal').modal('show');
             let uuid = $(this).data('uuid');
-            let editUrl = `{{ route('superadmin.kategori-edit', ':uuid') }}`;
+            let editUrl = `{{ route('superadmin.gaji-edit', ':uuid') }}`;
             editUrl = editUrl.replace(':uuid', uuid);
             $.get(editUrl, function(res) {
                 $.each(res, function(key, value) {
                     $(`[name="${key}"]`).val(value);
+
+                    if (key === 'jumlah') {
+                        // Kalau jumlah, format ke Rupiah saat set value
+                        $(`[name="${key}"]`).val(formatRupiah(value.toString()));
+                    }
+
+                    if ($(`[name="${key}"]`).hasClass('select2-hidden-accessible')) {
+                        $(`[name="${key}"]`)
+                            .val(value ? value.toString().toLowerCase() : "")
+                            .trigger('change');
+                    }
                 });
             });
         });
@@ -208,7 +280,7 @@
         // Hapus
         $('#dataTables').on('click', '.delete', function() {
             let uuid = $(this).data('uuid');
-            let deleteUrl = `{{ route('superadmin.kategori-delete', ':uuid') }}`;
+            let deleteUrl = `{{ route('superadmin.gaji-delete', ':uuid') }}`;
             deleteUrl = deleteUrl.replace(':uuid', uuid);
 
             Swal.fire({
@@ -261,7 +333,7 @@
                 pageLength: 10,
                 processing: true,
                 serverSide: true,
-                ajax: "{{ route('superadmin.kategori-get') }}",
+                ajax: "{{ route('superadmin.gaji-get') }}",
                 columns: [{
                         data: null,
                         class: 'mb-kolom-nomor align-content-center',
@@ -270,12 +342,20 @@
                         }
                     },
                     {
-                        data: 'kode',
+                        data: 'nama_karyawan',
                         class: 'mb-kolom-text text-left align-content-center'
                     },
                     {
-                        data: 'nama_kategori',
+                        data: 'tanggal',
                         class: 'mb-kolom-tanggal text-left align-content-center'
+                    },
+                    {
+                        data: 'jumlah',
+                        class: 'mb-kolom-tanggal text-left align-content-center',
+                        render: function(data, type, row) {
+                            // Format jumlah ke Rupiah
+                            return formatRupiah(data.toString());
+                        }
                     },
                     {
                         data: 'uuid', // akan diganti di columnDefs

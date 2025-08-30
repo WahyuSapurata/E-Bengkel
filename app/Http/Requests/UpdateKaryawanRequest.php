@@ -4,14 +4,14 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateJasaRequest extends FormRequest
+class UpdateKaryawanRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return true;
+        return false;
     }
 
     /**
@@ -22,18 +22,7 @@ class UpdateJasaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama' => 'required',
-            'deskripsi' => 'required',
-            'harga' => 'required',
-        ];
-    }
-
-    public function messages()
-    {
-        return [
-            'nama.required' => 'Kolom nama harus di isi.',
-            'deskripsi.required' => 'Kolom deskripsi harus di isi.',
-            'harga.required' => 'Kolom harga harus di isi.',
+            //
         ];
     }
 }

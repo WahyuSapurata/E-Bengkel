@@ -4,7 +4,7 @@
         <div class="page-header">
             <div class="page-header-left d-flex align-items-center">
                 <div class="page-header-title">
-                    <h5 class="m-b-10 text-capitalize">Master Data</h5>
+                    <h5 class="m-b-10 text-capitalize">Accounting</h5>
                 </div>
                 <ul class="breadcrumb">
                     <li class="breadcrumb-item"><a href="/">Home</a></li>
@@ -64,8 +64,9 @@
                                     <thead>
                                         <tr>
                                             <th class="text-capitalize">No</th>
-                                            <th class="text-capitalize">Kode</th>
-                                            <th class="text-capitalize">Nama Kategori</th>
+                                            <th class="text-capitalize">kode</th>
+                                            <th class="text-capitalize">nama</th>
+                                            <th class="text-capitalize">tipe</th>
                                             <th class="text-end">Actions</th>
                                         </tr>
                                     </thead>
@@ -82,7 +83,7 @@
     <!-- Modal Form -->
     <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <form id="formKategori">
+            <form id="form">
                 <input type="hidden" name="uuid" id="uuid">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -91,8 +92,26 @@
                     </div>
                     <div class="modal-body">
                         <div class="mb-2">
-                            <label class="text-capitalize form-label">Nama Kategori</label>
-                            <input type="text" name="nama_kategori" id="nama_kategori" class="form-control">
+                            <label class="text-capitalize form-label">kode</label>
+                            <input type="text" name="kode" id="kode" class="form-control">
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="text-capitalize form-label">nama</label>
+                            <input type="text" name="nama" id="nama" class="form-control">
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="text-capitalize form-label">tipe</label>
+                            <select name="tipe" id="tipe" data-placeholder="Pilih inputan"
+                                class="form-select basic-usage">
+                                <option value=""></option>
+                                <option value="aset">aset</option>
+                                <option value="kewajiban">kewajiban</option>
+                                <option value="modal">modal</option>
+                                <option value="pendapatan">pendapatan</option>
+                                <option value="beban">beban</option>
+                            </select>
                             <div class="invalid-feedback"></div>
                         </div>
                     </div>
@@ -113,29 +132,53 @@
             }
         });
 
+        function initSelect2(element) {
+            element.select2({
+                theme: "bootstrap-5",
+                width: '100%',
+                placeholder: element.data('placeholder'),
+                dropdownParent: element.closest('.modal-body')
+            });
+        }
+
+        // Init select2 pertama kali
+        $('.basic-usage').each(function() {
+            initSelect2($(this));
+        });
+
         $('#openModal').on('click', function() {
             // Buka modal
             $('#modal').modal('show');
             // Bersihkan form
-            $('#formKategori')[0].reset();
+            $('#form')[0].reset();
             $('#uuid').val('');
+
+            // Reset semua input dan select di seluruh form
+            $('#form').find('input').val('');
+            $('#form').find('select').val('');
+
+            // Kalau pakai select2, reset juga semua select2 di form
+            $('#form').find('select').each(function() {
+                $(this).val('').trigger('change');
+            });
+
             // Hapus error lama
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
         });
 
         // Submit Form (Tambah / Edit)
-        $('#formKategori').on('submit', function(e) {
+        $('#form').on('submit', function(e) {
             e.preventDefault();
 
             let uuid = $('#uuid').val();
 
-            let updateUrl = `{{ route('superadmin.kategori-update', ':uuid') }}`;
+            let updateUrl = `{{ route('superadmin.akun-update', ':uuid') }}`;
             updateUrl = updateUrl.replace(':uuid', uuid);
 
             let url = uuid ? updateUrl :
-                `{{ route('superadmin.kategori-store') }}`;
-            let method = uuid ? 'PUT' : 'POST';
+                `{{ route('superadmin.akun-store') }}`;
+            let method = uuid ? 'POST' : 'POST';
 
             $.ajax({
                 url: url,
@@ -196,11 +239,17 @@
             $('.invalid-feedback').remove();
             $('#modal').modal('show');
             let uuid = $(this).data('uuid');
-            let editUrl = `{{ route('superadmin.kategori-edit', ':uuid') }}`;
+            let editUrl = `{{ route('superadmin.akun-edit', ':uuid') }}`;
             editUrl = editUrl.replace(':uuid', uuid);
             $.get(editUrl, function(res) {
                 $.each(res, function(key, value) {
                     $(`[name="${key}"]`).val(value);
+
+                    if ($(`[name="${key}"]`).hasClass('select2-hidden-accessible')) {
+                        $(`[name="${key}"]`)
+                            .val(value ? value.toString().toLowerCase() : "")
+                            .trigger('change');
+                    }
                 });
             });
         });
@@ -208,7 +257,7 @@
         // Hapus
         $('#dataTables').on('click', '.delete', function() {
             let uuid = $(this).data('uuid');
-            let deleteUrl = `{{ route('superadmin.kategori-delete', ':uuid') }}`;
+            let deleteUrl = `{{ route('superadmin.akun-delete', ':uuid') }}`;
             deleteUrl = deleteUrl.replace(':uuid', uuid);
 
             Swal.fire({
@@ -261,7 +310,7 @@
                 pageLength: 10,
                 processing: true,
                 serverSide: true,
-                ajax: "{{ route('superadmin.kategori-get') }}",
+                ajax: "{{ route('superadmin.akun-get') }}",
                 columns: [{
                         data: null,
                         class: 'mb-kolom-nomor align-content-center',
@@ -274,7 +323,11 @@
                         class: 'mb-kolom-text text-left align-content-center'
                     },
                     {
-                        data: 'nama_kategori',
+                        data: 'nama',
+                        class: 'mb-kolom-tanggal text-left align-content-center'
+                    },
+                    {
+                        data: 'tipe',
                         class: 'mb-kolom-tanggal text-left align-content-center'
                     },
                     {

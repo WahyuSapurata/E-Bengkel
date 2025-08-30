@@ -93,11 +93,6 @@
                     </div>
                     <div class="modal-body">
                         <div class="mb-2">
-                            <label class="text-capitalize form-label">kode</label>
-                            <input type="text" name="kode" id="kode" class="form-control">
-                            <div class="invalid-feedback"></div>
-                        </div>
-                        <div class="mb-2">
                             <label class="text-capitalize form-label">nama</label>
                             <input type="text" name="nama" id="nama" class="form-control">
                             <div class="invalid-feedback"></div>

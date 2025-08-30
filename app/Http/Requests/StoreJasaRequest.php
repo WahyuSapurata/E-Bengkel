@@ -22,7 +22,6 @@ class StoreJasaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'kode' => 'required|unique:jasas,kode',
             'nama' => 'required',
             'deskripsi' => 'required',
             'harga' => 'required',
@@ -32,8 +31,6 @@ class StoreJasaRequest extends FormRequest
     public function messages()
     {
         return [
-            'kode.required' => 'Kolom kode harus di isi.',
-            'kode.unique' => 'Kode sudah digunakan.',
             'nama.required' => 'Kolom nama harus di isi.',
             'deskripsi.required' => 'Kolom deskripsi harus di isi.',
             'harga.required' => 'Kolom harga harus di isi.',

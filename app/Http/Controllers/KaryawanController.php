@@ -2,39 +2,37 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreSuplayerRequest;
-use App\Http\Requests\UpdateSuplayerRequest;
-use App\Models\Suplayer;
+use App\Http\Requests\StoreKaryawanRequest;
+use App\Http\Requests\UpdateKaryawanRequest;
+use App\Models\Karyawan;
 use Illuminate\Http\Request;
 
-class SuplayerController extends Controller
+class KaryawanController extends Controller
 {
     public function index()
     {
-        $module = 'Suplayer';
-        return view('pages.suplayer.index', compact('module'));
+        $module = 'Karyawan';
+        return view('pages.karyawan.index', compact('module'));
     }
 
     public function get(Request $request)
     {
         $columns = [
             'uuid',
-            'kode',
             'nama',
             'alamat',
-            'telepon',
-            'kota',
+            'nomor',
+            'jabatan',
         ];
 
-        $totalData = Suplayer::count();
+        $totalData = Karyawan::count();
 
-        $query = Suplayer::select(
+        $query = Karyawan::select(
             'uuid',
-            'kode',
             'nama',
             'alamat',
-            'telepon',
-            'kota',
+            'nomor',
+            'jabatan',
         );
 
         // Searching
@@ -72,33 +70,13 @@ class SuplayerController extends Controller
         ]);
     }
 
-    public function store(StoreSuplayerRequest $request)
+    public function store(StoreKaryawanRequest $request)
     {
-        // Format tanggal -> DDMMYY
-        $today = now()->format('dmy');
-        $prefix = "S-" . $today;
-
-        // Cari PO terakhir di hari ini
-        $lastSuplayer = Suplayer::whereDate('created_at', now()->toDateString())
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        if ($lastSuplayer) {
-            // Ambil angka urut terakhir (setelah prefix)
-            $lastNumber = intval(substr($lastSuplayer->kode, strrpos($lastSuplayer->kode, '-') + 1));
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
-
-        $kode = $prefix . "-" . $nextNumber;
-
-        Suplayer::create([
-            'kode' => $kode,
+        Karyawan::create([
             'nama' => $request->nama,
             'alamat' => $request->alamat,
-            'telepon' => $request->telepon,
-            'kota' => $request->kota,
+            'nomor' => $request->nomor,
+            'jabatan' => $request->jabatan,
         ]);
 
         return response()->json(['status' => 'success']);
@@ -106,17 +84,17 @@ class SuplayerController extends Controller
 
     public function edit($params)
     {
-        return response()->json(Suplayer::where('uuid', $params)->first());
+        return response()->json(Karyawan::where('uuid', $params)->first());
     }
 
-    public function update(UpdateSuplayerRequest $update, $params)
+    public function update(StoreKaryawanRequest $update, $params)
     {
-        $kategori = Suplayer::where('uuid', $params)->first();
+        $kategori = Karyawan::where('uuid', $params)->first();
         $kategori->update([
             'nama' => $update->nama,
             'alamat' => $update->alamat,
-            'telepon' => $update->telepon,
-            'kota' => $update->kota,
+            'nomor' => $update->nomor,
+            'jabatan' => $update->jabatan,
         ]);
 
         return response()->json(['status' => 'success']);
@@ -124,7 +102,7 @@ class SuplayerController extends Controller
 
     public function delete($params)
     {
-        Suplayer::where('uuid', $params)->delete();
+        Karyawan::where('uuid', $params)->delete();
         return response()->json(['status' => 'success']);
     }
 }

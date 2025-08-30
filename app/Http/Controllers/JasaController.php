@@ -72,8 +72,27 @@ class JasaController extends Controller
 
     public function store(StoreJasaRequest $request)
     {
+        // Format tanggal -> DDMMYY
+        $today = now()->format('dmy');
+        $prefix = "J-" . $today;
+
+        // Cari PO terakhir di hari ini
+        $lastJasa = Jasa::whereDate('created_at', now()->toDateString())
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if ($lastJasa) {
+            // Ambil angka urut terakhir (setelah prefix)
+            $lastNumber = intval(substr($lastJasa->kode, strrpos($lastJasa->kode, '-') + 1));
+            $nextNumber = $lastNumber + 1;
+        } else {
+            $nextNumber = 1;
+        }
+
+        $kode = $prefix . "-" . $nextNumber;
+
         Jasa::create([
-            'kode' => $request->kode,
+            'kode' => $kode,
             'nama' => $request->nama,
             'deskripsi' => $request->deskripsi,
             'harga' => preg_replace('/\D/', '', $request->harga),
@@ -91,7 +110,6 @@ class JasaController extends Controller
     {
         $kategori = Jasa::where('uuid', $params)->first();
         $kategori->update([
-            'kode' => $update->kode,
             'nama' => $update->nama,
             'deskripsi' => $update->deskripsi,
             'harga' => preg_replace('/\D/', '', $update->harga),

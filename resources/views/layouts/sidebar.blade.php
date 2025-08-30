@@ -42,6 +42,8 @@
                                     class="nxl-link" href="{{ route('superadmin.produk') }}">Produk</a></li>
                             <li class="nxl-item {{ isset($path[2]) && $path[2] === 'costumer' ? 'active' : '' }}"><a
                                     class="nxl-link" href="{{ route('superadmin.costumer') }}">Customer</a></li>
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'karyawan' ? 'active' : '' }}"><a
+                                    class="nxl-link" href="{{ route('superadmin.karyawan') }}">Karyawan</a></li>
                             <li class="nxl-item {{ isset($path[2]) && $path[2] === 'outlet' ? 'active' : '' }}"><a
                                     class="nxl-link" href="{{ route('superadmin.outlet') }}">Outlet</a></li>
                         </ul>
@@ -55,6 +57,8 @@
                         <ul class="nxl-submenu">
                             <li class="nxl-item {{ isset($path[2]) && $path[2] === 'pembelian' ? 'active' : '' }}"><a
                                     class="nxl-link" href="{{ route('superadmin.pembelian') }}">Pembelian</a></li>
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'hutang' ? 'active' : '' }}"><a
+                                    class="nxl-link" href="{{ route('superadmin.hutang') }}">Hutang</a></li>
                             <li class="nxl-item {{ isset($path[2]) && $path[2] === 'po-pusat' ? 'active' : '' }}"><a
                                     class="nxl-link" href="{{ route('superadmin.po-pusat') }}">PO</a></li>
                             <li class="nxl-item {{ isset($path[2]) && $path[2] === 'po-vw-outlet' ? 'active' : '' }}">
@@ -63,6 +67,21 @@
                             <li class="nxl-item {{ isset($path[2]) && $path[2] === 'pengiriman' ? 'active' : '' }}">
                                 <a class="nxl-link" href="{{ route('superadmin.pengiriman') }}">Pengiriman Barang</a>
                             </li>
+                        </ul>
+                    </li>
+                    <li class="nxl-item nxl-hasmenu {{ $path[1] === 'accounting' ? 'active' : '' }}">
+                        <a href="javascript:void(0);" class="nxl-link">
+                            <span class="nxl-micon"><i class="feather-trello"></i></span>
+                            <span class="nxl-mtext">Accounting</span><span class="nxl-arrow"><i
+                                    class="feather-chevron-right"></i></span>
+                        </a>
+                        <ul class="nxl-submenu">
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'akun' ? 'active' : '' }}"><a
+                                    class="nxl-link" href="{{ route('superadmin.akun') }}">Daftar Akun</a></li>
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'gaji' ? 'active' : '' }}"><a
+                                    class="nxl-link" href="{{ route('superadmin.gaji') }}">Gaji Karyawan</a></li>
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'biaya' ? 'active' : '' }}"><a
+                                    class="nxl-link" href="{{ route('superadmin.biaya') }}">Biaya Lain-lain</a></li>
                         </ul>
                     </li>
                 </ul>

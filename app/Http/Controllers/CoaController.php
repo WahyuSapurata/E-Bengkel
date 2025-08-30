@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreSuplayerRequest;
-use App\Http\Requests\UpdateSuplayerRequest;
-use App\Models\Suplayer;
+use App\Http\Requests\StoreCoaRequest;
+use App\Http\Requests\UpdateCoaRequest;
+use App\Models\Coa;
 use Illuminate\Http\Request;
 
-class SuplayerController extends Controller
+class CoaController extends Controller
 {
     public function index()
     {
-        $module = 'Suplayer';
-        return view('pages.suplayer.index', compact('module'));
+        $module = 'Daftar Akun';
+        return view('pages.akun.index', compact('module'));
     }
 
     public function get(Request $request)
@@ -21,20 +21,16 @@ class SuplayerController extends Controller
             'uuid',
             'kode',
             'nama',
-            'alamat',
-            'telepon',
-            'kota',
+            'tipe',
         ];
 
-        $totalData = Suplayer::count();
+        $totalData = Coa::count();
 
-        $query = Suplayer::select(
+        $query = Coa::select(
             'uuid',
             'kode',
             'nama',
-            'alamat',
-            'telepon',
-            'kota',
+            'tipe',
         );
 
         // Searching
@@ -72,33 +68,31 @@ class SuplayerController extends Controller
         ]);
     }
 
-    public function store(StoreSuplayerRequest $request)
+    public function store(StoreCoaRequest $request)
     {
         // Format tanggal -> DDMMYY
-        $today = now()->format('dmy');
-        $prefix = "S-" . $today;
+        // $today = now()->format('dmy');
+        // $prefix = "S-" . $today;
 
-        // Cari PO terakhir di hari ini
-        $lastSuplayer = Suplayer::whereDate('created_at', now()->toDateString())
-            ->orderBy('created_at', 'desc')
-            ->first();
+        // // Cari PO terakhir di hari ini
+        // $lastCoa = Coa::whereDate('created_at', now()->toDateString())
+        //     ->orderBy('created_at', 'desc')
+        //     ->first();
 
-        if ($lastSuplayer) {
-            // Ambil angka urut terakhir (setelah prefix)
-            $lastNumber = intval(substr($lastSuplayer->kode, strrpos($lastSuplayer->kode, '-') + 1));
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
+        // if ($lastCoa) {
+        //     // Ambil angka urut terakhir (setelah prefix)
+        //     $lastNumber = intval(substr($lastCoa->kode, strrpos($lastCoa->kode, '-') + 1));
+        //     $nextNumber = $lastNumber + 1;
+        // } else {
+        //     $nextNumber = 1;
+        // }
 
-        $kode = $prefix . "-" . $nextNumber;
+        // $kode = $prefix . "-" . $nextNumber;
 
-        Suplayer::create([
-            'kode' => $kode,
+        Coa::create([
+            'kode' => $request->kode,
             'nama' => $request->nama,
-            'alamat' => $request->alamat,
-            'telepon' => $request->telepon,
-            'kota' => $request->kota,
+            'tipe' => $request->tipe,
         ]);
 
         return response()->json(['status' => 'success']);
@@ -106,17 +100,16 @@ class SuplayerController extends Controller
 
     public function edit($params)
     {
-        return response()->json(Suplayer::where('uuid', $params)->first());
+        return response()->json(Coa::where('uuid', $params)->first());
     }
 
-    public function update(UpdateSuplayerRequest $update, $params)
+    public function update(UpdateCoaRequest $update, $params)
     {
-        $kategori = Suplayer::where('uuid', $params)->first();
+        $kategori = Coa::where('uuid', $params)->first();
         $kategori->update([
+            'kode' => $update->kode,
             'nama' => $update->nama,
-            'alamat' => $update->alamat,
-            'telepon' => $update->telepon,
-            'kota' => $update->kota,
+            'tipe' => $update->tipe,
         ]);
 
         return response()->json(['status' => 'success']);
@@ -124,7 +117,7 @@ class SuplayerController extends Controller
 
     public function delete($params)
     {
-        Suplayer::where('uuid', $params)->delete();
+        Coa::where('uuid', $params)->delete();
         return response()->json(['status' => 'success']);
     }
 }

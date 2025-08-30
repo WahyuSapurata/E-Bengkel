@@ -6,6 +6,7 @@ use App\Http\Requests\StorePembelianRequest;
 use App\Http\Requests\UpdatePembelianRequest;
 use App\Models\DetailPembelian;
 use App\Models\DetailPoPusat;
+use App\Models\Hutang;
 use App\Models\Pembelian;
 use App\Models\PoPusat;
 use App\Models\Produk;
@@ -166,6 +167,13 @@ class PembelianController extends Controller
                 'jenis'          => 'masuk',
                 'sumber'         => 'pembelian',
                 'keterangan'     => 'Pembelian dari supplier: ' . $suplyer->nama,
+            ]);
+        }
+
+        if ($request->pembayaran === 'Kredit') {
+            Hutang::create([
+                'uuid_pembelian' => $pembelian->uuid,
+                'jatuh_tempo'    => now()->addDays(7)->format('d-m-Y'),
             ]);
         }
 

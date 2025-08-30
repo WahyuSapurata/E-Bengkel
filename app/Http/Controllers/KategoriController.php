@@ -60,8 +60,27 @@ class KategoriController extends BaseController
 
     public function store(StoreKategoriRequest $request)
     {
+        // Format tanggal -> DDMMYY
+        $today = now()->format('dmy');
+        $prefix = "K-" . $today;
+
+        // Cari PO terakhir di hari ini
+        $lastKategori = Kategori::whereDate('created_at', now()->toDateString())
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if ($lastKategori) {
+            // Ambil angka urut terakhir (setelah prefix)
+            $lastNumber = intval(substr($lastKategori->kode, strrpos($lastKategori->kode, '-') + 1));
+            $nextNumber = $lastNumber + 1;
+        } else {
+            $nextNumber = 1;
+        }
+
+        $kode = $prefix . "-" . $nextNumber;
+
         Kategori::create([
-            'kode' => $request->kode,
+            'kode' => $kode,
             'nama_kategori' => $request->nama_kategori
         ]);
 
@@ -77,7 +96,6 @@ class KategoriController extends BaseController
     {
         $kategori = Kategori::where('uuid', $params)->first();
         $kategori->update([
-            'kode' => $update->kode,
             'nama_kategori' => $update->nama_kategori
         ]);
 

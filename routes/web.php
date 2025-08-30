@@ -3,10 +3,6 @@
 use App\Http\Controllers\Dashboard;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/test-cors', function () {
-    return response()->json(['message' => 'CORS OK']);
-});
-
 Route::get('/', [Dashboard::class, 'landing_page'])->name('landing_page');
 
 Route::group([
@@ -87,6 +83,13 @@ Route::group([
         Route::get('/outlet-edit/{params}', [App\Http\Controllers\OutletController::class, 'edit'])->name('outlet-edit');
         Route::post('/outlet-update/{params}', [App\Http\Controllers\OutletController::class, 'update'])->name('outlet-update');
         Route::delete('/outlet-delete/{params}', [App\Http\Controllers\OutletController::class, 'delete'])->name('outlet-delete');
+
+        Route::get('/karyawan', [App\Http\Controllers\KaryawanController::class, 'index'])->name('karyawan');
+        Route::get('/karyawan-get', [App\Http\Controllers\KaryawanController::class, 'get'])->name('karyawan-get');
+        Route::post('/karyawan-store', [App\Http\Controllers\KaryawanController::class, 'store'])->name('karyawan-store');
+        Route::get('/karyawan-edit/{params}', [App\Http\Controllers\KaryawanController::class, 'edit'])->name('karyawan-edit');
+        Route::put('/karyawan-update/{params}', [App\Http\Controllers\KaryawanController::class, 'update'])->name('karyawan-update');
+        Route::delete('/karyawan-delete/{params}', [App\Http\Controllers\KaryawanController::class, 'delete'])->name('karyawan-delete');
     });
 
     Route::prefix('transaksi')->group(function () {
@@ -120,6 +123,35 @@ Route::group([
         Route::get('/pengiriman-edit/{params}', [App\Http\Controllers\PengirimanBarangController::class, 'edit'])->name('pengiriman-edit');
         Route::post('/pengiriman-update/{params}', [App\Http\Controllers\PengirimanBarangController::class, 'update'])->name('pengiriman-update');
         Route::delete('/pengiriman-delete/{params}', [App\Http\Controllers\PengirimanBarangController::class, 'delete'])->name('pengiriman-delete');
+
+        Route::get('/hutang', [App\Http\Controllers\HutangController::class, 'index'])->name('hutang');
+        Route::get('/hutang-get', [App\Http\Controllers\HutangController::class, 'get'])->name('hutang-get');
+        Route::get('/hutang-edit/{params}', [App\Http\Controllers\HutangController::class, 'edit'])->name('hutang-edit');
+        Route::post('/hutang-update/{params}', [App\Http\Controllers\HutangController::class, 'update'])->name('hutang-update');
+        Route::delete('/hutang-delete/{params}', [App\Http\Controllers\HutangController::class, 'delete'])->name('hutang-delete');
+    });
+
+    Route::prefix('accounting')->group(function () {
+        Route::get('/akun', [App\Http\Controllers\CoaController::class, 'index'])->name('akun');
+        Route::get('/akun-get', [App\Http\Controllers\CoaController::class, 'get'])->name('akun-get');
+        Route::post('/akun-store', [App\Http\Controllers\CoaController::class, 'store'])->name('akun-store');
+        Route::get('/akun-edit/{params}', [App\Http\Controllers\CoaController::class, 'edit'])->name('akun-edit');
+        Route::post('/akun-update/{params}', [App\Http\Controllers\CoaController::class, 'update'])->name('akun-update');
+        Route::delete('/akun-delete/{params}', [App\Http\Controllers\CoaController::class, 'delete'])->name('akun-delete');
+
+        Route::get('/gaji', [App\Http\Controllers\GajiController::class, 'index'])->name('gaji');
+        Route::get('/gaji-get', [App\Http\Controllers\GajiController::class, 'get'])->name('gaji-get');
+        Route::post('/gaji-store', [App\Http\Controllers\GajiController::class, 'store'])->name('gaji-store');
+        Route::get('/gaji-edit/{params}', [App\Http\Controllers\GajiController::class, 'edit'])->name('gaji-edit');
+        Route::post('/gaji-update/{params}', [App\Http\Controllers\GajiController::class, 'update'])->name('gaji-update');
+        Route::delete('/gaji-delete/{params}', [App\Http\Controllers\GajiController::class, 'delete'])->name('gaji-delete');
+
+        Route::get('/biaya', [App\Http\Controllers\BiayaController::class, 'index'])->name('biaya');
+        Route::get('/biaya-get', [App\Http\Controllers\BiayaController::class, 'get'])->name('biaya-get');
+        Route::post('/biaya-store', [App\Http\Controllers\BiayaController::class, 'store'])->name('biaya-store');
+        Route::get('/biaya-edit/{params}', [App\Http\Controllers\BiayaController::class, 'edit'])->name('biaya-edit');
+        Route::post('/biaya-update/{params}', [App\Http\Controllers\BiayaController::class, 'update'])->name('biaya-update');
+        Route::delete('/biaya-delete/{params}', [App\Http\Controllers\BiayaController::class, 'delete'])->name('biaya-delete');
     });
 });
 

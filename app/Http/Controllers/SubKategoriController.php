@@ -64,8 +64,27 @@ class SubKategoriController extends Controller
 
     public function store(StoreSubKategoriRequest $request)
     {
+        // Format tanggal -> DDMMYY
+        $today = now()->format('dmy');
+        $prefix = "SK-" . $today;
+
+        // Cari PO terakhir di hari ini
+        $lastSubKategori = SubKategori::whereDate('created_at', now()->toDateString())
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if ($lastSubKategori) {
+            // Ambil angka urut terakhir (setelah prefix)
+            $lastNumber = intval(substr($lastSubKategori->kode, strrpos($lastSubKategori->kode, '-') + 1));
+            $nextNumber = $lastNumber + 1;
+        } else {
+            $nextNumber = 1;
+        }
+
+        $kode = $prefix . "-" . $nextNumber;
+
         SubKategori::create([
-            'kode' => $request->kode,
+            'kode' => $kode,
             'nama_sub_kategori' => $request->nama_sub_kategori
         ]);
 
@@ -81,7 +100,6 @@ class SubKategoriController extends Controller
     {
         $kategori = SubKategori::where('uuid', $params)->first();
         $kategori->update([
-            'kode' => $update->kode,
             'nama_sub_kategori' => $update->nama_sub_kategori
         ]);
 

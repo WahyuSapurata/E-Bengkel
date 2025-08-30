@@ -4,7 +4,7 @@
         <div class="page-header">
             <div class="page-header-left d-flex align-items-center">
                 <div class="page-header-title">
-                    <h5 class="m-b-10 text-capitalize">Master Data</h5>
+                    <h5 class="m-b-10 text-capitalize">Transaksi</h5>
                 </div>
                 <ul class="breadcrumb">
                     <li class="breadcrumb-item"><a href="/">Home</a></li>
@@ -20,14 +20,6 @@
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg><span>Back</span></a></div>
-                    <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-                        <a href="#" id="openModal" class="btn btn-primary"><svg stroke="currentColor" fill="none"
-                                stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"
-                                class="me-2" height="16" width="16" xmlns="http://www.w3.org/2000/svg">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg><span>Tambah Data</span></a>
-                    </div>
                 </div>
                 <div class="d-md-none d-flex align-items-center"><a class="page-header-right-open-toggle"
                         href="/widgets/tables"><svg stroke="currentColor" fill="none" stroke-width="2"
@@ -64,8 +56,10 @@
                                     <thead>
                                         <tr>
                                             <th class="text-capitalize">No</th>
-                                            <th class="text-capitalize">Kode</th>
-                                            <th class="text-capitalize">Nama Kategori</th>
+                                            <th class="text-capitalize">no invoice</th>
+                                            <th class="text-capitalize">jatuh tempo</th>
+                                            <th class="text-capitalize">total harga</th>
+                                            <th class="text-capitalize">status</th>
                                             <th class="text-end">Actions</th>
                                         </tr>
                                     </thead>
@@ -82,7 +76,7 @@
     <!-- Modal Form -->
     <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <form id="formKategori">
+            <form id="form">
                 <input type="hidden" name="uuid" id="uuid">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -91,8 +85,19 @@
                     </div>
                     <div class="modal-body">
                         <div class="mb-2">
-                            <label class="text-capitalize form-label">Nama Kategori</label>
-                            <input type="text" name="nama_kategori" id="nama_kategori" class="form-control">
+                            <label class="text-capitalize form-label">jumlah terbayarkan</label>
+                            <input type="text" name="jumlah_terbayarkan" id="jumlah_terbayarkan"
+                                class="form-control">
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="text-capitalize form-label">status</label>
+                            <select name="status" id="status" data-placeholder="Pilih inputan"
+                                class="form-select basic-usage">
+                                <option value=""></option>
+                                <option value="Lunas">Lunas</option>
+                                <option value="Belum Lunas">Belum Lunas</option>
+                            </select>
                             <div class="invalid-feedback"></div>
                         </div>
                     </div>
@@ -113,32 +118,54 @@
             }
         });
 
-        $('#openModal').on('click', function() {
-            // Buka modal
-            $('#modal').modal('show');
-            // Bersihkan form
-            $('#formKategori')[0].reset();
-            $('#uuid').val('');
-            // Hapus error lama
-            $('.is-invalid').removeClass('is-invalid');
-            $('.invalid-feedback').remove();
+        function initSelect2(element) {
+            element.select2({
+                theme: "bootstrap-5",
+                width: '100%',
+                placeholder: element.data('placeholder'),
+                dropdownParent: element.closest('.modal-body')
+            });
+        }
+
+        // Init select2 pertama kali
+        $('.basic-usage').each(function() {
+            initSelect2($(this));
         });
 
+        function formatRupiah(angka) {
+            let number_string = angka.replace(/[^,\d]/g, '').toString(),
+                split = number_string.split(','),
+                sisa = split[0].length % 3,
+                rupiah = split[0].substr(0, sisa),
+                ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+            if (ribuan) {
+                let separator = sisa ? '.' : '';
+                rupiah += separator + ribuan.join('.');
+            }
+
+            rupiah = split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
+            return rupiah ? 'Rp ' + rupiah : '';
+        }
+
+        $('#jumlah_terbayarkan').on('input', function() {
+            $(this).val(formatRupiah(this.value));
+        });
+
+
         // Submit Form (Tambah / Edit)
-        $('#formKategori').on('submit', function(e) {
+        $('#form').on('submit', function(e) {
             e.preventDefault();
 
             let uuid = $('#uuid').val();
 
-            let updateUrl = `{{ route('superadmin.kategori-update', ':uuid') }}`;
+            let updateUrl = `{{ route('superadmin.hutang-update', ':uuid') }}`;
             updateUrl = updateUrl.replace(':uuid', uuid);
 
-            let url = uuid ? updateUrl :
-                `{{ route('superadmin.kategori-store') }}`;
-            let method = uuid ? 'PUT' : 'POST';
+            let method = 'POST';
 
             $.ajax({
-                url: url,
+                url: updateUrl,
                 method: method,
                 data: $(this).serialize(),
                 success: function(res) {
@@ -196,11 +223,16 @@
             $('.invalid-feedback').remove();
             $('#modal').modal('show');
             let uuid = $(this).data('uuid');
-            let editUrl = `{{ route('superadmin.kategori-edit', ':uuid') }}`;
+            let editUrl = `{{ route('superadmin.hutang-edit', ':uuid') }}`;
             editUrl = editUrl.replace(':uuid', uuid);
             $.get(editUrl, function(res) {
                 $.each(res, function(key, value) {
                     $(`[name="${key}"]`).val(value);
+
+                    // if (key === 'jumlah_terbayarkan') {
+                    //     // Kalau jumlah_terbayarkan, format ke Rupiah saat set value
+                    //     $(`[name="${key}"]`).val(formatRupiah(value.toString()));
+                    // }
                 });
             });
         });
@@ -208,7 +240,7 @@
         // Hapus
         $('#dataTables').on('click', '.delete', function() {
             let uuid = $(this).data('uuid');
-            let deleteUrl = `{{ route('superadmin.kategori-delete', ':uuid') }}`;
+            let deleteUrl = `{{ route('superadmin.hutang-delete', ':uuid') }}`;
             deleteUrl = deleteUrl.replace(':uuid', uuid);
 
             Swal.fire({
@@ -261,7 +293,7 @@
                 pageLength: 10,
                 processing: true,
                 serverSide: true,
-                ajax: "{{ route('superadmin.kategori-get') }}",
+                ajax: "{{ route('superadmin.hutang-get') }}",
                 columns: [{
                         data: null,
                         class: 'mb-kolom-nomor align-content-center',
@@ -270,12 +302,31 @@
                         }
                     },
                     {
-                        data: 'kode',
+                        data: 'no_invoice',
                         class: 'mb-kolom-text text-left align-content-center'
                     },
                     {
-                        data: 'nama_kategori',
+                        data: 'jatuh_tempo',
                         class: 'mb-kolom-tanggal text-left align-content-center'
+                    },
+                    {
+                        data: 'total_harga',
+                        class: 'mb-kolom-tanggal text-left align-content-center',
+                        render: function(data, type, row) {
+                            // Format jumlah_terbayarkan ke Rupiah
+                            return formatRupiah(data.toString());
+                        }
+                    },
+                    {
+                        data: 'status',
+                        class: 'mb-kolom-tanggal text-left align-content-center',
+                        render: function(data, type, row) {
+                            return `
+                                <span class="badge text-uppercase bg-${data === 'Belum Lunas' ? 'danger' : ''}">
+                                    ${data}
+                                </span>
+                            `;
+                        }
                     },
                     {
                         data: 'uuid', // akan diganti di columnDefs

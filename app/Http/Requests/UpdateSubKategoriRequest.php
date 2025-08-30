@@ -21,9 +21,7 @@ class UpdateSubKategoriRequest extends FormRequest
      */
     public function rules(): array
     {
-        $params = $this->route('params');
         return [
-            'kode' => 'required|unique:sub_kategoris,kode,' . $params . ',uuid',
             'nama_sub_kategori' => 'required',
         ];
     }
@@ -31,7 +29,6 @@ class UpdateSubKategoriRequest extends FormRequest
     public function messages()
     {
         return [
-            'kode.required' => 'Kolom kode harus di isi.',
             'nama_sub_kategori.required' => 'Kolom nama sub kategori harus di isi.',
         ];
     }

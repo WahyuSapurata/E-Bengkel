@@ -64,8 +64,10 @@
                                     <thead>
                                         <tr>
                                             <th class="text-capitalize">No</th>
-                                            <th class="text-capitalize">Kode</th>
-                                            <th class="text-capitalize">Nama Kategori</th>
+                                            <th class="text-capitalize">nama</th>
+                                            <th class="text-capitalize">alamat</th>
+                                            <th class="text-capitalize">nomor</th>
+                                            <th class="text-capitalize">jabatan</th>
                                             <th class="text-end">Actions</th>
                                         </tr>
                                     </thead>
@@ -82,7 +84,7 @@
     <!-- Modal Form -->
     <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <form id="formKategori">
+            <form id="form">
                 <input type="hidden" name="uuid" id="uuid">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -91,8 +93,23 @@
                     </div>
                     <div class="modal-body">
                         <div class="mb-2">
-                            <label class="text-capitalize form-label">Nama Kategori</label>
-                            <input type="text" name="nama_kategori" id="nama_kategori" class="form-control">
+                            <label class="text-capitalize form-label">nama</label>
+                            <input type="text" name="nama" id="nama" class="form-control">
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="text-capitalize form-label">alamat</label>
+                            <input type="text" name="alamat" id="alamat" class="form-control">
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="text-capitalize form-label">nomor</label>
+                            <input type="text" name="nomor" id="nomor" class="form-control">
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="text-capitalize form-label">jabatan</label>
+                            <input type="text" name="jabatan" id="jabatan" class="form-control">
                             <div class="invalid-feedback"></div>
                         </div>
                     </div>
@@ -117,7 +134,7 @@
             // Buka modal
             $('#modal').modal('show');
             // Bersihkan form
-            $('#formKategori')[0].reset();
+            $('#form')[0].reset();
             $('#uuid').val('');
             // Hapus error lama
             $('.is-invalid').removeClass('is-invalid');
@@ -125,16 +142,16 @@
         });
 
         // Submit Form (Tambah / Edit)
-        $('#formKategori').on('submit', function(e) {
+        $('#form').on('submit', function(e) {
             e.preventDefault();
 
             let uuid = $('#uuid').val();
 
-            let updateUrl = `{{ route('superadmin.kategori-update', ':uuid') }}`;
+            let updateUrl = `{{ route('superadmin.karyawan-update', ':uuid') }}`;
             updateUrl = updateUrl.replace(':uuid', uuid);
 
             let url = uuid ? updateUrl :
-                `{{ route('superadmin.kategori-store') }}`;
+                `{{ route('superadmin.karyawan-store') }}`;
             let method = uuid ? 'PUT' : 'POST';
 
             $.ajax({
@@ -196,7 +213,7 @@
             $('.invalid-feedback').remove();
             $('#modal').modal('show');
             let uuid = $(this).data('uuid');
-            let editUrl = `{{ route('superadmin.kategori-edit', ':uuid') }}`;
+            let editUrl = `{{ route('superadmin.karyawan-edit', ':uuid') }}`;
             editUrl = editUrl.replace(':uuid', uuid);
             $.get(editUrl, function(res) {
                 $.each(res, function(key, value) {
@@ -208,7 +225,7 @@
         // Hapus
         $('#dataTables').on('click', '.delete', function() {
             let uuid = $(this).data('uuid');
-            let deleteUrl = `{{ route('superadmin.kategori-delete', ':uuid') }}`;
+            let deleteUrl = `{{ route('superadmin.karyawan-delete', ':uuid') }}`;
             deleteUrl = deleteUrl.replace(':uuid', uuid);
 
             Swal.fire({
@@ -261,7 +278,7 @@
                 pageLength: 10,
                 processing: true,
                 serverSide: true,
-                ajax: "{{ route('superadmin.kategori-get') }}",
+                ajax: "{{ route('superadmin.karyawan-get') }}",
                 columns: [{
                         data: null,
                         class: 'mb-kolom-nomor align-content-center',
@@ -270,11 +287,19 @@
                         }
                     },
                     {
-                        data: 'kode',
+                        data: 'nama',
                         class: 'mb-kolom-text text-left align-content-center'
                     },
                     {
-                        data: 'nama_kategori',
+                        data: 'alamat',
+                        class: 'mb-kolom-tanggal text-left align-content-center'
+                    },
+                    {
+                        data: 'nomor',
+                        class: 'mb-kolom-tanggal text-left align-content-center'
+                    },
+                    {
+                        data: 'jabatan',
                         class: 'mb-kolom-tanggal text-left align-content-center'
                     },
                     {

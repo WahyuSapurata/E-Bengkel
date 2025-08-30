@@ -22,7 +22,6 @@ class StoreSubKategoriRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'kode' => 'required|unique:kategoris,kode',
             'nama_sub_kategori' => 'required',
         ];
     }
@@ -30,8 +29,6 @@ class StoreSubKategoriRequest extends FormRequest
     public function messages()
     {
         return [
-            'kode.required' => 'Kolom kode harus di isi.',
-            'kode.unique' => 'Kode sudah digunakan.',
             'nama_sub_kategori.required' => 'Kolom nama sub kategori harus di isi.',
         ];
     }
