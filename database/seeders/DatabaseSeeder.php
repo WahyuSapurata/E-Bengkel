@@ -33,8 +33,13 @@ class DatabaseSeeder extends Seeder
         $coas = [
             // Aset
             ['kode' => '101', 'nama' => 'Kas', 'tipe' => 'aset'],
-            ['kode' => '102', 'nama' => 'Bank', 'tipe' => 'aset'],
-            ['kode' => '103', 'nama' => 'Persediaan Sparepart', 'tipe' => 'aset'],
+            ['kode' => '102', 'nama' => 'Bank Mandiri', 'tipe' => 'aset'],
+            ['kode' => '103', 'nama' => 'Bank BNI', 'tipe' => 'aset'],
+            ['kode' => '104', 'nama' => 'Bank BCA', 'tipe' => 'aset'],
+            ['kode' => '105', 'nama' => 'Bank BSI', 'tipe' => 'aset'],
+            ['kode' => '106', 'nama' => 'Bank BRI', 'tipe' => 'aset'],
+            ['kode' => '107', 'nama' => 'Persediaan Sparepart', 'tipe' => 'aset'],
+            ['kode' => '108', 'nama' => 'Kas Outlet', 'tipe' => 'aset'],
 
             // Kewajiban
             ['kode' => '201', 'nama' => 'Hutang Usaha', 'tipe' => 'kewajiban'],
@@ -43,14 +48,14 @@ class DatabaseSeeder extends Seeder
             ['kode' => '301', 'nama' => 'Modal Pemilik', 'tipe' => 'modal'],
 
             // Pendapatan
-            ['kode' => '401', 'nama' => 'Pendapatan Service', 'tipe' => 'pendapatan'],
+            ['kode' => '401', 'nama' => 'Pendapatan Jasa Service', 'tipe' => 'pendapatan'],
             ['kode' => '402', 'nama' => 'Pendapatan Penjualan Sparepart', 'tipe' => 'pendapatan'],
 
             // Beban
-            ['kode' => '501', 'nama' => 'Beban Listrik', 'tipe' => 'beban'],
-            ['kode' => '502', 'nama' => 'Beban Gaji', 'tipe' => 'beban'],
-            ['kode' => '503', 'nama' => 'Beban Operasional', 'tipe' => 'beban'],
-            ['kode' => '504', 'nama' => 'Beban Selisih Persediaan', 'tipe' => 'beban'],
+            ['kode' => '501', 'nama' => 'Beban Listrik & Utilitas', 'tipe' => 'beban'],
+            ['kode' => '502', 'nama' => 'Beban Gaji Karyawan', 'tipe' => 'beban'],
+            ['kode' => '503', 'nama' => 'Beban Operasional Lainnya', 'tipe' => 'beban'],
+            ['kode' => '504', 'nama' => 'Beban Selisih Persediaan / HPP', 'tipe' => 'beban'],
         ];
 
         foreach ($coas as $coa) {

@@ -82,6 +82,10 @@
                                     class="nxl-link" href="{{ route('superadmin.gaji') }}">Gaji Karyawan</a></li>
                             <li class="nxl-item {{ isset($path[2]) && $path[2] === 'biaya' ? 'active' : '' }}"><a
                                     class="nxl-link" href="{{ route('superadmin.biaya') }}">Biaya Lain-lain</a></li>
+                            <li
+                                class="nxl-item {{ isset($path[2]) && $path[2] === 'vw-jurnal-umum' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.vw-jurnal-umum') }}">Jurnal Umum</a>
+                            </li>
                         </ul>
                     </li>
                 </ul>

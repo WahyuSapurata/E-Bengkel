@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\JurnalHelper;
 use App\Http\Requests\StorePenjualanRequest;
 use App\Http\Requests\UpdatePenjualanRequest;
+use App\Models\ClosingKasir;
+use App\Models\Coa;
 use App\Models\Costumer;
 use App\Models\DetailPenjualan;
 use App\Models\Jasa;
@@ -45,7 +48,12 @@ class PenjualanController extends Controller
 
         $module = 'Kasir ' . $data_outlet->nama_outlet;
 
-        return view('outlet.kasir.index', compact('module', 'kasir_login', 'nomor_urut', 'data_outlet'));
+        $aset = Coa::where('tipe', 'aset')
+            ->whereNotIn('nama', ['Kas Outlet', 'Kas', 'Persediaan Sparepart'])
+            ->select('uuid', 'nama')
+            ->get();
+
+        return view('outlet.kasir.index', compact('module', 'kasir_login', 'nomor_urut', 'data_outlet', 'aset'));
     }
 
     public function get_stock()
@@ -151,10 +159,23 @@ class PenjualanController extends Controller
     public function store(Request $request)
     {
         try {
-            $penjualan = null; // untuk disimpan keluar closure
+            $penjualan = null;
             $details   = [];
 
             DB::transaction(function () use ($request, &$penjualan, &$details) {
+                // Ambil outlet dari kasir
+                $kasir = KasirOutlet::where('uuid_user', Auth::user()->uuid)->firstOrFail();
+                $closingToday = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid_outlet)
+                    ->whereDate('tanggal_closing', now()->format('d-m-Y'))
+                    ->first();
+
+                if ($closingToday) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Kasir sudah closing hari ini, tidak bisa transaksi lagi.'
+                    ], 403);
+                }
+
                 // Validasi produk
                 $produk = Produk::whereIn('uuid', $request->uuid_produk)->get();
                 if ($produk->count() !== count($request->uuid_produk)) {
@@ -172,9 +193,6 @@ class PenjualanController extends Controller
                     : 1;
                 $no_bukti = $prefix . "-" . $nextNumber;
 
-                // Ambil outlet dari kasir
-                $kasir = KasirOutlet::where('uuid_user', Auth::user()->uuid)->firstOrFail();
-
                 // costumer (opsional)
                 if ($request->nama && $request->alamat && $request->nomor && $request->plat) {
                     Costumer::create([
@@ -188,7 +206,7 @@ class PenjualanController extends Controller
                 // Simpan header penjualan
                 $penjualan = Penjualan::create([
                     'uuid_outlet'       => $kasir->uuid_outlet,
-                    'uuid_jasa'       => $request->uuid_jasa,
+                    'uuid_jasa'         => $request->uuid_jasa,
                     'no_bukti'          => $no_bukti,
                     'tanggal_transaksi' => now()->format('d-m-Y'),
                     'pembayaran'        => $request->pembayaran,
@@ -209,6 +227,9 @@ class PenjualanController extends Controller
                         'keterangan' => 'Toko outlet ' . $namaOutlet,
                     ]);
                 }
+
+                $grandTotal = 0;
+                $totalHpp   = 0;
 
                 // Simpan detail & kurangi stok
                 foreach ($request->uuid_produk as $i => $uuid_produk) {
@@ -232,15 +253,74 @@ class PenjualanController extends Controller
                         'keterangan'     => 'Penjualan kasir',
                     ]);
 
-                    // simpan detail untuk dikirim ke frontend
+                    // simpan detail untuk frontend
                     $produkInfo = $produk->where('uuid', $uuid_produk)->first();
+                    $hargaJual  = $produkInfo->hrg_modal + ($produkInfo->hrg_modal * $produkInfo->profit / 100);
+
                     $details[] = [
                         'nama'     => $produkInfo->nama_barang ?? 'Produk',
                         'qty'      => $qty,
-                        'harga'    => $produkInfo->hrg_modal + ($produkInfo->hrg_modal * $produkInfo->profit / 100) ?? 0,
+                        'harga'    => $hargaJual,
                         'subtotal' => $total_harga,
                     ];
+
+                    $grandTotal += $total_harga;
+                    $totalHpp   += $produkInfo->hrg_modal * $qty;
                 }
+
+                // === Catat ke jurnal penjualan ===
+                $penjualanSparepart = Coa::where('nama', 'Pendapatan Penjualan Sparepart')->firstOrFail();
+                $hpp                = Coa::where('nama', 'Beban Selisih Persediaan / HPP')->firstOrFail();
+                $persediaan         = Coa::where('nama', 'Persediaan Sparepart')->firstOrFail();
+
+                $totalJasa = 0;
+                if ($request->uuid_jasa) {
+                    $jasaCoa = Coa::where('nama', 'Pendapatan Jasa Service')->firstOrFail();
+                    $totalJasa = Jasa::where('uuid', $request->uuid_jasa)->firstOrFail()->harga;
+                }
+
+                // Tentukan akun debit sesuai metode pembayaran
+                if ($request->pembayaran === 'Tunai') {
+                    // Masuk ke Kas Outlet
+                    $kasOutlet = Coa::where('nama', 'Kas Outlet')->firstOrFail();
+                    $akunDebit = $kasOutlet;
+                    $judulJurnal = 'Penjualan Cash';
+                } else {
+                    // Masuk ke Kas (pusat) sesuai bank
+                    $kas = Coa::where('nama', 'Kas')->firstOrFail(); // khusus setor transfer masuk ke kas
+                    $akunDebit = $kas;
+                    $judulJurnal = 'Penjualan Transfer';
+                }
+
+                // === Siapkan entri jurnal ===
+                $entries = [];
+
+                // Debit kas/kas outlet sebesar total grand
+                $entries[] = ['uuid_coa' => $akunDebit->uuid, 'debit' => $grandTotal];
+
+                // Kredit pendapatan jasa (kalau ada)
+                if ($totalJasa > 0) {
+                    $entries[] = ['uuid_coa' => $jasaCoa->uuid, 'kredit' => $totalJasa];
+                }
+
+                // Kredit pendapatan sparepart (grandTotal - jasa)
+                $totalSparepart = $grandTotal - $totalJasa;
+                if ($totalSparepart > 0) {
+                    $entries[] = ['uuid_coa' => $penjualanSparepart->uuid, 'kredit' => $totalSparepart];
+                    // Catat HPP dan persediaan hanya untuk sparepart
+                    if ($totalHpp > 0) {
+                        $entries[] = ['uuid_coa' => $hpp->uuid, 'debit' => $totalHpp];
+                        $entries[] = ['uuid_coa' => $persediaan->uuid, 'kredit' => $totalHpp];
+                    }
+                }
+
+                // === Simpan ke jurnal ===
+                JurnalHelper::create(
+                    now()->format('d-m-Y'),
+                    $no_bukti,
+                    $judulJurnal,
+                    $entries
+                );
             });
 
             return response()->json([

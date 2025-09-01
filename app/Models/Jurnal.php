@@ -5,16 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Ramsey\Uuid\Uuid;
 
-class DetailPenjualan extends Model
+class Jurnal extends Model
 {
-    protected $table = 'detail_penjualans';
+    protected $table = 'jurnals';
     protected $primaryKey = 'id';
     protected $fillable = [
         'uuid',
-        'uuid_penjualans',
-        'uuid_produk',
-        'qty',
-        'total_harga',
+        'uuid_coa',
+        'uuid_outlet',
+        'tanggal',
+        'ref',
+        'deskripsi',
+        'debit',
+        'kredit',
     ];
 
     protected static function boot()
@@ -25,10 +28,5 @@ class DetailPenjualan extends Model
         static::creating(function ($model) {
             $model->uuid = Uuid::uuid4()->toString();
         });
-    }
-
-    public function penjualan()
-    {
-        return $this->belongsTo(Penjualan::class, 'uuid_penjualans', 'uuid');
     }
 }

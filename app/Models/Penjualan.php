@@ -28,4 +28,9 @@ class Penjualan extends Model
             $model->uuid = Uuid::uuid4()->toString();
         });
     }
+
+    public function penjualan()
+    {
+        return $this->belongsTo(Penjualan::class, 'uuid_penjualans', 'uuid');
+    }
 }

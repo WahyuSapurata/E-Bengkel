@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\JurnalHelper;
 use App\Http\Requests\StoreHutangRequest;
 use App\Http\Requests\UpdateHutangRequest;
+use App\Models\Coa;
 use App\Models\Hutang;
+use App\Models\Pembelian;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -104,10 +107,24 @@ class HutangController extends Controller
     public function update(Request $update, $params)
     {
         $kategori = Hutang::where('uuid', $params)->first();
+        $pembelian = Pembelian::where('uuid', $kategori->uuid_pembelian)->first();
         $kategori->update([
             'status' => $update->status,
             'jumlah_terbayarkan' => preg_replace('/\D/', '', $update->jumlah_terbayarkan),
         ]);
+
+        $persediaan = Coa::where('nama', 'Persediaan Sparepart')->first();
+        $hutang     = Coa::where('nama', 'Hutang Usaha')->first();
+
+        JurnalHelper::create(
+            now()->format('d-m-Y'),
+            $pembelian->no_invoice,
+            'Pembayaran Hutang ' . $pembelian->no_invoice,
+            [
+                ['uuid_coa' => $hutang->uuid, 'debit' => $kategori->jumlah_terbayarkan],
+                ['uuid_coa' => $persediaan->uuid,     'kredit' => $kategori->jumlah_terbayarkan],
+            ]
+        );
 
         return response()->json(['status' => 'success']);
     }

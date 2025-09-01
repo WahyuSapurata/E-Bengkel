@@ -152,6 +152,9 @@ Route::group([
         Route::get('/biaya-edit/{params}', [App\Http\Controllers\BiayaController::class, 'edit'])->name('biaya-edit');
         Route::post('/biaya-update/{params}', [App\Http\Controllers\BiayaController::class, 'update'])->name('biaya-update');
         Route::delete('/biaya-delete/{params}', [App\Http\Controllers\BiayaController::class, 'delete'])->name('biaya-delete');
+
+        Route::get('/vw-jurnal-umum', [App\Http\Controllers\ReportController::class, 'vw_jurnal_umum'])->name('vw-jurnal-umum');
+        Route::get('/get-jurnal-umum', [App\Http\Controllers\ReportController::class, 'get_jurnal_umum'])->name('get-jurnal-umum');
     });
 });
 
@@ -207,6 +210,8 @@ Route::group([
 
     Route::get('/get-jasa', [App\Http\Controllers\PenjualanController::class, 'get_jasa'])->name('get-jasa');
     Route::get('/get-stock', [App\Http\Controllers\PenjualanController::class, 'get_stock'])->name('get-stock');
+
+    Route::post('/closing', [App\Http\Controllers\ClosingKasirController::class, 'store'])->name('closing');
 });
 
 Route::get('/logout', [App\Http\Controllers\Auth::class, 'logout'])->name('logout');

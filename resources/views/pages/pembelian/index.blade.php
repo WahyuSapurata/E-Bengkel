@@ -136,6 +136,17 @@
                             </select>
                             <div class="invalid-feedback"></div>
                         </div>
+                        <div id="aset-select" class="mb-2 d-none">
+                            <label class="text-capitalize form-label">aset</label>
+                            <select name="aset" id="aset" data-placeholder="Pilih inputan"
+                                class="form-select basic-usage">
+                                <option value=""></option>
+                                @foreach ($aset as $a)
+                                    <option value="{{ $a->uuid }}">{{ $a->nama }}</option>
+                                @endforeach
+                            </select>
+                            <div class="invalid-feedback"></div>
+                        </div>
                         <div class="mb-2">
                             <label class="text-capitalize form-label">tanggal transaksi</label>
                             <input type="text" name="tanggal_transaksi" id="tanggal_transaksi"
@@ -207,6 +218,16 @@
                     });
                 } else {
                     $produkSelect.html('<option value=""></option>');
+                }
+            });
+
+            $('#pembayaran').on('change', function() {
+                let pembayaran = $(this).val();
+
+                if (pembayaran === 'Cash') {
+                    $('#aset-select').removeClass('d-none');
+                } else {
+                    $('#aset-select').addClass('d-none');
                 }
             });
 

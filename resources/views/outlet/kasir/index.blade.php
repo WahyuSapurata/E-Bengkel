@@ -139,18 +139,21 @@
                         <!-- Tombol pilihan pembayaran -->
                         <button type="button" class="btn btn-primary w-100 mb-2 pay-btn" data-metode="Tunai">💵
                             PEMBAYARAN TUNAI</button>
-                        <button type="button" class="btn btn-outline-dark w-100 mb-2 pay-btn"
-                            data-metode="Kartu Debit/Credit">💳 Kartu Debit/Credit</button>
-                        <button type="button" class="btn btn-outline-dark w-100 mb-2 pay-btn"
-                            data-metode="E-Wallet">📱
-                            E-Wallet</button>
                         <button type="button" class="btn btn-outline-dark w-100 pay-btn"
                             data-metode="Transfer Bank">🏦
                             Transfer Bank</button>
+                        <select class="form-select d-none mt-2" id="select-pembayaran" name="nama_bank"
+                            aria-label="Default select example">
+                            <option selected disabled>Pilih bank</option>
+                            @foreach ($aset as $cp)
+                                <option value="{{ $cp->nama }}">{{ $cp->nama }}</option>
+                            @endforeach
+                        </select>
 
                         <div class="mt-5">
                             <button class="btn btn-outline-primary w-100 mb-2">💾 Simpan Transaksi (F8)</button>
-                            <button class="btn btn-outline-danger w-100">❌ Batal Transaksi (F9)</button>
+                            <button class="btn btn-outline-danger w-100 mb-2">❌ Batal Transaksi (F9)</button>
+                            <button id="btn-closing" class="btn btn-outline-success w-100">📂 Closing Kasir</button>
                         </div>
                     </div>
                 </div>
@@ -276,40 +279,63 @@
             // ----------------
             // Fokus otomatis
             // ----------------
-            function keepFocus() {
-                // kalau ada modal utama terbuka, jangan paksa fokus ke scanInput
-                if (modalEl.classList.contains("show")) return;
 
-                // kalau ada modal stock terbuka, jangan paksa fokus ke scanInput
-                if (modalStock.classList.contains("show")) return;
+            // optional: flag tambahan kalau mau
+            let __swalOpen = false;
 
-                // kalau tidak ada modal terbuka, kembalikan fokus ke scanInput
-                if (scanInput) {
-                    setTimeout(() => scanInput.focus(), 100);
+            function keepFocus(e) {
+                // 1) Kalau ada modal bootstrap terbuka → jangan pindah fokus
+                if (typeof modalEl !== 'undefined' && modalEl?.classList?.contains("show")) return;
+                if (typeof modalStock !== 'undefined' && modalStock?.classList?.contains("show")) return;
+
+                // 2) Kalau SweetAlert2 sedang tampil → jangan pindah fokus
+                //    cek dua cara supaya robust di berbagai versi Swal
+                if ((typeof Swal !== 'undefined' && Swal.isVisible && Swal.isVisible()) ||
+                    document.body.classList.contains('swal2-shown') ||
+                    __swalOpen === true) {
+                    return;
+                }
+
+                // 3) Kalau user sedang mengetik di input/select/textarea/button/contenteditable → jangan ganggu
+                const ae = document.activeElement;
+                if (ae &&
+                    (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT' ||
+                        ae.tagName === 'BUTTON' || ae.isContentEditable)) {
+                    return;
+                }
+
+                // 4) Tidak ada yang perlu diprioritaskan → kembalikan fokus ke scanInput
+                if (typeof scanInput !== 'undefined' && scanInput) {
+                    // tanpa delay pun boleh; jika perlu beri kecil
+                    setTimeout(() => scanInput.focus(), 50);
                 }
             }
 
-            // pakai click saja (tidak keydown supaya tidak bentrok shortcut F2/F8)
+            // pakai click saja (tidak keydown supaya tidak bentrok shortcut)
             document.addEventListener("click", keepFocus);
 
             // panggil sekali di awal
             keepFocus();
 
             // Modal utama
-            modalEl.addEventListener("shown.bs.modal", () => {
-                if (kodeProdukInput) kodeProdukInput.focus();
-            });
-            modalEl.addEventListener("hidden.bs.modal", () => {
-                if (scanInput) scanInput.focus();
-            });
+            if (typeof modalEl !== 'undefined' && modalEl) {
+                modalEl.addEventListener("shown.bs.modal", () => {
+                    if (typeof kodeProdukInput !== 'undefined' && kodeProdukInput) kodeProdukInput.focus();
+                });
+                modalEl.addEventListener("hidden.bs.modal", () => {
+                    if (typeof scanInput !== 'undefined' && scanInput) scanInput.focus();
+                });
+            }
 
             // Modal stok
-            modalStock.addEventListener("shown.bs.modal", () => {
-                if (search) search.focus();
-            });
-            modalStock.addEventListener("hidden.bs.modal", () => {
-                if (scanInput) scanInput.focus();
-            });
+            if (typeof modalStock !== 'undefined' && modalStock) {
+                modalStock.addEventListener("shown.bs.modal", () => {
+                    if (typeof search !== 'undefined' && search) search.focus();
+                });
+                modalStock.addEventListener("hidden.bs.modal", () => {
+                    if (typeof scanInput !== 'undefined' && scanInput) scanInput.focus();
+                });
+            }
 
             // ----------------
             // Tombol save produk manual
@@ -406,6 +432,7 @@
 
             const buttons = document.querySelectorAll(".pay-btn");
             const inputMetode = document.getElementById("pembayaran");
+            const selectBank = document.getElementById("select-pembayaran");
 
             buttons.forEach(btn => {
                 btn.addEventListener("click", function() {
@@ -413,12 +440,24 @@
                     inputMetode.value = this.dataset.metode;
 
                     // reset semua tombol ke outline
-                    buttons.forEach(b => b.classList.remove("btn-primary"));
-                    buttons.forEach(b => b.classList.add("btn-outline-dark"));
+                    buttons.forEach(b => {
+                        b.classList.remove("btn-primary");
+                        b.classList.add("btn-outline-dark");
+                    });
 
                     // tombol terpilih jadi biru
                     this.classList.remove("btn-outline-dark");
                     this.classList.add("btn-primary");
+
+                    // kalau Transfer Bank => tampilkan select bank
+                    if (this.dataset.metode === "Transfer Bank") {
+                        selectBank.classList.remove("d-none");
+                        selectBank.required = true;
+                    } else {
+                        selectBank.classList.add("d-none");
+                        selectBank.required = false;
+                        selectBank.value = ""; // reset pilihan
+                    }
                 });
             });
 
@@ -885,6 +924,10 @@
                             <tbody>
                                 ${itemsHtml}
                                 <tr class="total">
+                                    <td colspan="3">Total Jasa</td>
+                                    <td style="text-align:right;">${totalJasa}</td>
+                                </tr>
+                                <tr class="total">
                                     <td colspan="3">Total Item</td>
                                     <td style="text-align:right;">${data.totalItem}</td>
                                 </tr>
@@ -948,20 +991,20 @@
                     } else {
                         data.forEach(p => {
                             tbody.innerHTML += `
-                    <tr>
-                        <td>${p.kode}</td>
-                        <td>${p.nama_barang}</td>
-                        <td>${p.total_stok} ${p.satuan}</td>
-                    </tr>
-                `;
+                        <tr>
+                            <td>${p.kode}</td>
+                            <td>${p.nama_barang}</td>
+                            <td>${p.total_stok} ${p.satuan}</td>
+                        </tr>
+                    `;
                         });
 
                         // sisakan row untuk "tidak ada data hasil filter"
                         tbody.innerHTML += `
-                <tr id="no-data" class="d-none">
-                    <td colspan="3" class="text-center">Tidak ada produk ditemukan</td>
-                </tr>
-            `;
+                    <tr id="no-data" class="d-none">
+                        <td colspan="3" class="text-center">Tidak ada produk ditemukan</td>
+                    </tr>
+                `;
                     }
                 } catch (err) {
                     console.error("Gagal ambil stok:", err);
@@ -1003,6 +1046,73 @@
                         noData.classList.add("d-none");
                     }
                 }
+            });
+
+
+            document.getElementById("btn-closing").addEventListener("click", function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Input Uang Fisik',
+                    input: 'number',
+                    inputLabel: 'Masukkan jumlah uang fisik di kasir',
+                    inputPlaceholder: 'Contoh: 1500000',
+                    showCancelButton: true,
+                    confirmButtonText: 'Simpan Closing',
+                    cancelButtonText: 'Batal',
+                    willOpen: () => {
+                        window.__swalOpen = true;
+                    }, // flag ON
+                    didOpen: () => {
+                        const input = Swal.getInput();
+                        if (input) {
+                            input.focus();
+                            input.select();
+                        }
+                    },
+                    willClose: () => {
+                        window.__swalOpen = false;
+                    } // flag OFF
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
+
+                    if (result.isConfirmed) {
+                        let data = {
+                            total_fisik: result.value,
+                            uuid_kasir_outlet: "{{ $kasir_login->uuid_outlet ?? '' }}"
+                        };
+
+                        fetch("{{ route('kasir.closing') }}", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "X-CSRF-TOKEN": document.querySelector(
+                                        'meta[name="csrf-token"]').getAttribute("content")
+                                },
+                                body: JSON.stringify(data)
+                            })
+                            .then(res => res.json())
+                            .then(res => {
+                                if (res.status === "success") {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Closing Berhasil',
+                                        text: 'Data closing kasir sudah disimpan!',
+                                        confirmButtonText: 'OK'
+                                    }).then(() => {
+                                        localStorage.setItem("closing_done", "1");
+                                        location.reload();
+                                    });
+                                } else {
+                                    Swal.fire('Error', res.message ??
+                                        'Gagal menyimpan closing.', 'error');
+                                }
+                            })
+                            .catch(err => {
+                                console.error(err);
+                                Swal.fire('Error', 'Terjadi kesalahan koneksi.', 'error');
+                            });
+                    }
+                });
             });
 
         });

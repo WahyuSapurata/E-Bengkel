@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\JurnalHelper;
 use App\Http\Requests\StoreBiayaRequest;
 use App\Http\Requests\UpdateBiayaRequest;
 use App\Models\Biaya;
@@ -77,14 +78,42 @@ class BiayaController extends Controller
 
     public function store(StoreBiayaRequest $request)
     {
-        Biaya::create([
-            'uuid_coa' => $request->uuid_coa,
-            'tanggal' => $request->tanggal,
-            'deskripsi' => $request->deskripsi,
-            'jumlah' => preg_replace('/\D/', '', $request->jumlah),
+        // Simpan biaya
+        $biaya = Biaya::create([
+            'uuid_coa'   => $request->uuid_coa,
+            'tanggal'    => $request->tanggal,
+            'deskripsi'  => $request->deskripsi,
+            'jumlah'     => preg_replace('/\D/', '', $request->jumlah),
         ]);
 
-        return response()->json(['status' => 'success']);
+        // Ambil akun COA
+        $akunBiaya = Coa::where('uuid', $request->uuid_coa)->firstOrFail();
+        $kas       = Coa::where('nama', 'Kas')->firstOrFail();
+
+        // Hitung biaya ke berapa (buat nomor bukti)
+        $biayaKe = Biaya::where('uuid_coa', $request->uuid_coa)->count();
+
+        // Nomor bukti → BBIAYA-001-NAMA-AKUN
+        $namaAkun   = strtoupper(str_replace(' ', '', $akunBiaya->nama));
+        $nomorBukti = 'BIAYA-' . str_pad($biayaKe, 3, '0', STR_PAD_LEFT) . '-' . $namaAkun;
+
+        // Catat ke jurnal
+        JurnalHelper::create(
+            $request->tanggal,
+            $nomorBukti,
+            'Pembayaran Biaya: ' . $request->deskripsi,
+            [
+                ['uuid_coa' => $akunBiaya->uuid, 'debit'  => $biaya->jumlah],
+                ['uuid_coa' => $kas->uuid,       'kredit' => $biaya->jumlah],
+            ]
+        );
+
+        return response()->json([
+            'status'      => 'success',
+            'nomor_bukti' => $nomorBukti,
+            'akun_biaya'  => $akunBiaya->nama,
+            'jumlah'      => $biaya->jumlah,
+        ]);
     }
 
     public function edit($params)

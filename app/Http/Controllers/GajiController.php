@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\JurnalHelper;
 use App\Http\Requests\StoreGajiRequest;
 use App\Http\Requests\UpdateGajiRequest;
+use App\Models\Coa;
 use App\Models\Gaji;
 use App\Models\Karyawan;
 use Illuminate\Http\Request;
@@ -75,11 +77,37 @@ class GajiController extends Controller
 
     public function store(StoreGajiRequest $request)
     {
-        Gaji::create([
+        // Hitung gaji ke berapa untuk karyawan ini
+        $gajiKe = Gaji::where('uuid_karyawan', $request->uuid_karyawan)->count() + 1;
+
+        // Ambil data karyawan
+        $karyawan = Karyawan::where('uuid', $request->uuid_karyawan)->firstOrFail();
+
+        // Simpan gaji
+        $gaji = Gaji::create([
             'uuid_karyawan' => $request->uuid_karyawan,
-            'tanggal' => $request->tanggal,
-            'jumlah' => preg_replace('/\D/', '', $request->jumlah),
+            'tanggal'       => $request->tanggal,
+            'jumlah'        => preg_replace('/\D/', '', $request->jumlah),
         ]);
+
+        // Ambil akun COA
+        $bebanGaji = Coa::where('nama', 'Beban Gaji Karyawan')->first();
+        $kas       = Coa::where('nama', 'Kas')->first();
+
+        // Format nomor bukti: GAJI-{gajiKe}-{NamaKaryawan}
+        $namaKaryawan = strtoupper(str_replace(' ', '', $karyawan->nama)); // hapus spasi, biar rapi
+        $nomorBukti = 'GAJI-' . str_pad($gajiKe, 3, '0', STR_PAD_LEFT) . '-' . $namaKaryawan;
+
+        // Catat ke jurnal
+        JurnalHelper::create(
+            $request->tanggal,              // tanggal transaksi
+            $nomorBukti,                    // nomor bukti
+            'Pembayaran Gaji ' . $karyawan->nama, // keterangan
+            [
+                ['uuid_coa' => $bebanGaji->uuid, 'debit'  => $gaji->jumlah],
+                ['uuid_coa' => $kas->uuid,       'kredit' => $gaji->jumlah],
+            ]
+        );
 
         return response()->json(['status' => 'success']);
     }

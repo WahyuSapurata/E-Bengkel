@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\JurnalHelper;
 use App\Http\Requests\StorePembelianRequest;
 use App\Http\Requests\UpdatePembelianRequest;
+use App\Models\Coa;
 use App\Models\DetailPembelian;
 use App\Models\DetailPoPusat;
 use App\Models\Hutang;
@@ -23,7 +25,8 @@ class PembelianController extends Controller
         $module = 'Pembelian';
         $suplayers = Suplayer::select('uuid', 'nama')->get();
         $po_pusat = PoPusat::select('uuid', 'no_po')->get();
-        return view('pages.pembelian.index', compact('module', 'suplayers', 'po_pusat'));
+        $aset = Coa::where('tipe', 'aset')->where('nama', '!=', 'Kas Outlet')->select('uuid', 'nama')->get();
+        return view('pages.pembelian.index', compact('module', 'suplayers', 'po_pusat', 'aset'));
     }
 
     public function getProdukBySuplayer($params)
@@ -135,13 +138,20 @@ class PembelianController extends Controller
             'created_by'         => Auth::user()->nama,
         ]);
 
-        // Simpan detail pembelian
+        $totalPembelian = 0;
+
+        // Simpan detail pembelian + hitung total
         foreach ($request->uuid_produk as $index => $uuid_produk) {
+            $produk = $produk->where('uuid', $uuid_produk)->first();
+            $qty = $request->qty[$index];
+
             DetailPembelian::create([
                 'uuid_pembelian' => $pembelian->uuid,
                 'uuid_produk'    => $uuid_produk,
-                'qty'            => $request->qty[$index],
+                'qty'            => $qty,
             ]);
+
+            $totalPembelian += $qty * $produk->hrg_modal;
         }
 
         // Ambil gudang pusat (jangan bikin baru setiap kali)
@@ -170,11 +180,39 @@ class PembelianController extends Controller
             ]);
         }
 
+        // Jika pembayaran kredit → simpan hutang
         if ($request->pembayaran === 'Kredit') {
             Hutang::create([
                 'uuid_pembelian' => $pembelian->uuid,
-                'jatuh_tempo'    => now()->addDays(7)->format('d-m-Y'),
+                'jatuh_tempo'    => now()->addDays(7)->format('Y-m-d'),
             ]);
+        }
+
+        // ======== Jurnal Otomatis =========
+        $persediaan = Coa::where('nama', 'Persediaan Sparepart')->first();
+        $kas        = Coa::where('uuid', $request->aset)->first();
+        $hutang     = Coa::where('nama', 'Hutang Usaha')->first();
+
+        if ($request->pembayaran === 'Cash') {
+            JurnalHelper::create(
+                $request->tanggal_transaksi,
+                $request->no_invoice,
+                'Pembelian Cash ' . $kas->nama,
+                [
+                    ['uuid_coa' => $persediaan->uuid, 'debit' => $totalPembelian],
+                    ['uuid_coa' => $kas->uuid,        'kredit' => $totalPembelian],
+                ]
+            );
+        } elseif ($request->pembayaran === 'Kredit') {
+            JurnalHelper::create(
+                $request->tanggal_transaksi,
+                $request->no_invoice,
+                'Pembelian Kredit',
+                [
+                    ['uuid_coa' => $persediaan->uuid, 'debit' => $totalPembelian],
+                    ['uuid_coa' => $hutang->uuid,     'kredit' => $totalPembelian],
+                ]
+            );
         }
 
         return response()->json(['status' => 'success']);
