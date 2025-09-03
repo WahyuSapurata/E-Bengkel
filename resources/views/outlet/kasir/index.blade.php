@@ -973,13 +973,13 @@
                 // Format item list
                 let itemsHtml = data.items.map(item => {
                     return `
-                        <tr>
-                            <td>${item.nama}</td>
-                            <td style="text-align:center;">${item.qty}</td>
-                            <td style="text-align:right;">${parseInt(item.harga).toLocaleString()}</td>
-                            <td style="text-align:right;">${parseInt(item.subtotal).toLocaleString()}</td>
-                        </tr>
-                    `;
+                    <tr>
+                        <td style="width: 50%; word-wrap: break-word;">${item.nama}</td>
+                        <td style="text-align:center; width:10%;">${item.qty}</td>
+                        <td style="text-align:right; width:20%;">${parseInt(item.harga).toLocaleString()}</td>
+                        <td style="text-align:right; width:20%;">${parseInt(item.subtotal).toLocaleString()}</td>
+                    </tr>
+                `;
                 }).join('');
 
                 // Template struk
@@ -988,9 +988,16 @@
                     <head>
                         <title>Struk</title>
                         <style>
+                            @page {
+                                size: auto;   /* biar sesuai panjang isi */
+                                margin: 0mm;  /* hilangkan margin default */
+                            }
                             body {
                                 font-family: monospace;
                                 font-size: 12px;
+                                margin: 0;
+                                padding: 5px;
+                                width: 220px; /* untuk printer 58mm, kalau 80mm bisa 300px */
                             }
                             .center {
                                 text-align: center;
@@ -1006,14 +1013,16 @@
                                 border-top: 1px dashed #000;
                                 font-weight: bold;
                             }
+                            h6, h3, p, small {
+                                margin: 0;
+                                padding: 0;
+                            }
                         </style>
                     </head>
                     <body onload="window.print(); window.close();">
                         <div class="center">
-                            <h6 class="fw-bold text-uppercase">{{ $data_outlet->nama_outlet }}</h6>
-                            <small>{{ $data_outlet->alamat }}</small>
                             <h3>{{ $data_outlet->nama_outlet }}</h3>
-                            <p>{{ $data_outlet->alamat }}<br/>Telp: {{ $data_outlet->telepon }}</p>
+                            <small>{{ $data_outlet->alamat }}<br/>Telp: {{ $data_outlet->telepon }}</small>
                         </div>
                         <p>
                             No: ${data.no_bukti}<br/>
@@ -1292,7 +1301,7 @@
                             // Format ke rupiah saat mengetik
                             input.addEventListener("input", () => {
                                 let value = input.value.replace(/\D/g,
-                                ""); // hanya angka
+                                    ""); // hanya angka
                                 if (value) {
                                     input.value = new Intl.NumberFormat("id-ID").format(
                                         value);
