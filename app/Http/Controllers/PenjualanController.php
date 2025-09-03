@@ -345,4 +345,91 @@ class PenjualanController extends Controller
             ], 500);
         }
     }
+
+    public function cetakStrukThermal(Request $request)
+    {
+        $data = $request->all(); // ambil semua data dari frontend
+
+        // panggil fungsi yang sudah kita buat tadi
+        $this->printStruk($data);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Struk berhasil dicetak'
+        ]);
+    }
+
+    function printStruk($data)
+    {
+        $struk = "";
+        $struk .= $this->centerText($data['outlet_nama'], 32) . "\n";
+        $struk .= $this->centerText($data['outlet_alamat'], 32) . "\n";
+        $struk .= $this->centerText("Telp: " . $data['outlet_telp'], 32) . "\n";
+        $struk .= str_repeat("-", 32) . "\n";
+
+        // INFO TRANSAKSI
+        $struk .= "No: " . $data['no_bukti'] . "\n";
+        $struk .= "Tgl: " . $data['tanggal'] . "\n";
+        $struk .= "Kasir: " . $data['kasir'] . "\n";
+        $struk .= "Pembayaran: " . $data['pembayaran'] . "\n";
+        $struk .= str_repeat("-", 32) . "\n";
+
+        // ITEMS
+        $struk .= str_pad("Barang", 15) . str_pad("Qty", 5) .
+            str_pad("Harga", 6, " ", STR_PAD_LEFT) .
+            str_pad("Sub", 6, " ", STR_PAD_LEFT) . "\n";
+
+        foreach ($data['items'] as $item) {
+            $struk .= str_pad(substr($item['nama'], 0, 15), 15);
+            $struk .= str_pad($item['qty'], 5);
+            $struk .= str_pad(number_format($item['harga'], 0, ',', '.'), 6, " ", STR_PAD_LEFT);
+            $struk .= str_pad(number_format($item['subtotal'], 0, ',', '.'), 6, " ", STR_PAD_LEFT) . "\n";
+        }
+
+        // Jika ada total jasa
+        if (!empty($data['totalJasa']) && $data['totalJasa'] > 0) {
+            $struk .= str_repeat("-", 32) . "\n";
+            $struk .= str_pad("Total Jasa", 26, " ", STR_PAD_LEFT) .
+                str_pad(number_format($data['totalJasa'], 0, ',', '.'), 6, " ", STR_PAD_LEFT) . "\n";
+        }
+
+        // Jika ada total item
+        if (!empty($data['totalItem'])) {
+            $struk .= str_pad("Total Item", 26, " ", STR_PAD_LEFT) .
+                str_pad(number_format($data['totalItem'], 0, ',', '.'), 6, " ", STR_PAD_LEFT) . "\n";
+        }
+
+        // Grand total
+        $struk .= str_repeat("-", 32) . "\n";
+        $struk .= str_pad("Grand Total", 26, " ", STR_PAD_LEFT) .
+            str_pad(number_format($data['grandTotal'], 0, ',', '.'), 6, " ", STR_PAD_LEFT) . "\n";
+        $struk .= str_repeat("-", 32) . "\n";
+
+        // FOOTER
+        $struk .= $this->centerText("--- Terima Kasih ---", 32) . "\n";
+        $struk .= $this->centerText("Barang yang sudah dibeli tidak dapat ditukar/dikembalikan", 32) . "\n";
+
+        // Tambah feed kosong biar kertas longgar
+        $struk .= "\n\n\n\n";
+
+        // CUT PAPER (GS V 0 = full cut)
+        $struk .= chr(29) . chr(86) . chr(0);
+
+        // SIMPAN & PRINT
+        $tmpFile = '/tmp/struk.txt';
+        file_put_contents($tmpFile, $struk);
+        shell_exec("lp -d POS-80 $tmpFile");
+    }
+
+    // ===============================
+    // Helper: Center Text
+    // ===============================
+    function centerText($text, $width = 32)
+    {
+        $len = strlen($text);
+        if ($len >= $width) return $text;
+        $left = floor(($width - $len) / 2);
+        $right = $width - $len - $left;
+        return str_repeat(" ", $left) . $text . str_repeat(" ", $right);
+    }
 }

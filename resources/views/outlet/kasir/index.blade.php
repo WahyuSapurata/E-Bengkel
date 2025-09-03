@@ -940,7 +940,28 @@
                                     reverseButtons: true
                                 }).then(result => {
                                     if (result.isConfirmed) {
-                                        cetakStruk(res.data); // cetak struk
+                                        // siapkan data struk
+                                        const strukData = {
+                                            outlet_nama: "{{ $data_outlet->nama_outlet }}",
+                                            outlet_alamat: "{{ $data_outlet->alamat }}",
+                                            outlet_telp: "{{ $data_outlet->telepon }}",
+                                            no_bukti: res.data.no_bukti,
+                                            tanggal: res.data.tanggal,
+                                            kasir: res.data.kasir,
+                                            pembayaran: res.data.pembayaran,
+                                            items: res.data.items.map(i => ({
+                                                nama: i.nama,
+                                                qty: i.qty,
+                                                harga: i.harga,
+                                                subtotal: i.subtotal
+                                            })),
+                                            totalJasa: totalJasa,
+                                            totalItem: res.data.totalItem,
+                                            grandTotal: res.data.grandTotal + totalJasa
+                                        };
+
+                                        // kirim ke backend print
+                                        cetakStruk(strukData);
                                     }
                                     // reset kasir & reload jasa
                                     resetKasir();
@@ -970,104 +991,113 @@
 
             // ------------------ // Fungsi Cetak Struk // ------------------
             function cetakStruk(data) {
-                // Format item list
-                let itemsHtml = data.items.map(item => {
-                    return `
-                    <tr>
-                        <td style="width: 50%; word-wrap: break-word;">${item.nama}</td>
-                        <td style="text-align:center; width:10%;">${item.qty}</td>
-                        <td style="text-align:right; width:20%;">${parseInt(item.harga).toLocaleString()}</td>
-                        <td style="text-align:right; width:20%;">${parseInt(item.subtotal).toLocaleString()}</td>
-                    </tr>
-                `;
-                }).join('');
-
-                // Template struk
-                let strukHtml = `
-                    <html>
-                    <head>
-                        <title>Struk</title>
-                        <style>
-                           @page {
-                                size: auto;       /* panjang menyesuaikan isi */
-                                margin: 0;        /* buang semua margin default dari browser */
-                            }
-
-                            body {
-                                font-family: monospace, monospace; /* monospace double biar konsisten */
-                                font-size: 12px;
-                                margin: 0;
-                                padding: 0;       /* jangan kasih padding, karena thermal printer hitung pixel */
-                                width: 220px;     /* 58mm printer: 220px, 80mm printer: 300px */
-                            }
-                            .center {
-                                text-align: center;
-                            }
-                            table {
-                                width: 100%;
-                                border-collapse: collapse;
-                            }
-                            td {
-                                padding: 2px 0;
-                            }
-                            .total td {
-                                border-top: 1px dashed #000;
-                                font-weight: bold;
-                            }
-                            h6, h3, p, small {
-                                margin: 0;
-                                padding: 0;
-                            }
-                        </style>
-                    </head>
-                    <body onload="window.print(); window.close();">
-                        <div class="center">
-                            <h3>{{ $data_outlet->nama_outlet }}</h3>
-                            <small>{{ $data_outlet->alamat }}<br/>Telp: {{ $data_outlet->telepon }}</small>
-                        </div>
-                        <p>
-                            No: ${data.no_bukti}<br/>
-                            Tgl: ${data.tanggal}<br/>
-                            Kasir: ${data.kasir}<br/>
-                            Pembayaran: ${data.pembayaran}
-                        </p>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <td>Barang</td>
-                                    <td>Qty</td>
-                                    <td>Harga</td>
-                                    <td>Sub</td>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${itemsHtml}
-                                <tr class="total">
-                                    <td colspan="3">Total Jasa</td>
-                                    <td style="text-align:right;">${totalJasa}</td>
-                                </tr>
-                                <tr class="total">
-                                    <td colspan="3">Total Item</td>
-                                    <td style="text-align:right;">${data.totalItem}</td>
-                                </tr>
-                                <tr class="total">
-                                    <td colspan="3">Grand Total</td>
-                                    <td style="text-align:right;">${parseInt(data.grandTotal + totalJasa).toLocaleString()}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <div class="center">
-                            <p>--- Terima Kasih ---<br/>Barang yang sudah dibeli tidak dapat ditukar/dikembalikan</p>
-                        </div>
-                    </body>
-                    </html>
-                `;
-
-                // Buka window popup untuk print
-                let win = window.open('', 'Struk', 'width=300,height=600');
-                win.document.write(strukHtml);
-                win.document.close();
+                fetch("/kasir/print-struk", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute(
+                                "content")
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res.status === "success") {
+                            Swal.fire("Berhasil!", "Struk berhasil dicetak ✅", "success");
+                        } else {
+                            Swal.fire("Gagal!", res.message, "error");
+                        }
+                    })
+                    .catch(err => console.error("❌ Error print struk:", err));
             }
+
+            // function cetakStruk(data) {
+            //     // Format item list
+            //     let itemsHtml = data.items.map(item => {
+            //         return `
+        //             <tr>
+        //                 <td>${item.nama}</td>
+        //                 <td style="text-align:center;">${item.qty}</td>
+        //                 <td style="text-align:right;">${parseInt(item.harga).toLocaleString()}</td>
+        //                 <td style="text-align:right;">${parseInt(item.subtotal).toLocaleString()}</td>
+        //             </tr>
+        //         `;
+            //     }).join('');
+
+            //     // Template struk
+            //     let strukHtml = `
+        //         <html>
+        //         <head>
+        //             <title>Struk</title>
+        //             <style>
+        //                 body {
+        //                     font-family: monospace;
+        //                     font-size: 12px;
+        //                 }
+        //                 .center {
+        //                     text-align: center;
+        //                 }
+        //                 table {
+        //                     width: 100%;
+        //                     border-collapse: collapse;
+        //                 }
+        //                 td {
+        //                     padding: 2px 0;
+        //                 }
+        //                 .total td {
+        //                     border-top: 1px dashed #000;
+        //                     font-weight: bold;
+        //                 }
+        //             </style>
+        //         </head>
+        //         <body onload="window.print(); window.close();">
+        //             <div class="center">
+        //                 <h3>{{ $data_outlet->nama_outlet }}</h3>
+        //                 <p>{{ $data_outlet->alamat }}<br/>Telp: {{ $data_outlet->telepon }}</p>
+        //             </div>
+        //             <p>
+        //                 No: ${data.no_bukti}<br/>
+        //                 Tgl: ${data.tanggal}<br/>
+        //                 Kasir: ${data.kasir}<br/>
+        //                 Pembayaran: ${data.pembayaran}
+        //             </p>
+        //             <table>
+        //                 <thead>
+        //                     <tr>
+        //                         <td>Barang</td>
+        //                         <td>Qty</td>
+        //                         <td>Harga</td>
+        //                         <td>Sub</td>
+        //                     </tr>
+        //                 </thead>
+        //                 <tbody>
+        //                     ${itemsHtml}
+        //                     <tr class="total">
+        //                         <td colspan="3">Total Jasa</td>
+        //                         <td style="text-align:right;">${totalJasa}</td>
+        //                     </tr>
+        //                     <tr class="total">
+        //                         <td colspan="3">Total Item</td>
+        //                         <td style="text-align:right;">${data.totalItem}</td>
+        //                     </tr>
+        //                     <tr class="total">
+        //                         <td colspan="3">Grand Total</td>
+        //                         <td style="text-align:right;">${parseInt(data.grandTotal + totalJasa).toLocaleString()}</td>
+        //                     </tr>
+        //                 </tbody>
+        //             </table>
+        //             <div class="center">
+        //                 <p>--- Terima Kasih ---<br/>Barang yang sudah dibeli tidak dapat ditukar/dikembalikan</p>
+        //             </div>
+        //         </body>
+        //         </html>
+        //     `;
+
+            //     // Buka window popup untuk print
+            //     let win = window.open('', 'Struk', 'width=300,height=600');
+            //     win.document.write(strukHtml);
+            //     win.document.close();
+            // }
 
 
             // ------------------
