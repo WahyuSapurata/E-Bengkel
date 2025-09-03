@@ -988,16 +988,17 @@
                     <head>
                         <title>Struk</title>
                         <style>
-                            @page {
-                                size: auto;   /* biar sesuai panjang isi */
-                                margin: 0mm;  /* hilangkan margin default */
+                           @page {
+                                size: auto;       /* panjang menyesuaikan isi */
+                                margin: 0;        /* buang semua margin default dari browser */
                             }
+
                             body {
-                                font-family: monospace;
+                                font-family: monospace, monospace; /* monospace double biar konsisten */
                                 font-size: 12px;
                                 margin: 0;
-                                padding: 5px;
-                                width: 220px; /* untuk printer 58mm, kalau 80mm bisa 300px */
+                                padding: 0;       /* jangan kasih padding, karena thermal printer hitung pixel */
+                                width: 220px;     /* 58mm printer: 220px, 80mm printer: 300px */
                             }
                             .center {
                                 text-align: center;
