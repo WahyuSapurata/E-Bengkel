@@ -40,10 +40,10 @@
 
                     <!-- Tombol tetap di bawah -->
                     <div class="d-grid gap-2 mt-auto">
-                        <button onclick="window.location.href = '{{ route('logout') }}'"
+                        <button type="button" onclick="window.location.href = '{{ route('logout') }}'"
                             class="btn btn-outline-danger btn-sm">📤 Keluar</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal"
-                            data-bs-target="#stockModal">📦 Stok Barang</button>
+                        <button type="button" id="open-stock" class="btn btn-outline-secondary btn-sm">📦 Stok
+                            Barang</button>
                     </div>
                 </div>
 
@@ -52,8 +52,8 @@
                     <!-- Judul -->
                     <h5 class="bg-success text-white text-center py-2 rounded">BARANG BELANJA</h5>
                     <!-- Input scan (bisa disembunyikan kalau mau) -->
-                    <input type="text" id="scanInput" class="form-control" placeholder="Scan barcode disini"
-                        autofocus style="opacity:0; position:absolute; left:-9999px;">
+                    {{-- <input type="text" id="scanInput" class="form-control" placeholder="Scan barcode disini"
+                        autofocus style="opacity:0; position:absolute; left:-9999px;"> --}}
                     <!-- Area scroll untuk tabel + form -->
                     <div class="flex-grow-1 overflow-auto">
                         <div class="table-wrapper mb-2">
@@ -95,16 +95,22 @@
 
                     <!-- Shortcut tombol selalu di bawah -->
                     <div class="shortcut-bar d-flex justify-content-between flex-wrap py-2 mt-auto">
-                        {{-- <button id="btn-f1" class="btn btn-outline-primary btn-sm shortcut-btn">F1 Menu</button> --}}
-                        <button id="btn-f2" class="btn btn-outline-success btn-sm shortcut-btn">F2 Tambah</button>
-                        <button id="btn-f3" class="btn btn-outline-danger btn-sm shortcut-btn">F3 Hapus</button>
-                        <button id="btn-f4" class="btn btn-outline-warning btn-sm shortcut-btn">F4 Edit Qty</button>
-                        {{-- <button id="btn-f5" class="btn btn-outline-info btn-sm shortcut-btn">F5 Member</button> --}}
-                        {{-- <button id="btn-f6" class="btn btn-outline-dark btn-sm shortcut-btn">F6 Cari</button> --}}
-                        {{-- <button id="btn-f7" class="btn btn-outline-secondary btn-sm shortcut-btn">F7 Hold</button>  --}}
-                        <button id="btn-f8" class="btn btn-outline-success btn-sm shortcut-btn">F8 Simpan</button>
-                        <button id="btn-f9" class="btn btn-outline-danger btn-sm shortcut-btn">F9 Batal</button>
-                        <button id="btn-f10" class="btn btn-outline-danger btn-sm shortcut-btn">F10
+                        <button type="button" id="btn-f1" class="btn btn-outline-primary btn-sm shortcut-btn">F1
+                            Search</button>
+                        <button type="button" id="btn-f2" class="btn btn-outline-success btn-sm shortcut-btn">F2
+                            Tambah</button>
+                        <button type="button" id="btn-f3" class="btn btn-outline-danger btn-sm shortcut-btn">F3
+                            Hapus</button>
+                        <button type="button" id="btn-f4" class="btn btn-outline-warning btn-sm shortcut-btn">F4
+                            Edit Qty</button>
+                        <button type="button" class="btn btn-outline-info btn-sm shortcut-btn">F5 Reload</button>
+                        {{-- <button type="button" id="btn-f6" class="btn btn-outline-dark btn-sm shortcut-btn">F6 Cari</button> --}}
+                        {{-- <button type="button" id="btn-f7" class="btn btn-outline-secondary btn-sm shortcut-btn">F7 Hold</button>  --}}
+                        <button type="button" id="btn-f8" class="btn btn-outline-success btn-sm shortcut-btn">F8
+                            Simpan</button>
+                        <button type="button" id="btn-f9" class="btn btn-outline-danger btn-sm shortcut-btn">F9
+                            Batal</button>
+                        <button type="button" id="btn-f10" class="btn btn-outline-danger btn-sm shortcut-btn">F10
                             Fullscreen</button>
                     </div>
                 </div>
@@ -151,9 +157,12 @@
                         </select>
 
                         <div class="mt-5">
-                            <button class="btn btn-outline-primary w-100 mb-2">💾 Simpan Transaksi (F8)</button>
-                            <button class="btn btn-outline-danger w-100 mb-2">❌ Batal Transaksi (F9)</button>
-                            <button id="btn-closing" class="btn btn-outline-success w-100">📂 Closing Kasir</button>
+                            <button type="button" class="btn btn-outline-primary w-100 mb-2">💾 Simpan Transaksi
+                                (F8)</button>
+                            <button type="button" class="btn btn-outline-danger w-100 mb-2">❌ Batal Transaksi
+                                (F9)</button>
+                            <button type="button" id="btn-closing" class="btn btn-outline-success w-100">📂 Closing
+                                Kasir</button>
                         </div>
                     </div>
                 </div>
@@ -162,8 +171,8 @@
     </form>
 
     <!-- Modal -->
-    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel"
-        aria-hidden="true">
+    <div class="modal fade" id="exampleModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -189,7 +198,8 @@
         </div>
     </div>
 
-    <div class="modal fade" id="stockModal" tabindex="-1" aria-labelledby="stockModalLabel" aria-hidden="true">
+    <div class="modal fade" id="stockModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="stockModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -225,6 +235,42 @@
         </div>
     </div>
 
+    <div class="modal fade" id="SearchModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="SearchModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="SearchModalLabel">List Produk</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="flex-grow-1 overflow-auto">
+                        <div class="table-wrapper mb-2">
+                            <div class="mb-2">
+                                <input type="text" id="searchInputModal" class="form-control"
+                                    placeholder="Cari produk (kode/nama barang)...">
+                            </div>
+
+                            <table class="table table-bordered table-striped table-sm mb-0" id="produkTableModal">
+                                <thead class="table-success sticky-top">
+                                    <tr>
+                                        <th>Kode</th>
+                                        <th>Nama Barang</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="{{ asset('assets/vendors/js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('assets/sweet-alert/sweetalert2.min.js') }}"></script>
     <script>
@@ -234,8 +280,12 @@
             const kodeProdukInput = document.getElementById("kode-produk");
             const btnSaveProduk = document.getElementById("btn-save-produk");
 
+            const openStock = document.getElementById("open-stock");
             const modalStock = document.getElementById("stockModal");
             const search = document.getElementById("searchInput");
+
+            const modalSearch = document.getElementById("SearchModal");
+            const searchSearch = document.getElementById("searchInputModal");
 
             // variabel penting
             const cartTable = document.getElementById("cartTable");
@@ -276,6 +326,31 @@
                 }
             });
 
+            openStock.addEventListener("click", (e) => {
+                e.preventDefault();
+                const modal = bootstrap.Modal.getOrCreateInstance(modalStock);
+                if (modalStock.classList.contains("show")) {
+                    modal.hide();
+                } else {
+                    // panggil pertama kali
+                    loadStok();
+                    modal.show();
+                }
+            });
+
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "F1") {
+                    e.preventDefault();
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalSearch);
+                    if (modalSearch.classList.contains("show")) {
+                        modal.hide();
+                    } else {
+                        loadProduk();
+                        modal.show();
+                    }
+                }
+            });
+
             // ----------------
             // Fokus otomatis
             // ----------------
@@ -287,6 +362,7 @@
                 // 1) Kalau ada modal bootstrap terbuka → jangan pindah fokus
                 if (typeof modalEl !== 'undefined' && modalEl?.classList?.contains("show")) return;
                 if (typeof modalStock !== 'undefined' && modalStock?.classList?.contains("show")) return;
+                if (typeof modalSearch !== 'undefined' && modalSearch?.classList?.contains("show")) return;
 
                 // 2) Kalau SweetAlert2 sedang tampil → jangan pindah fokus
                 //    cek dua cara supaya robust di berbagai versi Swal
@@ -306,8 +382,7 @@
 
                 // 4) Tidak ada yang perlu diprioritaskan → kembalikan fokus ke scanInput
                 if (typeof scanInput !== 'undefined' && scanInput) {
-                    // tanpa delay pun boleh; jika perlu beri kecil
-                    setTimeout(() => scanInput.focus(), 50);
+                    scanInput.focus()
                 }
             }
 
@@ -337,6 +412,15 @@
                 });
             }
 
+            if (typeof modalSearch !== 'undefined' && modalSearch) {
+                modalSearch.addEventListener("shown.bs.modal", () => {
+                    if (typeof searchSearch !== 'undefined' && searchSearch) searchSearch.focus();
+                });
+                modalSearch.addEventListener("hidden.bs.modal", () => {
+                    if (typeof scanInput !== 'undefined' && scanInput) scanInput.focus();
+                });
+            }
+
             // ----------------
             // Tombol save produk manual
             // ----------------
@@ -357,18 +441,34 @@
                 });
             }
 
-            // ----------------
-            // Scanner enter
-            // ----------------
-            scanInput.addEventListener("keydown", (e) => {
+            let scanBuffer = "";
+            let scanTimeout;
+
+            document.addEventListener("keydown", function(e) {
+
+                // Kalau ada inputan manual (user ngetik), biarin aja
+                if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
+                    return;
+                }
+
                 if (e.key === "Enter") {
                     e.preventDefault();
-                    const kode = scanInput.value.trim();
+                    const kode = scanBuffer.trim();
                     if (kode !== "") {
-                        tambahProduk(kode);
+                        tambahProduk(kode); // default qty = 1
                     }
-                    scanInput.value = "";
+                    scanBuffer = ""; // reset buffer
+                    return;
                 }
+
+                // Tambah ke buffer
+                scanBuffer += e.key;
+
+                // Reset kalau delay lebih dari 500ms antar ketikan (anggap bukan scan)
+                clearTimeout(scanTimeout);
+                scanTimeout = setTimeout(() => {
+                    scanBuffer = "";
+                }, 500);
             });
 
             // ----------------
@@ -395,6 +495,7 @@
                     selectJasa.classList.add("d-none");
                     selectJasa.innerHTML = `<option selected disabled>Pilih jasa</option>`;
                     totalJasa = 0;
+                    grandTotalEl.innerText = "Rp 0";
                 }
             });
 
@@ -713,7 +814,6 @@
                     });
             }
 
-
             // ----------------
             // Hapus Row
             // ----------------
@@ -774,6 +874,13 @@
                     itemTotalEl.innerText = item + " item";
                 }
             }
+
+            document.addEventListener("keydown", function(event) {
+                if (event.key === "F9") {
+                    event.preventDefault();
+                    resetKasir();
+                }
+            });
 
             // ---- tombol F8 submit ----
             document.addEventListener("keydown", function(event) {
@@ -903,8 +1010,10 @@
                     </head>
                     <body onload="window.print(); window.close();">
                         <div class="center">
-                            <h3>Toko Kita</h3>
-                            <p>Jl. Contoh No.123<br/>Telp: 0812-3456-7890</p>
+                            <h6 class="fw-bold text-uppercase">{{ $data_outlet->nama_outlet }}</h6>
+                            <small>{{ $data_outlet->alamat }}</small>
+                            <h3>{{ $data_outlet->nama_outlet }}</h3>
+                            <p>{{ $data_outlet->alamat }}<br/>Telp: {{ $data_outlet->telepon }}</p>
                         </div>
                         <p>
                             No: ${data.no_bukti}<br/>
@@ -973,10 +1082,47 @@
                 }
 
                 // reset scan input
-                scanInput.value = "";
+                // scanInput.value = "";
                 scanInput.focus();
             }
 
+            // function kurangiStok(kode, qty = 1) {
+            //     const tbody = document.querySelector("#produkTable tbody");
+            //     const rows = tbody.querySelectorAll("tr");
+
+            //     for (let tr of rows) {
+            //         let kodeCell = tr.querySelector("td:first-child");
+            //         if (!kodeCell) continue;
+
+            //         if (kodeCell.textContent.trim() === kode) {
+            //             let stokCell = tr.querySelector("td:nth-child(3)");
+            //             let stokText = stokCell.textContent.trim().split(" ");
+            //             let currentStok = parseInt(stokText[0], 10);
+            //             let satuan = stokText[1] || "";
+
+            //             if (currentStok >= qty) {
+            //                 currentStok -= qty;
+            //                 stokCell.textContent = `${currentStok} ${satuan}`;
+
+            //                 if (currentStok <= 0) {
+            //                     tr.classList.add("table-secondary"); // tandai habis
+            //                 }
+
+            //                 return true; // sukses dikurangi
+            //             } else {
+            //                 Swal.fire({
+            //                     title: "Stok Tidak Cukup!",
+            //                     text: `Stok ${kode} hanya ${currentStok}, tidak bisa kurangi ${qty}.`,
+            //                     icon: "warning",
+            //                     confirmButtonText: "OK"
+            //                 });
+            //                 return false;
+            //             }
+            //         }
+            //     }
+
+            //     return false; // kode tidak ada di tabel
+            // }
 
             async function loadStok() {
                 try {
@@ -990,32 +1136,76 @@
                         tbody.innerHTML = `<tr><td colspan="3" class="text-center">Belum ada produk</td></tr>`;
                     } else {
                         data.forEach(p => {
-                            tbody.innerHTML += `
-                        <tr>
-                            <td>${p.kode}</td>
-                            <td>${p.nama_barang}</td>
-                            <td>${p.total_stok} ${p.satuan}</td>
-                        </tr>
-                    `;
+                            // buat elemen row
+                            const tr = document.createElement("tr");
+                            tr.innerHTML = `
+                                <td>${p.kode}</td>
+                                <td>${p.nama_barang}</td>
+                                <td>${p.total_stok} ${p.satuan}</td>
+                            `;
+
+                            tbody.appendChild(tr);
                         });
 
-                        // sisakan row untuk "tidak ada data hasil filter"
-                        tbody.innerHTML += `
-                    <tr id="no-data" class="d-none">
-                        <td colspan="3" class="text-center">Tidak ada produk ditemukan</td>
-                    </tr>
-                `;
+                        // row no-data
+                        const noDataRow = document.createElement("tr");
+                        noDataRow.id = "no-data";
+                        noDataRow.classList.add("d-none");
+                        noDataRow.innerHTML =
+                            `<td colspan="3" class="text-center">Tidak ada produk ditemukan</td>`;
+                        tbody.appendChild(noDataRow);
                     }
                 } catch (err) {
                     console.error("Gagal ambil stok:", err);
                 }
             }
 
-            // reload tiap 5 detik
-            setInterval(loadStok, 5000);
+            async function loadProduk() {
+                try {
+                    const res = await fetch('/kasir/get-stock');
+                    const data = await res.json();
 
-            // panggil pertama kali
-            loadStok();
+                    const tbody = document.querySelector("#produkTableModal tbody");
+                    tbody.innerHTML = "";
+
+                    if (data.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="2" class="text-center">Belum ada produk</td></tr>`;
+                    } else {
+                        data.forEach(p => {
+                            // buat elemen row
+                            const tr = document.createElement("tr");
+                            tr.innerHTML = `
+                                <td>${p.kode}</td>
+                                <td>${p.nama_barang}</td>
+                            `;
+
+                            // event klik row
+                            tr.addEventListener("click", () => {
+                                let qty = 1; // default klik = tambah 1
+                                tambahProduk(p.kode, qty);
+
+                                // highlight row
+                                tr.classList.add("tr-highlight");
+                                setTimeout(() => {
+                                    tr.classList.remove("tr-highlight");
+                                }, 800);
+                            });
+
+                            tbody.appendChild(tr);
+                        });
+
+                        // row no-data
+                        const noDataRow = document.createElement("tr");
+                        noDataRow.id = "no-data-modal";
+                        noDataRow.classList.add("d-none");
+                        noDataRow.innerHTML =
+                            `<td colspan="2" class="text-center">Tidak ada produk ditemukan</td>`;
+                        tbody.appendChild(noDataRow);
+                    }
+                } catch (err) {
+                    console.error("Gagal ambil stok:", err);
+                }
+            }
 
             // ---------------------------
             // Search filter
@@ -1048,30 +1238,78 @@
                 }
             });
 
+            // ---------------------------
+            // Search filter
+            // ---------------------------
+            document.getElementById("searchInputModal").addEventListener("keyup", function() {
+                let value = this.value.toLowerCase();
+                let rows = document.querySelectorAll("#produkTableModal tbody tr:not(#no-data-modal)");
+                let noData = document.getElementById("no-data-modal");
+
+                let visibleCount = 0;
+
+                rows.forEach(function(row) {
+                    let kode = row.cells[0]?.textContent.toLowerCase() || "";
+                    let nama = row.cells[1]?.textContent.toLowerCase() || "";
+
+                    if (kode.includes(value) || nama.includes(value)) {
+                        row.style.display = "";
+                        visibleCount++;
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+
+                if (noData) {
+                    if (visibleCount === 0) {
+                        noData.classList.remove("d-none");
+                    } else {
+                        noData.classList.add("d-none");
+                    }
+                }
+            });
+
 
             document.getElementById("btn-closing").addEventListener("click", function(e) {
                 e.preventDefault();
                 Swal.fire({
                     title: 'Input Uang Fisik',
-                    input: 'number',
+                    input: 'text', // ganti dari number ke text
                     inputLabel: 'Masukkan jumlah uang fisik di kasir',
-                    inputPlaceholder: 'Contoh: 1500000',
+                    inputPlaceholder: 'Contoh: 1.500.000',
                     showCancelButton: true,
                     confirmButtonText: 'Simpan Closing',
                     cancelButtonText: 'Batal',
                     willOpen: () => {
                         window.__swalOpen = true;
-                    }, // flag ON
+                    },
                     didOpen: () => {
                         const input = Swal.getInput();
                         if (input) {
                             input.focus();
                             input.select();
+
+                            // Format ke rupiah saat mengetik
+                            input.addEventListener("input", () => {
+                                let value = input.value.replace(/\D/g,
+                                ""); // hanya angka
+                                if (value) {
+                                    input.value = new Intl.NumberFormat("id-ID").format(
+                                        value);
+                                } else {
+                                    input.value = "";
+                                }
+                            });
                         }
                     },
                     willClose: () => {
                         window.__swalOpen = false;
-                    } // flag OFF
+                    },
+                    preConfirm: () => {
+                        const input = Swal.getInput().value;
+                        // Hapus titik/format → jadi angka murni
+                        return input.replace(/\D/g, "");
+                    }
                 }).then((result) => {
                     if (!result.isConfirmed) return;
 

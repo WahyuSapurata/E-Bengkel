@@ -85,3 +85,9 @@ tr.selected {
     font-weight: bold;
     cursor: pointer;
 }
+
+.tr-highlight {
+    background-color: #fff3cd !important;
+    /* kuning muda */
+    transition: background-color 0.8s ease;
+}

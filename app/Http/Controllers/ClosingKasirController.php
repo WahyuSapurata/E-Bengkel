@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Helpers\JurnalHelper;
 use App\Models\ClosingKasir;
 use App\Models\Coa;
+use App\Models\KasirOutlet;
 use App\Models\Penjualan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class ClosingKasirController extends Controller
@@ -26,27 +28,28 @@ class ClosingKasirController extends Controller
             ]
         );
 
+        $kasir = KasirOutlet::where('uuid_user', Auth::user()->uuid)->firstOrFail();
+
         $tanggal = Carbon::now()->format('d-m-Y');
 
         $penjualans = Penjualan::where('uuid_outlet', $request->uuid_kasir_outlet)
-            ->whereDate('tanggal_transaksi', $tanggal)
-            ->with('details') // relasi ke detail_penjualans
+            ->where('tanggal_transaksi', $tanggal)
+            ->with('detailPenjualans') // ✅ ambil detail
             ->get();
 
         // Total penjualan dihitung dari detail
         $totalPenjualan = $penjualans->sum(function ($p) {
-            return $p->details->sum('total_harga');
+            return $p->detailPenjualans->sum('total_harga');
         });
 
-        // Total cash & transfer berdasarkan metode pembayaran
+        // Total cash & transfer
         $totalCash = $penjualans->where('pembayaran', 'Tunai')->sum(function ($p) {
-            return $p->details->sum('total_harga');
+            return $p->detailPenjualans->sum('total_harga');
         });
 
         $totalTransfer = $penjualans->where('pembayaran', 'Transfer Bank')->sum(function ($p) {
-            return $p->details->sum('total_harga');
+            return $p->detailPenjualans->sum('total_harga');
         });
-
 
         // Hitung selisih antara sistem vs fisik
         $selisih = $request->total_fisik - $totalCash;
@@ -73,6 +76,7 @@ class ClosingKasirController extends Controller
         if ($totalCash > 0) {
             JurnalHelper::create(
                 $tanggal,
+                $kasir->uuid_outlet,
                 $no_bukti,
                 'Closing Kasir',
                 [

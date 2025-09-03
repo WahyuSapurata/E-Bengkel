@@ -673,4 +673,72 @@ class ProdukController extends Controller
             'data' => $data
         ]);
     }
+
+    public function kartu_stock($params)
+    {
+        $produk = Produk::where('uuid', $params)->first();
+        $module = 'Kartu Stock ' . $produk->nama_barang;
+        return view('pages.produk.kartustock', compact('module', 'produk'));
+    }
+
+    public function get_kartu_stock(Request $request, $params)
+    {
+        $produk = Produk::where('uuid', $params)->first();
+        $columns = [
+            'wirehouse_stocks.uuid',
+            'wirehouse_stocks.uuid_warehouse',
+            'wirehouse_stocks.uuid_produk',
+            'wirehouse_stocks.qty',
+            'wirehouse_stocks.jenis',
+            'wirehouse_stocks.sumber',
+            'wirehouse_stocks.keterangan',
+            'produks.nama_barang as nama_barang',
+        ];
+
+        // Hitung total data tanpa filter
+        $totalData = WirehouseStock::where('uuid_produk', $produk->uuid)->count();
+
+        // Query utama dengan join ke tabel produk
+        $query = WirehouseStock::select($columns)
+            ->join('produks', 'produks.uuid', '=', 'wirehouse_stocks.uuid_produk')
+            ->where('wirehouse_stocks.uuid_produk', $produk->uuid);
+
+        // Searching
+        if (!empty($request->search['value'])) {
+            $search = $request->search['value'];
+            $query->where(function ($q) use ($search, $columns) {
+                foreach ($columns as $column) {
+                    // Hilangkan alias saat searching
+                    $colName = explode(' as ', $column)[0];
+                    $q->orWhere($colName, 'like', "%{$search}%");
+                }
+            });
+        }
+
+        // Hitung total data setelah filter
+        $totalFiltered = $query->count();
+
+        // Sorting
+        if (!empty($request->order)) {
+            $orderCol = explode(' as ', $columns[$request->order[0]['column']])[0];
+            $orderDir = $request->order[0]['dir'];
+            $query->orderBy($orderCol, $orderDir);
+        } else {
+            $query->latest('created_at');
+        }
+
+        // Pagination
+        $query->skip($request->start)->take($request->length);
+
+        // Ambil data
+        $data = $query->get();
+
+        // Response JSON untuk DataTables
+        return response()->json([
+            'draw' => intval($request->draw),
+            'recordsTotal' => $totalData,
+            'recordsFiltered' => $totalFiltered,
+            'data' => $data
+        ]);
+    }
 }

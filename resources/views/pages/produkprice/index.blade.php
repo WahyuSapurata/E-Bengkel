@@ -81,7 +81,8 @@
 @endsection
 @section('modals')
     <!-- Modal Form -->
-    <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal fade" id="modal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
+        aria-labelledby="modalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <form id="form">
                 <input type="hidden" name="uuid" id="uuid">

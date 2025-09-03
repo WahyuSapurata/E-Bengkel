@@ -39,6 +39,13 @@
                         <div class="card-header">
                             <h5 class="card-title">Tabel {{ $module }}</h5>
                             <div class="d-flex gap-2">
+                                <select name="uuid_coa" id="filter-coa" data-placeholder="Pilih kategori"
+                                    class="form-select">
+                                    <option value="">Pilih Akun</option>
+                                    @foreach ($coas as $c)
+                                        <option value="{{ $c->uuid }}">{{ $c->nama }}</option>
+                                    @endforeach
+                                </select>
                                 <input type="text" class="form-control" id="reportrange">
                             </div>
                             <div class="card-header-action">
@@ -65,6 +72,7 @@
                                             <th class="text-capitalize">Akun</th>
                                             <th class="text-capitalize">Debit</th>
                                             <th class="text-capitalize">Kredit</th>
+                                            <th class="text-capitalize">saldo</th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -78,6 +86,15 @@
 @endsection
 @push('scripts')
     <script>
+        $('.basic-usage').each(function() {
+            $(this).select2({
+                theme: "bootstrap-5",
+                width: '100%',
+                placeholder: $(this).data('placeholder'),
+                dropdownParent: $(this).closest('.modal-body')
+            });
+        });
+
         function formatRupiah(angka) {
             let number_string = angka.replace(/[^,\d]/g, '').toString(),
                 split = number_string.split(','),
@@ -106,11 +123,11 @@
                 processing: true,
                 serverSide: true,
                 ajax: {
-                    url: "{{ route('superadmin.get-jurnal-umum') }}",
+                    url: "{{ route('superadmin.get-buku-besar') }}",
                     data: function(d) {
                         let tanggal = $('#reportrange').val().split(' - ');
-                        console.log(tanggal);
 
+                        d.uuid_coa = $('#filter-coa').val();
 
                         if (tanggal.length === 2) {
                             d.tanggal_awal = moment(tanggal[0], 'MM/DD/YYYY').format('DD-MM-YYYY');
@@ -156,6 +173,13 @@
                             // Format harga ke Rupiah
                             return formatRupiah(data.toString());
                         }
+                    }, {
+                        data: 'saldo',
+                        class: 'mb-kolom-tanggal text-left align-content-center',
+                        render: function(data, type, row) {
+                            // Format harga ke Rupiah
+                            return formatRupiah(data.toString());
+                        }
                     }
                 ],
             });
@@ -163,6 +187,10 @@
 
         // Refresh datatable tiap kali tanggal berubah
         $('#reportrange').on('apply.daterangepicker', function(ev, picker) {
+            $('#dataTables').DataTable().ajax.reload();
+        });
+
+        $('#filter-coa').on('change', function() {
             $('#dataTables').DataTable().ajax.reload();
         });
 

@@ -94,6 +94,7 @@ class PenjualanController extends Controller
         $jasa = Jasa::whereNotIn('uuid', function ($q) use ($jamLalu) {
             $q->select('uuid_jasa')
                 ->from('penjualans')
+                ->whereNotNull('uuid_jasa')
                 ->where('created_at', '>=', $jamLalu);
         })
             ->get();
@@ -317,6 +318,7 @@ class PenjualanController extends Controller
                 // === Simpan ke jurnal ===
                 JurnalHelper::create(
                     now()->format('d-m-Y'),
+                    $kasir->uuid_outlet,
                     $no_bukti,
                     $judulJurnal,
                     $entries

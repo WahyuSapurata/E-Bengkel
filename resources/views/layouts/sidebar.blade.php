@@ -86,6 +86,15 @@
                                 class="nxl-item {{ isset($path[2]) && $path[2] === 'vw-jurnal-umum' ? 'active' : '' }}">
                                 <a class="nxl-link" href="{{ route('superadmin.vw-jurnal-umum') }}">Jurnal Umum</a>
                             </li>
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'vw-buku-besar' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.vw-buku-besar') }}">Buku Besar</a>
+                            </li>
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'vw-neraca' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.vw-neraca') }}">Neraca</a>
+                            </li>
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'vw-laba-rugi' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.vw-laba-rugi') }}">Laba Rugi</a>
+                            </li>
                         </ul>
                     </li>
                 </ul>

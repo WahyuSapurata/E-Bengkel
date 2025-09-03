@@ -27,6 +27,7 @@ class DetailPenjualan extends Model
         });
     }
 
+    // ✅ Relasi yang benar: detail milik penjualan
     public function penjualan()
     {
         return $this->belongsTo(Penjualan::class, 'uuid_penjualans', 'uuid');

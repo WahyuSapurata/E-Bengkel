@@ -107,7 +107,8 @@
 @endsection
 @section('modals')
     <!-- Modal Form -->
-    <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal fade" id="modal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
+        aria-labelledby="modalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <form id="form" enctype="multipart/form-data">
                 <input type="hidden" name="uuid" id="uuid">
@@ -266,13 +267,18 @@
 @endsection
 @push('scripts')
     <script>
-        $('.basic-usage').each(function() {
-            $(this).select2({
+        function initSelect2(element) {
+            element.select2({
                 theme: "bootstrap-5",
                 width: '100%',
-                placeholder: $(this).data('placeholder'),
-                dropdownParent: $(this).closest('.modal-body')
+                placeholder: element.data('placeholder'),
+                dropdownParent: element.closest('.modal-body')
             });
+        }
+
+        // Init select2 pertama kali
+        $('.basic-usage').each(function() {
+            initSelect2($(this));
         });
 
         function parseRupiah(value) {
@@ -678,6 +684,10 @@
                         let urlOpname =
                             "{{ route('superadmin.opname-stock', ['params' => ':id']) }}";
                         urlOpname = urlOpname.replace(':id', data);
+
+                        let urlKartuSock =
+                            "{{ route('superadmin.kartu-stock', ['params' => ':id']) }}";
+                        urlKartuSock = urlKartuSock.replace(':id', data);
                         return `
                                 <div class="hstack gap-2 justify-content-end">
                                     <a href="#" class="avatar-text avatar-md add-price" data-uuid="${data}">
@@ -717,6 +727,10 @@
                                     <a href="${urlOpname}" class="avatar-text avatar-md">
                                         <!-- Icon Delete -->
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-blocks-icon lucide-blocks"><path d="M10 22V7a1 1 0 0 0-1-1H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a1 1 0 0 0-1-1H2"/><rect x="14" y="2" width="8" height="8" rx="1"/></svg>
+                                    </a>
+                                    <a href="${urlKartuSock}" class="avatar-text avatar-md">
+                                        <!-- Icon Delete -->
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" viewBox="0 0 512 512"><!--!Font Awesome Free v6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M121 32C91.6 32 66 52 58.9 80.5L1.9 308.4C.6 313.5 0 318.7 0 323.9L0 416c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-92.1c0-5.2-.6-10.4-1.9-15.5l-57-227.9C446 52 420.4 32 391 32L121 32zm0 64l270 0 48 192-51.2 0c-12.1 0-23.2 6.8-28.6 17.7l-14.3 28.6c-5.4 10.8-16.5 17.7-28.6 17.7l-120.4 0c-12.1 0-23.2-6.8-28.6-17.7l-14.3-28.6c-5.4-10.8-16.5-17.7-28.6-17.7L73 288 121 96z"/></svg>
                                     </a>
                                 </div>
                     `;

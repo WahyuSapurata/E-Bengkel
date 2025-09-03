@@ -60,6 +60,9 @@ Route::group([
         Route::get('/price-history/{params}', [App\Http\Controllers\ProdukController::class, 'price_history'])->name('price-history');
         Route::get('/get-price-history/{params}', [App\Http\Controllers\ProdukController::class, 'get_price_history'])->name('get-price-history');
 
+        Route::get('/kartu-stock/{params}', [App\Http\Controllers\ProdukController::class, 'kartu_stock'])->name('kartu-stock');
+        Route::get('/get-kartu-stock/{params}', [App\Http\Controllers\ProdukController::class, 'get_kartu_stock'])->name('get-kartu-stock');
+
         Route::get('/opname-stock/{params}', [App\Http\Controllers\ProdukController::class, 'opname_stock'])->name('opname-stock');
         Route::post('/store_opname', [App\Http\Controllers\ProdukController::class, 'store_opname'])->name('store_opname');
 
@@ -155,6 +158,15 @@ Route::group([
 
         Route::get('/vw-jurnal-umum', [App\Http\Controllers\ReportController::class, 'vw_jurnal_umum'])->name('vw-jurnal-umum');
         Route::get('/get-jurnal-umum', [App\Http\Controllers\ReportController::class, 'get_jurnal_umum'])->name('get-jurnal-umum');
+
+        Route::get('/vw-buku-besar', [App\Http\Controllers\ReportController::class, 'vw_buku_besar'])->name('vw-buku-besar');
+        Route::get('/get-buku-besar', [App\Http\Controllers\ReportController::class, 'get_buku_besar'])->name('get-buku-besar');
+
+        Route::get('/vw-neraca', [App\Http\Controllers\ReportController::class, 'vw_neraca'])->name('vw-neraca');
+        Route::get('/get-neraca', [App\Http\Controllers\ReportController::class, 'get_neraca'])->name('get-neraca');
+
+        Route::get('/vw-laba-rugi', [App\Http\Controllers\ReportController::class, 'vw_laba_rugi'])->name('vw-laba-rugi');
+        Route::get('/get-laba-rugi', [App\Http\Controllers\ReportController::class, 'get_laba_rugi'])->name('get-laba-rugi');
     });
 });
 

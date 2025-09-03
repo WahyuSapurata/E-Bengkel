@@ -16,10 +16,14 @@ class ReportHelper
         $query = Jurnal::where('uuid_coa', $uuid_coa);
 
         if ($tanggal_awal && $tanggal_akhir) {
-            $query->whereBetween('tanggal', [$tanggal_awal, $tanggal_akhir]);
+            $query->whereRaw(
+                "STR_TO_DATE(tanggal, '%d-%m-%Y') BETWEEN STR_TO_DATE(?, '%d-%m-%Y')
+                 AND STR_TO_DATE(?, '%d-%m-%Y')",
+                [$tanggal_awal, $tanggal_akhir]
+            );
         }
 
-        return $query->orderBy('tanggal')->get();
+        return $query->orderByRaw("STR_TO_DATE(tanggal, '%d-%m-%Y')")->get();
     }
 
     /**
@@ -37,7 +41,11 @@ class ReportHelper
             ->groupBy('coas.uuid', 'coas.nama', 'coas.tipe');
 
         if ($tanggal_awal && $tanggal_akhir) {
-            $query->whereBetween('jurnals.tanggal', [$tanggal_awal, $tanggal_akhir]);
+            $query->whereRaw(
+                "STR_TO_DATE(jurnals.tanggal, '%d-%m-%Y') BETWEEN STR_TO_DATE(?, '%d-%m-%Y')
+                 AND STR_TO_DATE(?, '%d-%m-%Y')",
+                [$tanggal_awal, $tanggal_akhir]
+            );
         }
 
         $data = $query->get();
@@ -73,7 +81,11 @@ class ReportHelper
             ->groupBy('coas.uuid', 'coas.nama', 'coas.tipe');
 
         if ($tanggal_awal && $tanggal_akhir) {
-            $query->whereBetween('jurnals.tanggal', [$tanggal_awal, $tanggal_akhir]);
+            $query->whereRaw(
+                "STR_TO_DATE(jurnals.tanggal, '%d-%m-%Y') BETWEEN STR_TO_DATE(?, '%d-%m-%Y')
+                 AND STR_TO_DATE(?, '%d-%m-%Y')",
+                [$tanggal_awal, $tanggal_akhir]
+            );
         }
 
         $data = $query->get();

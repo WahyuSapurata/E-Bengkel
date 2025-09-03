@@ -1280,3 +1280,6 @@
         <!-- [ Main Content ] end -->
     </div>
 @endsection
+@push('scripts')
+    <script src="{{ asset('assets/js/dashboard-init.min.js') }}"></script>
+@endpush

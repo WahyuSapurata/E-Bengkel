@@ -25,7 +25,7 @@ class PembelianController extends Controller
         $module = 'Pembelian';
         $suplayers = Suplayer::select('uuid', 'nama')->get();
         $po_pusat = PoPusat::select('uuid', 'no_po')->get();
-        $aset = Coa::where('tipe', 'aset')->where('nama', '!=', 'Kas Outlet')->select('uuid', 'nama')->get();
+        $aset = Coa::where('tipe', 'aset')->whereNotIn('nama', ['Kas Outlet', 'Persediaan Sparepart'])->select('uuid', 'nama')->get();
         return view('pages.pembelian.index', compact('module', 'suplayers', 'po_pusat', 'aset'));
     }
 

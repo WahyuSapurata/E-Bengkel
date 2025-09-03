@@ -4,7 +4,7 @@
         <div class="page-header">
             <div class="page-header-left d-flex align-items-center">
                 <div class="page-header-title">
-                    <h5 class="m-b-10 text-capitalize">Accounting</h5>
+                    <h5 class="m-b-10 text-capitalize">Master Data</h5>
                 </div>
                 <ul class="breadcrumb">
                     <li class="breadcrumb-item"><a href="/">Home</a></li>
@@ -20,6 +20,9 @@
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg><span>Back</span></a></div>
+                    <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                        <a href="#" onclick="window.history.back()" class="btn btn-info"><span>Kembali</span></a>
+                    </div>
                 </div>
                 <div class="d-md-none d-flex align-items-center"><a class="page-header-right-open-toggle"
                         href="/widgets/tables"><svg stroke="currentColor" fill="none" stroke-width="2"
@@ -38,9 +41,6 @@
                     <div class="card stretch stretch-full widget-tasks-content  ">
                         <div class="card-header">
                             <h5 class="card-title">Tabel {{ $module }}</h5>
-                            <div class="d-flex gap-2">
-                                <input type="text" class="form-control" id="reportrange">
-                            </div>
                             <div class="card-header-action">
                                 <div class="card-header-btn">
                                     <div data-bs-toggle="tooltip" aria-label="Refresh" data-bs-original-title="Refresh">
@@ -59,12 +59,11 @@
                                     <thead>
                                         <tr>
                                             <th class="text-capitalize">No</th>
-                                            <th class="text-capitalize">Tanggal</th>
-                                            <th class="text-capitalize">No Bukti</th>
-                                            <th class="text-capitalize">Keterangan</th>
-                                            <th class="text-capitalize">Akun</th>
-                                            <th class="text-capitalize">Debit</th>
-                                            <th class="text-capitalize">Kredit</th>
+                                            <th class="text-capitalize">nama barang</th>
+                                            <th class="text-capitalize">qty</th>
+                                            <th class="text-capitalize">jenis</th>
+                                            <th class="text-capitalize">sumber</th>
+                                            <th class="text-capitalize">keterangan</th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -78,21 +77,9 @@
 @endsection
 @push('scripts')
     <script>
-        function formatRupiah(angka) {
-            let number_string = angka.replace(/[^,\d]/g, '').toString(),
-                split = number_string.split(','),
-                sisa = split[0].length % 3,
-                rupiah = split[0].substr(0, sisa),
-                ribuan = split[0].substr(sisa).match(/\d{3}/gi);
-
-            if (ribuan) {
-                let separator = sisa ? '.' : '';
-                rupiah += separator + ribuan.join('.');
-            }
-
-            rupiah = split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
-            return rupiah ? 'Rp ' + rupiah : '';
-        }
+        var currentPath = window.location.pathname;
+        var pathParts = currentPath.split('/'); // Membagi path menggunakan karakter '/'
+        var lastPart = pathParts[pathParts.length - 1]; // Mengambil elemen terakhir dari array
 
         const initDatatable = () => {
             // Destroy existing DataTable if it exists
@@ -100,24 +87,15 @@
                 $('#dataTables').DataTable().clear().destroy();
             }
 
+            let getUrl = `{{ route('superadmin.get-kartu-stock', ':uuid') }}`;
+            getUrl = getUrl.replace(':uuid', lastPart);
+
             $('#dataTables').DataTable({
                 responsive: true,
                 pageLength: 10,
                 processing: true,
                 serverSide: true,
-                ajax: {
-                    url: "{{ route('superadmin.get-jurnal-umum') }}",
-                    data: function(d) {
-                        let tanggal = $('#reportrange').val().split(' - ');
-                        console.log(tanggal);
-
-
-                        if (tanggal.length === 2) {
-                            d.tanggal_awal = moment(tanggal[0], 'MM/DD/YYYY').format('DD-MM-YYYY');
-                            d.tanggal_akhir = moment(tanggal[1], 'MM/DD/YYYY').format('DD-MM-YYYY');
-                        }
-                    }
-                },
+                ajax: getUrl,
                 columns: [{
                         data: null,
                         class: 'mb-kolom-nomor align-content-center',
@@ -126,45 +104,28 @@
                         }
                     },
                     {
-                        data: 'tanggal',
+                        data: 'nama_barang',
                         class: 'mb-kolom-text text-left align-content-center'
                     },
                     {
-                        data: 'ref',
-                        class: 'mb-kolom-tanggal text-left align-content-center'
+                        data: 'qty',
+                        class: 'mb-kolom-text text-left align-content-center'
                     },
                     {
-                        data: 'deskripsi',
-                        class: 'mb-kolom-tanggal text-left align-content-center'
+                        data: 'jenis',
+                        class: 'mb-kolom-text text-left align-content-center'
                     },
                     {
-                        data: 'nama_akun',
-                        class: 'mb-kolom-tanggal text-left align-content-center'
+                        data: 'sumber',
+                        class: 'mb-kolom-text text-left align-content-center'
                     },
                     {
-                        data: 'debit',
-                        class: 'mb-kolom-tanggal text-left align-content-center',
-                        render: function(data, type, row) {
-                            // Format harga ke Rupiah
-                            return formatRupiah(data.toString());
-                        }
+                        data: 'keterangan',
+                        class: 'mb-kolom-text text-left align-content-center'
                     },
-                    {
-                        data: 'kredit',
-                        class: 'mb-kolom-tanggal text-left align-content-center',
-                        render: function(data, type, row) {
-                            // Format harga ke Rupiah
-                            return formatRupiah(data.toString());
-                        }
-                    }
                 ],
             });
         };
-
-        // Refresh datatable tiap kali tanggal berubah
-        $('#reportrange').on('apply.daterangepicker', function(ev, picker) {
-            $('#dataTables').DataTable().ajax.reload();
-        });
 
         $(function() {
             initDatatable();

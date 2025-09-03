@@ -25,8 +25,8 @@
             <!--! [End] Header Left !-->
             <!--! [Start] Header Right !-->
             <div class="header-right ms-auto">
-                <div class="d-flex align-items-center">
-                    <div class="dropdown nxl-h-item nxl-header-search">
+                <div class="d-flex align-items-center gap-1">
+                    {{-- <div class="dropdown nxl-h-item nxl-header-search">
                         <a href="javascript:void(0);" class="nxl-head-link me-0" data-bs-toggle="dropdown"
                             data-bs-auto-close="outside">
                             <i class="feather-search"></i>
@@ -214,7 +214,7 @@
                                     class="p-3 fs-10 fw-bold text-uppercase text-center d-block">Loar More</a>
                             </div>
                         </div>
-                    </div>
+                    </div> --}}
                     <div class="nxl-h-item d-none d-sm-flex">
                         <div class="full-screen-switcher">
                             <a href="javascript:void(0);" class="nxl-head-link me-0"
@@ -232,7 +232,7 @@
                             <i class="feather-sun"></i>
                         </a>
                     </div>
-                    <div class="dropdown nxl-h-item">
+                    {{-- <div class="dropdown nxl-h-item">
                         <a href="javascript:void(0);" class="nxl-head-link me-0" data-bs-toggle="dropdown"
                             role="button" data-bs-auto-close="outside">
                             <i class="feather-clock"></i>
@@ -287,8 +287,8 @@
                                             <a href="javascript:void(0);"
                                                 class="d-block wd-8 ht-8 rounded-circle bg-gray-300"
                                                 data-bs-toggle="tooltip" title="Make as Read"></a>
-                                            <a href="javascript:void(0);" class="text-danger"
-                                                data-bs-toggle="tooltip" title="Remove">
+                                            <a href="javascript:void(0);" class="text-danger" data-bs-toggle="tooltip"
+                                                title="Remove">
                                                 <i class="feather-x fs-12"></i>
                                             </a>
                                         </div>
@@ -344,12 +344,13 @@
                                     Notifications</a>
                             </div>
                         </div>
-                    </div>
-                    <div class="dropdown nxl-h-item">
+                    </div> --}}
+                    <div class="dropdown nxl-h-item ms-3">
                         <a href="javascript:void(0);" data-bs-toggle="dropdown" role="button"
                             data-bs-auto-close="outside">
-                            <img src="{{ asset('assets/images/avatar/1.png') }}" alt="user-image"
-                                class="img-fluid user-avtar me-0" />
+                            <div class="btn btn-outline-primary text-capitalize">
+                                Hi, {{ auth()->user()->nama }}
+                            </div>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
                             <div class="dropdown-header">
@@ -361,7 +362,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="dropdown">
+                            {{-- <div class="dropdown">
                                 <a href="javascript:void(0);" class="dropdown-item" data-bs-toggle="dropdown">
                                     <span class="hstack">
                                         <i
@@ -415,7 +416,7 @@
                                         </span>
                                     </a>
                                 </div>
-                            </div>
+                            </div> --}}
                             <div class="dropdown-divider"></div>
                             <a href="{{ route('logout') }}" class="dropdown-item">
                                 <i class="feather-log-out"></i>

@@ -29,8 +29,9 @@ class Penjualan extends Model
         });
     }
 
-    public function penjualan()
+    // ✅ Relasi yang benar: Penjualan punya banyak detail
+    public function detailPenjualans()
     {
-        return $this->belongsTo(Penjualan::class, 'uuid_penjualans', 'uuid');
+        return $this->hasMany(DetailPenjualan::class, 'uuid_penjualans', 'uuid');
     }
 }

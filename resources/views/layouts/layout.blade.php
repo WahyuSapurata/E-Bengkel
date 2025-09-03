@@ -348,11 +348,12 @@
     <!--! END: Vendors JS !-->
     <!--! BEGIN: Apps Init  !-->
     <script src="{{ asset('assets/js/common-init.min.js') }}"></script>
-    <script src="{{ asset('assets/js/dashboard-init.min.js') }}"></script>
     <!--! END: Apps Init !-->
     <!--! BEGIN: Theme Customizer  !-->
     {{-- <script src="{{ asset('assets/js/common-init.min.js') }}"></script> --}}
     <script src="{{ asset('assets/js/customers-create-init.min.js') }}"></script>
+    <script src="{{ asset('assets/js/theme-customizer-init.min.js') }}"></script>
+    <script src="{{ asset('assets/js/analytics-init.min.js') }}"></script>
     <!-- DataTables JS + Bootstrap 5 support -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
@@ -360,6 +361,16 @@
     <!--! END: Theme Customizer !-->
 
     @stack('scripts')
+
+    {{-- <script>
+        $(function() {
+            if ($('.dateofBirth').length) {
+                $('.dateofBirth').datepicker({
+                    format: 'dd-mm-yyyy'
+                });
+            }
+        });
+    </script> --}}
 </body>
 
 </html>
