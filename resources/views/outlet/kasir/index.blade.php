@@ -1003,7 +1003,14 @@
                     .then(res => res.json())
                     .then(res => {
                         if (res.status === "success") {
-                            Swal.fire("Berhasil!", "Struk berhasil dicetak ✅", "success");
+                            Swal.fire({
+                                title: "Berhasil!",
+                                text: "Struk berhasil dicetak ✅",
+                                icon: "success",
+                                showConfirmButton: false,
+                                timer: 1500,
+                                timerProgressBar: true
+                            });
                         } else {
                             Swal.fire("Gagal!", res.message, "error");
                         }

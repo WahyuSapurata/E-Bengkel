@@ -376,7 +376,7 @@ class ProdukController extends Controller
             WirehouseStock::create([
                 'uuid_warehouse' => $warehouse->uuid,
                 'uuid_produk'    => $produk->uuid,
-                'qty'            => abs($selisih),
+                'qty'            => $store->stock,
                 'jenis'          => $selisih > 0 ? 'masuk' : 'keluar',
                 'sumber'         => 'opname',
                 'keterangan'     => 'Penyesuaian stok opname #' . $opname->id,
@@ -432,7 +432,7 @@ class ProdukController extends Controller
                 WirehouseStock::create([
                     'uuid_warehouse' => $warehouseOutlet->uuid,
                     'uuid_produk'    => $produk->uuid,
-                    'qty'            => abs($selisih),
+                    'qty'            => $store->stock,
                     'jenis'          => $selisih > 0 ? 'masuk' : 'keluar',
                     'sumber'         => 'opname',
                     'keterangan'     => 'Penyesuaian stok opname #' . $opname->id,

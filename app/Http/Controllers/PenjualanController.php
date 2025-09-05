@@ -409,16 +409,16 @@ class PenjualanController extends Controller
         $struk .= $this->centerText("--- Terima Kasih ---", 32) . "\n";
         $struk .= $this->centerText("Barang yang sudah dibeli tidak dapat ditukar/dikembalikan", 32) . "\n";
 
-        // Tambah feed kosong biar kertas longgar
-        $struk .= "\n\n\n\n";
+        // Feed kosong (biar struk tidak kepotong)
+        $struk .= "\n\n\n";
 
-        // CUT PAPER (GS V 0 = full cut)
-        $struk .= chr(29) . chr(86) . chr(0);
+        // CUT PAPER (GS V A 0 = full cut)
+        $struk .= chr(29) . chr(86) . chr(65) . chr(0);
 
-        // SIMPAN & PRINT
+        // SIMPAN & PRINT (raw mode, pakai default printer)
         $tmpFile = '/tmp/struk.txt';
         file_put_contents($tmpFile, $struk);
-        shell_exec("lp -d POS-80 $tmpFile");
+        shell_exec("lp -o raw $tmpFile");
     }
 
     // ===============================

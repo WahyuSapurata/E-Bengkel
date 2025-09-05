@@ -120,10 +120,10 @@ class ReportController extends Controller
 
         $totalData = Jurnal::join('coas', 'coas.uuid', '=', 'jurnals.uuid_coa')
             ->where('jurnals.uuid_coa', $uuid_coa)
-            ->whereBetween(
-                DB::raw("STR_TO_DATE(jurnals.tanggal, '%d-%m-%Y')"),
-                [$tanggal_awal, $tanggal_akhir]
-            )
+            ->whereRaw("STR_TO_DATE(jurnals.tanggal, '%d-%m-%Y') BETWEEN STR_TO_DATE(?, '%d-%m-%Y') AND STR_TO_DATE(?, '%d-%m-%Y')", [
+                $tanggal_awal,
+                $tanggal_akhir
+            ])
             ->count();
 
         $query = Jurnal::join('coas', 'coas.uuid', '=', 'jurnals.uuid_coa')
@@ -137,10 +137,10 @@ class ReportController extends Controller
                 'jurnals.kredit'
             )
             ->where('jurnals.uuid_coa', $uuid_coa)
-            ->whereBetween(
-                DB::raw("STR_TO_DATE(jurnals.tanggal, '%d-%m-%Y')"),
-                [$tanggal_awal, $tanggal_akhir]
-            );
+            ->whereRaw("STR_TO_DATE(jurnals.tanggal, '%d-%m-%Y') BETWEEN STR_TO_DATE(?, '%d-%m-%Y') AND STR_TO_DATE(?, '%d-%m-%Y')", [
+                $tanggal_awal,
+                $tanggal_akhir
+            ]);
 
         // Searching
         if (!empty($request->search['value'])) {
