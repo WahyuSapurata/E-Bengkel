@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Coa;
+use App\Models\HakAkses;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -19,7 +20,7 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::updateOrCreate(
+        $user = User::updateOrCreate(
             ['username' => 'superadmin'],
             [
                 'uuid' => Uuid::uuid4()->toString(),
@@ -66,6 +67,31 @@ class DatabaseSeeder extends Seeder
                     'tipe' => $coa['tipe'],
                 ]
             );
+        }
+
+        $defaultMenus = [
+            'Setup' => ['Data Pengguna'],
+            'Master Data' => ['Kategori', 'Sub Kategori', 'Suplayer', 'Jasa', 'Produk', 'Customer', 'Karyawan', 'Outlet'],
+            'Transaksi'   => ['Pembelian', 'Hutang', 'PO', 'PO Outlet', 'Pengiriman Barang'],
+            'Accounting'  => ['Daftar Akun', 'Gaji Karyawan', 'Biaya Lain-lain', 'Jurnal Umum', 'Buku Besar', 'Neraca', 'Laba Rugi'],
+        ];
+
+        foreach ($defaultMenus as $group => $menus) {
+            foreach ($menus as $menu) {
+                HakAkses::updateOrCreate(
+                    [
+                        'uuid_user' => $user->uuid,
+                        'menu'      => $menu,
+                    ],
+                    [
+                        'group'  => $group,
+                        'view'   => true,
+                        'create' => true,
+                        'edit'   => true,
+                        'delete' => true,
+                    ]
+                );
+            }
         }
     }
 }

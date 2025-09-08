@@ -318,6 +318,7 @@
                     render: function(data, type, row) {
                         return `
                                 <div class="hstack gap-2 justify-content-end">
+                                    @canEdit('PO Outlet')
                                     <a href="#" class="avatar-text avatar-md edit" data-uuid="${data}">
                                         <!-- Icon Edit -->
                                         <svg stroke="currentColor" fill="none" stroke-width="2"
@@ -327,6 +328,7 @@
                                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                         </svg>
                                     </a>
+                                    @endcanEdit
                                 </div>
                     `;
                     }

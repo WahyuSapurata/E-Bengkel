@@ -12,17 +12,39 @@
             </a>
         </div>
         <div class="navbar-content">
+            {{-- <pre>{{ print_r(array_keys(session('hak_akses')->toArray()), true) }}</pre> --}}
+
             @if ($role === 'superadmin')
                 <ul class="nxl-navbar">
                     <li class="nxl-item nxl-caption">
                         <label>Super Admin</label>
                     </li>
+
+                    {{-- Dashboard (global, tidak pakai canView) --}}
                     <li class="nxl-item nxl-hasmenu {{ $path[1] === 'dashboard-superadmin' ? 'active' : '' }}">
                         <a href="{{ route('superadmin.dashboard-superadmin') }}" class="nxl-link">
                             <span class="nxl-micon"><i class="feather-airplay"></i></span>
                             <span class="nxl-mtext">Dashboard</span>
                         </a>
                     </li>
+
+                    {{-- Setup --}}
+                    <li class="nxl-item nxl-hasmenu {{ $path[1] === 'setup' ? 'active' : '' }}">
+                        <a href="javascript:void(0);" class="nxl-link">
+                            <span class="nxl-micon"><i class="feather-sliders"></i></span>
+                            <span class="nxl-mtext">Setup</span><span class="nxl-arrow"><i
+                                    class="feather-chevron-right"></i></span>
+                        </a>
+                        <ul class="nxl-submenu">
+                            @canView('Data Pengguna')
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'data-pengguna' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.data-pengguna') }}">Data Pengguna</a>
+                            </li>
+                            @endcanView
+                        </ul>
+                    </li>
+
+                    {{-- Master Data --}}
                     <li class="nxl-item nxl-hasmenu {{ $path[1] === 'master-data' ? 'active' : '' }}">
                         <a href="javascript:void(0);" class="nxl-link">
                             <span class="nxl-micon"><i class="feather-cast"></i></span>
@@ -30,24 +52,57 @@
                                     class="feather-chevron-right"></i></span>
                         </a>
                         <ul class="nxl-submenu">
-                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'kategori' ? 'active' : '' }}"><a
-                                    class="nxl-link" href="{{ route('superadmin.kategori') }}">Kategori</a></li>
-                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'subkategori' ? 'active' : '' }}"><a
-                                    class="nxl-link" href="{{ route('superadmin.subkategori') }}">Sub Kategori</a></li>
-                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'suplayer' ? 'active' : '' }}"><a
-                                    class="nxl-link" href="{{ route('superadmin.suplayer') }}">Suplayer</a></li>
-                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'jasa' ? 'active' : '' }}"><a
-                                    class="nxl-link" href="{{ route('superadmin.jasa') }}">Jasa</a></li>
-                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'produk' ? 'active' : '' }}"><a
-                                    class="nxl-link" href="{{ route('superadmin.produk') }}">Produk</a></li>
-                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'costumer' ? 'active' : '' }}"><a
-                                    class="nxl-link" href="{{ route('superadmin.costumer') }}">Customer</a></li>
-                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'karyawan' ? 'active' : '' }}"><a
-                                    class="nxl-link" href="{{ route('superadmin.karyawan') }}">Karyawan</a></li>
-                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'outlet' ? 'active' : '' }}"><a
-                                    class="nxl-link" href="{{ route('superadmin.outlet') }}">Outlet</a></li>
+                            @canView('Kategori')
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'kategori' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.kategori') }}">Kategori</a>
+                            </li>
+                            @endcanView
+
+                            @canView('Sub Kategori')
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'subkategori' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.subkategori') }}">Sub Kategori</a>
+                            </li>
+                            @endcanView
+
+                            @canView('Suplayer')
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'suplayer' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.suplayer') }}">Suplayer</a>
+                            </li>
+                            @endcanView
+
+                            @canView('Jasa')
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'jasa' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.jasa') }}">Jasa</a>
+                            </li>
+                            @endcanView
+
+                            @canView('Produk')
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'produk' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.produk') }}">Produk</a>
+                            </li>
+                            @endcanView
+
+                            @canView('Customer')
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'costumer' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.costumer') }}">Customer</a>
+                            </li>
+                            @endcanView
+
+                            @canView('Karyawan')
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'karyawan' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.karyawan') }}">Karyawan</a>
+                            </li>
+                            @endcanView
+
+                            @canView('Outlet')
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'outlet' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.outlet') }}">Outlet</a>
+                            </li>
+                            @endcanView
                         </ul>
                     </li>
+
+                    {{-- Transaksi --}}
                     <li class="nxl-item nxl-hasmenu {{ $path[1] === 'transaksi' ? 'active' : '' }}">
                         <a href="javascript:void(0);" class="nxl-link">
                             <span class="nxl-micon"><i class="feather-dollar-sign"></i></span>
@@ -55,20 +110,39 @@
                                     class="feather-chevron-right"></i></span>
                         </a>
                         <ul class="nxl-submenu">
-                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'pembelian' ? 'active' : '' }}"><a
-                                    class="nxl-link" href="{{ route('superadmin.pembelian') }}">Pembelian</a></li>
-                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'hutang' ? 'active' : '' }}"><a
-                                    class="nxl-link" href="{{ route('superadmin.hutang') }}">Hutang</a></li>
-                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'po-pusat' ? 'active' : '' }}"><a
-                                    class="nxl-link" href="{{ route('superadmin.po-pusat') }}">PO</a></li>
+                            @canView('Pembelian')
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'pembelian' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.pembelian') }}">Pembelian</a>
+                            </li>
+                            @endcanView
+
+                            @canView('Hutang')
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'hutang' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.hutang') }}">Hutang</a>
+                            </li>
+                            @endcanView
+
+                            @canView('PO')
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'po-pusat' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.po-pusat') }}">PO</a>
+                            </li>
+                            @endcanView
+
+                            @canView('PO Outlet')
                             <li class="nxl-item {{ isset($path[2]) && $path[2] === 'po-vw-outlet' ? 'active' : '' }}">
                                 <a class="nxl-link" href="{{ route('superadmin.po-vw-outlet') }}">PO Outlet</a>
                             </li>
+                            @endcanView
+
+                            @canView('Pengiriman Barang')
                             <li class="nxl-item {{ isset($path[2]) && $path[2] === 'pengiriman' ? 'active' : '' }}">
                                 <a class="nxl-link" href="{{ route('superadmin.pengiriman') }}">Pengiriman Barang</a>
                             </li>
+                            @endcanView
                         </ul>
                     </li>
+
+                    {{-- Accounting --}}
                     <li class="nxl-item nxl-hasmenu {{ $path[1] === 'accounting' ? 'active' : '' }}">
                         <a href="javascript:void(0);" class="nxl-link">
                             <span class="nxl-micon"><i class="feather-trello"></i></span>
@@ -76,25 +150,49 @@
                                     class="feather-chevron-right"></i></span>
                         </a>
                         <ul class="nxl-submenu">
-                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'akun' ? 'active' : '' }}"><a
-                                    class="nxl-link" href="{{ route('superadmin.akun') }}">Daftar Akun</a></li>
-                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'gaji' ? 'active' : '' }}"><a
-                                    class="nxl-link" href="{{ route('superadmin.gaji') }}">Gaji Karyawan</a></li>
-                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'biaya' ? 'active' : '' }}"><a
-                                    class="nxl-link" href="{{ route('superadmin.biaya') }}">Biaya Lain-lain</a></li>
+                            @canView('Daftar Akun')
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'akun' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.akun') }}">Daftar Akun</a>
+                            </li>
+                            @endcanView
+
+                            @canView('Gaji Karyawan')
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'gaji' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.gaji') }}">Gaji Karyawan</a>
+                            </li>
+                            @endcanView
+
+                            @canView('Biaya Lain-lain')
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'biaya' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.biaya') }}">Biaya Lain-lain</a>
+                            </li>
+                            @endcanView
+
+                            @canView('Jurnal Umum')
                             <li
                                 class="nxl-item {{ isset($path[2]) && $path[2] === 'vw-jurnal-umum' ? 'active' : '' }}">
                                 <a class="nxl-link" href="{{ route('superadmin.vw-jurnal-umum') }}">Jurnal Umum</a>
                             </li>
-                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'vw-buku-besar' ? 'active' : '' }}">
+                            @endcanView
+
+                            @canView('Buku Besar')
+                            <li
+                                class="nxl-item {{ isset($path[2]) && $path[2] === 'vw-buku-besar' ? 'active' : '' }}">
                                 <a class="nxl-link" href="{{ route('superadmin.vw-buku-besar') }}">Buku Besar</a>
                             </li>
+                            @endcanView
+
+                            @canView('Neraca')
                             <li class="nxl-item {{ isset($path[2]) && $path[2] === 'vw-neraca' ? 'active' : '' }}">
                                 <a class="nxl-link" href="{{ route('superadmin.vw-neraca') }}">Neraca</a>
                             </li>
+                            @endcanView
+
+                            @canView('Laba Rugi')
                             <li class="nxl-item {{ isset($path[2]) && $path[2] === 'vw-laba-rugi' ? 'active' : '' }}">
                                 <a class="nxl-link" href="{{ route('superadmin.vw-laba-rugi') }}">Laba Rugi</a>
                             </li>
+                            @endcanView
                         </ul>
                     </li>
                 </ul>

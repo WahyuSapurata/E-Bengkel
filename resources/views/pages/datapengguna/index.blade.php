@@ -1,10 +1,20 @@
 @extends('layouts.layout')
+<style>
+    .custom-card-action .table-responsive .table tbody tr:last-child .hak-akses {
+        border: 1px solid;
+    }
+
+    .custom-card-action .table-responsive .table tbody tr:last-child .hak-akses:hover {
+        background-color: var(--bs-btn-hover-bg);
+        border-color: var(--bs-btn-hover-border-color);
+    }
+</style>
 @section('content')
     <div class="nxl-content">
         <div class="page-header">
             <div class="page-header-left d-flex align-items-center">
                 <div class="page-header-title">
-                    <h5 class="m-b-10 text-capitalize">Accounting</h5>
+                    <h5 class="m-b-10 text-capitalize">Master Data</h5>
                 </div>
                 <ul class="breadcrumb">
                     <li class="breadcrumb-item"><a href="/">Home</a></li>
@@ -20,7 +30,7 @@
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg><span>Back</span></a></div>
-                    @canCreate('Daftar Akun')
+                    @canCreate('Data Pengguna')
                     <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
                         <a href="#" id="openModal" class="btn btn-primary"><svg stroke="currentColor" fill="none"
                                 stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"
@@ -66,9 +76,9 @@
                                     <thead>
                                         <tr>
                                             <th class="text-capitalize">No</th>
-                                            <th class="text-capitalize">kode</th>
                                             <th class="text-capitalize">nama</th>
-                                            <th class="text-capitalize">tipe</th>
+                                            <th class="text-capitalize">username</th>
+                                            <th class="text-capitalize">password</th>
                                             <th class="text-end">Actions</th>
                                         </tr>
                                     </thead>
@@ -95,26 +105,18 @@
                     </div>
                     <div class="modal-body">
                         <div class="mb-2">
-                            <label class="text-capitalize form-label">kode</label>
-                            <input type="text" name="kode" id="kode" class="form-control">
-                            <div class="invalid-feedback"></div>
-                        </div>
-                        <div class="mb-2">
                             <label class="text-capitalize form-label">nama</label>
                             <input type="text" name="nama" id="nama" class="form-control">
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="mb-2">
-                            <label class="text-capitalize form-label">tipe</label>
-                            <select name="tipe" id="tipe" data-placeholder="Pilih inputan"
-                                class="form-select basic-usage">
-                                <option value=""></option>
-                                <option value="aset">aset</option>
-                                <option value="kewajiban">kewajiban</option>
-                                <option value="modal">modal</option>
-                                <option value="pendapatan">pendapatan</option>
-                                <option value="beban">beban</option>
-                            </select>
+                            <label class="text-capitalize form-label">username</label>
+                            <input type="text" name="username" id="username" class="form-control">
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="text-capitalize form-label">password</label>
+                            <input type="text" name="password_hash" id="password_hash" class="form-control">
                             <div class="invalid-feedback"></div>
                         </div>
                     </div>
@@ -135,36 +137,12 @@
             }
         });
 
-        function initSelect2(element) {
-            element.select2({
-                theme: "bootstrap-5",
-                width: '100%',
-                placeholder: element.data('placeholder'),
-                dropdownParent: element.closest('.modal-body')
-            });
-        }
-
-        // Init select2 pertama kali
-        $('.basic-usage').each(function() {
-            initSelect2($(this));
-        });
-
         $('#openModal').on('click', function() {
             // Buka modal
             $('#modal').modal('show');
             // Bersihkan form
             $('#form')[0].reset();
             $('#uuid').val('');
-
-            // Reset semua input dan select di seluruh form
-            $('#form').find('input').val('');
-            $('#form').find('select').val('');
-
-            // Kalau pakai select2, reset juga semua select2 di form
-            $('#form').find('select').each(function() {
-                $(this).val('').trigger('change');
-            });
-
             // Hapus error lama
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
@@ -176,11 +154,11 @@
 
             let uuid = $('#uuid').val();
 
-            let updateUrl = `{{ route('superadmin.akun-update', ':uuid') }}`;
+            let updateUrl = `{{ route('superadmin.data-pengguna-update', ':uuid') }}`;
             updateUrl = updateUrl.replace(':uuid', uuid);
 
             let url = uuid ? updateUrl :
-                `{{ route('superadmin.akun-store') }}`;
+                `{{ route('superadmin.data-pengguna-store') }}`;
             let method = uuid ? 'POST' : 'POST';
 
             $.ajax({
@@ -242,17 +220,14 @@
             $('.invalid-feedback').remove();
             $('#modal').modal('show');
             let uuid = $(this).data('uuid');
-            let editUrl = `{{ route('superadmin.akun-edit', ':uuid') }}`;
+            let editUrl = `{{ route('superadmin.data-pengguna-edit', ':uuid') }}`;
             editUrl = editUrl.replace(':uuid', uuid);
             $.get(editUrl, function(res) {
                 $.each(res, function(key, value) {
-                    $(`[name="${key}"]`).val(value);
+                    let $field = $(`[name="${key}"]`);
+                    if (!$field.length) return;
 
-                    if ($(`[name="${key}"]`).hasClass('select2-hidden-accessible')) {
-                        $(`[name="${key}"]`)
-                            .val(value ? value.toString().toLowerCase() : "")
-                            .trigger('change');
-                    }
+                    $field.val(value);
                 });
             });
         });
@@ -260,7 +235,7 @@
         // Hapus
         $('#dataTables').on('click', '.delete', function() {
             let uuid = $(this).data('uuid');
-            let deleteUrl = `{{ route('superadmin.akun-delete', ':uuid') }}`;
+            let deleteUrl = `{{ route('superadmin.data-pengguna-delete', ':uuid') }}`;
             deleteUrl = deleteUrl.replace(':uuid', uuid);
 
             Swal.fire({
@@ -313,7 +288,7 @@
                 pageLength: 10,
                 processing: true,
                 serverSide: true,
-                ajax: "{{ route('superadmin.akun-get') }}",
+                ajax: "{{ route('superadmin.data-pengguna-get') }}",
                 columns: [{
                         data: null,
                         class: 'mb-kolom-nomor align-content-center',
@@ -322,15 +297,15 @@
                         }
                     },
                     {
-                        data: 'kode',
-                        class: 'mb-kolom-text text-left align-content-center'
-                    },
-                    {
                         data: 'nama',
                         class: 'mb-kolom-tanggal text-left align-content-center'
                     },
                     {
-                        data: 'tipe',
+                        data: 'username',
+                        class: 'mb-kolom-tanggal text-left align-content-center'
+                    },
+                    {
+                        data: 'password_hash',
                         class: 'mb-kolom-tanggal text-left align-content-center'
                     },
                     {
@@ -344,9 +319,15 @@
                     title: 'Aksi',
                     class: 'mb-kolom-aksi text-end',
                     render: function(data, type, row) {
+                        let urlAkses =
+                            "{{ route('superadmin.hak-akses', ['params' => ':id']) }}";
+                        urlAkses = urlAkses.replace(':id', data);
                         return `
                                 <div class="hstack gap-2 justify-content-end">
-                                    @canEdit('Daftar Akun')
+                                    @canEdit('Data Pengguna')
+                                    <a href="${urlAkses}" class="btn btn-outline-primary btn-sm hak-akses">
+                                        Edit Hak Akses
+                                    </a>
                                     <a href="#" class="avatar-text avatar-md edit" data-uuid="${data}">
                                         <!-- Icon Edit -->
                                         <svg stroke="currentColor" fill="none" stroke-width="2"
@@ -357,7 +338,7 @@
                                         </svg>
                                     </a>
                                     @endcanEdit
-                                    @canDelete('Daftar Akun')
+                                    @canDelete('Data Pengguna')
                                     <a href="#" class="avatar-text avatar-md delete" data-uuid="${data}">
                                         <!-- Icon Delete -->
                                         <svg stroke="currentColor" fill="none" stroke-width="2"

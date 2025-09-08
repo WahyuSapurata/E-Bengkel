@@ -371,6 +371,18 @@
             }
         });
     </script> --}}
+
+    @if ($message = Session::get('success'))
+        <script>
+            Swal.fire({
+                title: "Sukses",
+                text: "{{ $message }}",
+                icon: "success",
+                showConfirmButton: false,
+                timer: 1500,
+            });
+        </script>
+    @endif
 </body>
 
 </html>

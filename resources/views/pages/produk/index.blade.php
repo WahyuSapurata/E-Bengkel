@@ -20,6 +20,7 @@
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg><span>Back</span></a></div>
+                    @canCreate('Produk')
                     <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
                         <a href="#" id="openModal" class="btn btn-primary"><svg stroke="currentColor" fill="none"
                                 stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"
@@ -28,6 +29,7 @@
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg><span>Tambah Data</span></a>
                     </div>
+                    @endcanCreate
                 </div>
                 <div class="d-md-none d-flex align-items-center"><a class="page-header-right-open-toggle"
                         href="/widgets/tables"><svg stroke="currentColor" fill="none" stroke-width="2"
@@ -690,6 +692,7 @@
                         urlKartuSock = urlKartuSock.replace(':id', data);
                         return `
                                 <div class="hstack gap-2 justify-content-end">
+                                    @canEdit('Produk')
                                     <a href="#" class="avatar-text avatar-md add-price" data-uuid="${data}">
                                         <!-- Icon Add Price -->
                                         <svg stroke="currentColor" fill="none"
@@ -708,6 +711,8 @@
                                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                         </svg>
                                     </a>
+                                    @endcanEdit
+                                    @canDelete('Produk')
                                     <a href="#" class="avatar-text avatar-md delete" data-uuid="${data}">
                                         <!-- Icon Delete -->
                                         <svg stroke="currentColor" fill="none" stroke-width="2"
@@ -720,6 +725,8 @@
                                             <line x1="14" y1="11" x2="14" y2="17"></line>
                                         </svg>
                                     </a>
+                                    @endcanDelete
+                                    @canEdit('Produk')
                                     <a href="${urlHostory}" class="avatar-text avatar-md">
                                         <!-- Icon Delete -->
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-clock-icon lucide-clipboard-clock"><path d="M16 14v2.2l1.6 1"/><path d="M16 4h2a2 2 0 0 1 2 2v.832"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h2"/><circle cx="16" cy="16" r="6"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
@@ -732,6 +739,7 @@
                                         <!-- Icon Delete -->
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" viewBox="0 0 512 512"><!--!Font Awesome Free v6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M121 32C91.6 32 66 52 58.9 80.5L1.9 308.4C.6 313.5 0 318.7 0 323.9L0 416c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-92.1c0-5.2-.6-10.4-1.9-15.5l-57-227.9C446 52 420.4 32 391 32L121 32zm0 64l270 0 48 192-51.2 0c-12.1 0-23.2 6.8-28.6 17.7l-14.3 28.6c-5.4 10.8-16.5 17.7-28.6 17.7l-120.4 0c-12.1 0-23.2-6.8-28.6-17.7l-14.3-28.6c-5.4-10.8-16.5-17.7-28.6-17.7L73 288 121 96z"/></svg>
                                     </a>
+                                    @endcanEdit
                                 </div>
                     `;
                     }

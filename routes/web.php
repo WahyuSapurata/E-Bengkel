@@ -21,6 +21,20 @@ Route::group([
 ], function () {
     Route::get('/dashboard-superadmin', [App\Http\Controllers\Dashboard::class, 'dashboard_superadmin'])->name('dashboard-superadmin');
 
+    Route::prefix('setup')->group(function () {
+        Route::get('/data-pengguna', [App\Http\Controllers\DataPengguna::class, 'index'])->name('data-pengguna');
+        Route::get('/data-pengguna-get', [App\Http\Controllers\DataPengguna::class, 'get'])->name('data-pengguna-get');
+        Route::post('/data-pengguna-store', [App\Http\Controllers\DataPengguna::class, 'store'])->name('data-pengguna-store');
+        Route::get('/data-pengguna-edit/{params}', [App\Http\Controllers\DataPengguna::class, 'edit'])->name('data-pengguna-edit');
+        Route::post('/data-pengguna-update/{params}', [App\Http\Controllers\DataPengguna::class, 'update'])->name('data-pengguna-update');
+        Route::delete('/data-pengguna-delete/{params}', [App\Http\Controllers\DataPengguna::class, 'delete'])->name('data-pengguna-delete');
+
+        Route::get('/hak-akses/{params}', [App\Http\Controllers\HakAkses::class, 'index'])->name('hak-akses');
+        Route::get('/hak-akses-get', [App\Http\Controllers\HakAkses::class, 'get'])->name('hak-akses-get');
+        Route::get('/hak-akses-edit/{params}', [App\Http\Controllers\HakAkses::class, 'edit'])->name('hak-akses-edit');
+        Route::post('/hak-akses-update/{params}', [App\Http\Controllers\HakAkses::class, 'update'])->name('hak-akses-update');
+    });
+
     Route::prefix('master-data')->group(function () {
         Route::get('/kategori', [App\Http\Controllers\KategoriController::class, 'index'])->name('kategori');
         Route::get('/kategori-get', [App\Http\Controllers\KategoriController::class, 'get'])->name('kategori-get');

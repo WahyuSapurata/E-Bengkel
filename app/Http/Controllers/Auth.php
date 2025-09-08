@@ -38,9 +38,11 @@ class Auth extends BaseController
         }
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
         FacadesAuth::logout();
+        // Hapus session hak_akses
+        $request->session()->forget('hak_akses');
         return redirect()->route('login.login-akun')->with('success', 'Berhasil Logout');
     }
 }

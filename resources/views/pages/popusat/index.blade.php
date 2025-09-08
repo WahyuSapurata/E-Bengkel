@@ -20,6 +20,7 @@
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg><span>Back</span></a></div>
+                    @canCreate('PO')
                     <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
                         <a href="#" id="openModal" class="btn btn-primary"><svg stroke="currentColor" fill="none"
                                 stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"
@@ -28,6 +29,7 @@
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg><span>Tambah Data</span></a>
                     </div>
+                    @endcanCreate
                 </div>
                 <div class="d-md-none d-flex align-items-center"><a class="page-header-right-open-toggle"
                         href="/widgets/tables"><svg stroke="currentColor" fill="none" stroke-width="2"
@@ -535,6 +537,7 @@
                     render: function(data, type, row) {
                         return `
                                 <div class="hstack gap-2 justify-content-end">
+                                    @canEdit('PO')
                                     <a href="#" class="avatar-text avatar-md edit" data-uuid="${data}">
                                         <!-- Icon Edit -->
                                         <svg stroke="currentColor" fill="none" stroke-width="2"
@@ -544,6 +547,8 @@
                                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                         </svg>
                                     </a>
+                                    @endcanEdit
+                                    @canDelete('PO')
                                     <a href="#" class="avatar-text avatar-md delete" data-uuid="${data}">
                                         <!-- Icon Delete -->
                                         <svg stroke="currentColor" fill="none" stroke-width="2"
@@ -556,6 +561,7 @@
                                             <line x1="14" y1="11" x2="14" y2="17"></line>
                                         </svg>
                                     </a>
+                                    @endcanDelete
                                 </div>
                     `;
                     }
