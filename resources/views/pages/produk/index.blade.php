@@ -59,15 +59,13 @@
                         <div class="card-header">
                             <h5 class="card-title">Tabel {{ $module }}</h5>
                             <div class="d-flex gap-2 w-50">
-                                <select name="uuid_kategori" id="filter-kategori" data-placeholder="Pilih kategori"
-                                    class="form-select">
+                                <select id="filter-kategori" data-placeholder="Pilih kategori" class="form-select">
                                     <option value="">Pilih Kategori</option>
                                     @foreach ($kategoris as $k)
                                         <option value="{{ $k->uuid }}">{{ $k->nama_kategori }}</option>
                                     @endforeach
                                 </select>
-                                <select name="uuid_suplayer" id="filter-suplayer" data-placeholder="Pilih suplayer"
-                                    class="form-select">
+                                <select id="filter-suplayer" data-placeholder="Pilih suplayer" class="form-select">
                                     <option value="">Pilih Suplayer</option>
                                     @foreach ($suplayers as $s)
                                         <option value="{{ $s->uuid }}">{{ $s->nama }}</option>
@@ -592,6 +590,68 @@
             window.location.href = `{{ route('superadmin.produk-price', ':uuid') }}`.replace(':uuid', uuid);
         });
 
+        $('#dataTables').on('click', '.cetak-barcode', function() {
+            let uuid = $(this).data('uuid');
+
+            Swal.fire({
+                title: 'Masukkan jumlah label',
+                input: 'number',
+                inputLabel: 'Jumlah cetak',
+                inputAttributes: {
+                    min: 1
+                },
+                inputValue: 1,
+                showCancelButton: true,
+                confirmButtonText: 'Cetak',
+                cancelButtonText: 'Batal',
+                preConfirm: (value) => {
+                    if (!value || value < 1) {
+                        Swal.showValidationMessage('Jumlah minimal 1');
+                        return false;
+                    }
+                    return value;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `{{ route('superadmin.cetak-barcode', ':uuid') }}`.replace(':uuid',
+                            uuid),
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            jumlah: result.value // kirim jumlah ke backend
+                        },
+                        success: function(res) {
+                            if (res.success) {
+                                Swal.fire({
+                                    title: "Sukses",
+                                    text: res.message,
+                                    icon: "success",
+                                    showConfirmButton: false,
+                                    timer: 1500,
+                                });
+                                // Refresh datatable
+                                $('#dataTables').DataTable().ajax.reload();
+                            } else {
+                                Swal.fire({
+                                    title: "Gagal",
+                                    text: res.message,
+                                    icon: "error"
+                                });
+                            }
+                        },
+                        error: function(xhr) {
+                            Swal.fire({
+                                title: "Gagal",
+                                text: xhr.responseJSON?.message || 'Terjadi kesalahan.',
+                                icon: "error"
+                            });
+                        }
+                    });
+                }
+            });
+        });
+
         const initDatatable = () => {
             // Destroy existing DataTable if it exists
             if ($.fn.DataTable.isDataTable('#dataTables')) {
@@ -740,6 +800,9 @@
                                     </a>
                                     <a href="${urlKartuSock}" class="btn btn-outline-warning btn-sm">
                                         Kartu Stock
+                                    </a>
+                                    <a href="#" class="btn btn-outline-success btn-sm cetak-barcode" data-uuid="${data}">
+                                        Cetak Barcode
                                     </a>
                                     </div>
                                     @endcanEdit

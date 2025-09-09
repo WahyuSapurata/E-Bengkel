@@ -80,6 +80,8 @@ Route::group([
         Route::get('/opname-stock/{params}', [App\Http\Controllers\ProdukController::class, 'opname_stock'])->name('opname-stock');
         Route::post('/store_opname', [App\Http\Controllers\ProdukController::class, 'store_opname'])->name('store_opname');
 
+        Route::post('/cetak-barcode/{params}', [App\Http\Controllers\ProdukController::class, 'cetakBarcode'])->name('cetak-barcode');
+
         Route::get('/produk-price/{params}', [App\Http\Controllers\ProdukPriceController::class, 'index'])->name('produk-price');
         Route::get('/produk-price-get/{params}', [App\Http\Controllers\ProdukPriceController::class, 'get'])->name('produk-price-get');
         Route::post('/produk-price-store', [App\Http\Controllers\ProdukPriceController::class, 'store'])->name('produk-price-store');

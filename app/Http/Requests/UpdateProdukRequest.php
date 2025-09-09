@@ -23,7 +23,7 @@ class UpdateProdukRequest extends FormRequest
     {
         $params = $this->route('params');
         return [
-            'kode' => 'required|unique:produks,kode,' . $params . ',uuid',
+            'kode' => 'unique:produks,kode,' . $params . ',uuid',
             'uuid_kategori' => 'required',
             'uuid_sub_kategori' => 'required',
             'uuid_suplayer' => 'required',
@@ -40,7 +40,6 @@ class UpdateProdukRequest extends FormRequest
     public function messages()
     {
         return [
-            'kode.required' => 'Kolom kode harus di isi.',
             'kode.unique' => 'Kode sudah digunakan.',
             'uuid_kategori.required' => 'Kolom nama kategori harus di isi.',
             'uuid_sub_kategori.required' => 'Kolom nama sub kategori harus di isi.',

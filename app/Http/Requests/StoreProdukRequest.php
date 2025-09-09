@@ -22,7 +22,7 @@ class StoreProdukRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'kode' => 'required|unique:produks,kode',
+            'kode' => 'unique:produks,kode',
             'uuid_kategori' => 'required',
             'uuid_sub_kategori' => 'required',
             'uuid_suplayer' => 'required',
@@ -39,7 +39,6 @@ class StoreProdukRequest extends FormRequest
     public function messages()
     {
         return [
-            'kode.required' => 'Kolom kode harus di isi.',
             'kode.unique' => 'Kode sudah digunakan.',
             'uuid_kategori.required' => 'Kolom nama kategori harus di isi.',
             'uuid_sub_kategori.required' => 'Kolom nama sub kategori harus di isi.',

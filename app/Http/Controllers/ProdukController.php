@@ -314,11 +314,17 @@ class ProdukController extends Controller
             $path = $request->foto->storeAs('foto_produk', $fileName, 'public');
         }
 
+        if ($request->kode) {
+            $kode = $request->kode;
+        } else {
+            $kode = '9' . str_pad(mt_rand(0, 999999999999), 12, '0', STR_PAD_LEFT);
+        }
+
         $produk = Produk::create([
             'uuid_kategori' => $request->uuid_kategori,
             'uuid_sub_kategori' => $request->uuid_sub_kategori,
             'uuid_suplayer' => $request->uuid_suplayer,
-            'kode' => $request->kode,
+            'kode' => $kode,
             'nama_barang' => $request->nama_barang,
             'merek' => $request->merek,
             'hrg_modal' => preg_replace('/\D/', '', $request->hrg_modal),
@@ -759,6 +765,66 @@ class ProdukController extends Controller
             'recordsTotal' => $totalData,
             'recordsFiltered' => $totalFiltered,
             'data' => $data
+        ]);
+    }
+
+    public function cetakBarcode(Request $request, $params)
+    {
+        $produk = Produk::where('uuid', $params)->firstOrFail();
+
+        $jumlah = (int) $request->input('jumlah', 1);
+        if ($jumlah % 2 != 0) $jumlah++; // genapkan
+
+        $dpi = 203;
+        $labelWidthMM  = 33;
+        $labelHeightMM = 15;
+
+        // konversi mm -> dot
+        $singleWidth = round($labelWidthMM * ($dpi / 25.4));   // ~264 dot
+        $labelHeight = round($labelHeightMM * ($dpi / 25.4));  // ~120 dot
+
+        // Margin manual
+        $extraX = (int) $request->input('margin_x', 1);
+        $extraY = (int) $request->input('margin_y', 15);
+
+        $nama    = strtoupper(substr($produk->nama_barang, 0, 18));
+        $harga   = $produk->hrg_modal + ($produk->hrg_modal * $produk->profit / 100);
+        $harga   = number_format($harga, 0, ',', '.');
+        $barcode = $produk->kode;
+
+        $zpl = "";
+
+        for ($i = 0; $i < $jumlah; $i += 2) {
+            $zpl .= "^XA\n^CI28\n^PW" . ($singleWidth * 2) . "\n^LL$labelHeight\n";
+
+            // Kolom kiri
+            $zpl .= "
+^FO" . (20 + $extraX) . "," . (5 + $extraY) . "^A0N,20,20^FD$nama^FS
+^BY2,2,30
+^FO" . (20 + $extraX) . "," . (30 + $extraY) . "^BEN,30,Y,N^FD$barcode^FS
+^FO" . (20 + $extraX) . "," . (85 + $extraY) . "^A0N,22,22^FDRp. $harga^FS
+";
+
+            // Kolom kanan
+            $xOffset = $singleWidth + 40 + $extraX;
+            $zpl .= "
+^FO$xOffset," . (5 + $extraY) . "^A0N,20,20^FD$nama^FS
+^BY2,2,30
+^FO$xOffset," . (30 + $extraY) . "^BEN,30,Y,N^FD$barcode^FS
+^FO$xOffset," . (85 + $extraY) . "^A0N,22,22^FDRp. $harga^FS
+";
+
+            $zpl .= "^XZ\n"; // Tutup setiap baris label
+        }
+
+        $tmpFile = tempnam(sys_get_temp_dir(), 'zpl');
+        file_put_contents($tmpFile, $zpl);
+
+        exec("lp -d ZEBRA_RAW " . escapeshellarg($tmpFile));
+
+        return response()->json([
+            'success' => true,
+            'message' => "Label produk {$produk->nama_barang} berhasil dicetak ($jumlah label)"
         ]);
     }
 }
