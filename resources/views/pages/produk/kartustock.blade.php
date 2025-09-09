@@ -41,6 +41,21 @@
                     <div class="card stretch stretch-full widget-tasks-content  ">
                         <div class="card-header">
                             <h5 class="card-title">Tabel {{ $module }}</h5>
+                            <div class="d-flex gap-2 w-50">
+                                <select name="tipe" id="filter-wirehouse" data-placeholder="Pilih wirehouse"
+                                    class="form-select">
+                                    <option value="">Pilih Wirehouse</option>
+                                    <option value="gudang">Gudang</option>
+                                    <option value="toko">Toko</option>
+                                </select>
+                                <select name="uuid" id="filter-outlet" data-placeholder="Pilih outlet"
+                                    class="form-select">
+                                    <option value="">Pilih Outlet</option>
+                                    @foreach ($wirehouse as $w)
+                                        <option value="{{ $w->uuid }}">{{ $w->nama_outlet }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                             <div class="card-header-action">
                                 <div class="card-header-btn">
                                     <div data-bs-toggle="tooltip" aria-label="Refresh" data-bs-original-title="Refresh">
@@ -95,7 +110,13 @@
                 pageLength: 10,
                 processing: true,
                 serverSide: true,
-                ajax: getUrl,
+                ajax: {
+                    url: getUrl,
+                    data: function(d) {
+                        d.tipe = $('#filter-wirehouse').val();
+                        d.uuid = $('#filter-outlet').val();
+                    },
+                },
                 columns: [{
                         data: null,
                         class: 'mb-kolom-nomor align-content-center',
@@ -126,6 +147,10 @@
                 ],
             });
         };
+
+        $('#filter-wirehouse, #filter-outlet').on('change', function() {
+            $('#dataTables').DataTable().ajax.reload();
+        });
 
         $(function() {
             initDatatable();

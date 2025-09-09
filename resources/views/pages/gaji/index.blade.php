@@ -373,7 +373,7 @@
                     render: function(data, type, row) {
                         return `
                                 <div class="hstack gap-2 justify-content-end">
-                                    @canEdit()('Gaji Karyawan')
+                                    @canEdit('Gaji Karyawan')
                                     <a href="#" class="avatar-text avatar-md edit" data-uuid="${data}">
                                         <!-- Icon Edit -->
                                         <svg stroke="currentColor" fill="none" stroke-width="2"
@@ -384,7 +384,7 @@
                                         </svg>
                                     </a>
                                     @endcanEdit
-                                    @canDelete()('Gaji Karyawan')
+                                    @canDelete('Gaji Karyawan')
                                     <a href="#" class="avatar-text avatar-md delete" data-uuid="${data}">
                                         <!-- Icon Delete -->
                                         <svg stroke="currentColor" fill="none" stroke-width="2"

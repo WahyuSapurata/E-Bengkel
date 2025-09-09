@@ -124,16 +124,20 @@
                         <label class="text-uppercase form-label">Produk</label>
                         <div id="produk-wrapper">
                             <div class="row mb-2 produk-row">
-                                <div class="col-6">
+                                <div class="col-4">
                                     <label class="text-capitalize form-label">Produk</label>
                                     <select name="uuid_produk[]" id="uuid_produk" data-placeholder="Pilih inputan"
                                         class="form-select basic-usage">
                                         <option value=""></option>
                                     </select>
                                 </div>
-                                <div class="col-6">
+                                <div class="col-4">
                                     <label class="text-capitalize form-label">QTY</label>
                                     <input type="number" name="qty[]" class="form-control">
+                                </div>
+                                <div class="col-4">
+                                    <label class="text-capitalize form-label">Harga</label>
+                                    <input type="text" name="harga[]" class="form-control formatRupiah">
                                 </div>
                             </div>
                         </div>
@@ -224,10 +228,12 @@
             });
         });
 
+        // Fungsi parse angka dari string Rupiah
         function parseRupiah(value) {
             return parseInt(value.replace(/[^0-9]/g, ''), 10) || 0;
         }
 
+        // Fungsi format ke Rupiah
         function formatRupiah(angka) {
             angka = angka.toString();
             let number_string = angka.replace(/[^,\d]/g, ''),
@@ -245,8 +251,8 @@
             return rupiah ? 'Rp ' + rupiah : '';
         }
 
-        // Format Rupiah saat diketik
-        $('.formatRupiah').on('input', function() {
+        // Event delegation untuk semua input formatRupiah (termasuk yang ditambahkan dinamis)
+        $(document).on('input', '.formatRupiah', function() {
             let angka = parseRupiah($(this).val());
             $(this).val(formatRupiah(angka));
         });
@@ -405,13 +411,16 @@
                         function(data) {
                             let row = `
                                         <div class="row mb-2 produk-row">
-                                            <div class="col-6">
+                                            <div class="col-4">
                                                 <select name="uuid_produk[]" class="form-select basic-usage" data-placeholder="Pilih produk">
                                                     ${produkOptions(data, item.uuid_produk)}
                                                 </select>
                                             </div>
-                                            <div class="col-6">
+                                            <div class="col-4">
                                                 <input type="number" name="qty[]" class="form-control" value="${item.qty}">
+                                            </div>
+                                            <div class="col-4">
+                                                <input type="text" name="harga[]" class="form-control formatRupiah" value="${formatRupiah(parseRupiah(item.harga))}">
                                             </div>
                                         </div>
                                     `;

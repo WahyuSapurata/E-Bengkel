@@ -31,6 +31,7 @@ return new class extends Migration
             $table->uuid('uuid_pembelian');
             $table->uuid('uuid_produk');
             $table->integer('qty');
+            $table->string('harga');
             $table->timestamps();
         });
     }

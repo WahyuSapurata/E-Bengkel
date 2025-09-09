@@ -29,6 +29,7 @@ return new class extends Migration
             $table->uuid('uuid_po_pusat');
             $table->uuid('uuid_produk');
             $table->integer('qty');
+            $table->string('harga');
             $table->timestamps();
         });
     }

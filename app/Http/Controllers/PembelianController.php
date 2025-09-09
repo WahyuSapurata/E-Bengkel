@@ -11,6 +11,7 @@ use App\Models\DetailPoPusat;
 use App\Models\Hutang;
 use App\Models\Pembelian;
 use App\Models\PoPusat;
+use App\Models\PriceHistory;
 use App\Models\Produk;
 use App\Models\Suplayer;
 use App\Models\Wirehouse;
@@ -145,11 +146,28 @@ class PembelianController extends Controller
             $produk = $produk->where('uuid', $uuid_produk)->first();
             $qty = $request->qty[$index];
 
+            $hargaBaru = (int) preg_replace('/\D/', '', $request->harga[$index]);
+
             DetailPembelian::create([
                 'uuid_pembelian' => $pembelian->uuid,
                 'uuid_produk'    => $uuid_produk,
                 'qty'            => $qty,
+                'harga'         => $hargaBaru,
             ]);
+
+            // Simpan harga lama sebelum update
+            $hargaLama = (int) $produk->hrg_modal;
+
+            // Update harga modal produk
+            $produk->update(['hrg_modal' => $hargaBaru]);
+
+            // Tambahkan price history hanya jika modal berubah
+            if ($hargaLama !== $hargaBaru) {
+                PriceHistory::create([
+                    'uuid_produk' => $produk->uuid,
+                    'harga'       => $hargaBaru,
+                ]);
+            }
 
             $totalPembelian += $qty * $produk->hrg_modal;
         }
@@ -254,12 +272,31 @@ class PembelianController extends Controller
 
         // Simpan detail baru
         foreach ($request->uuid_produk as $index => $uuid_produk) {
-            $item = $produk->firstWhere('uuid', $uuid_produk);
+            $produk = $produk->where('uuid', $uuid_produk)->first();
+            $qty = $request->qty[$index];
+
+            $hargaBaru = (int) preg_replace('/\D/', '', $request->harga[$index]);
+
             DetailPembelian::create([
                 'uuid_pembelian' => $pembelian->uuid,
                 'uuid_produk'    => $uuid_produk,
-                'qty'            => $request->qty[$index],
+                'qty'            => $qty,
+                'harga'         => $hargaBaru,
             ]);
+
+            // Simpan harga lama sebelum update
+            $hargaLama = (int) $produk->hrg_modal;
+
+            // Update harga modal produk
+            $produk->update(['hrg_modal' => $hargaBaru]);
+
+            // Tambahkan price history hanya jika modal berubah
+            if ($hargaLama !== $hargaBaru) {
+                PriceHistory::create([
+                    'uuid_produk' => $produk->uuid,
+                    'harga'       => $hargaBaru,
+                ]);
+            }
         }
 
         return response()->json(['status' => 'success']);
@@ -302,6 +339,7 @@ class PembelianController extends Controller
                 'uuid_produk' => $d->uuid_produk,
                 'nama_barang' => $produk ? $produk->nama_barang : null,
                 'qty' => $d->qty,
+                'harga' => $d->harga,
             ];
         });
 

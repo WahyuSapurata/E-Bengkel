@@ -6,6 +6,7 @@ use App\Http\Requests\StorePoPusatRequest;
 use App\Http\Requests\UpdatePoPusatRequest;
 use App\Models\DetailPoPusat;
 use App\Models\PoPusat;
+use App\Models\PriceHistory;
 use App\Models\Produk;
 use App\Models\Suplayer;
 use Illuminate\Http\Request;
@@ -146,12 +147,36 @@ class PoPusatController extends Controller
 
         // Simpan detail po_pusat
         foreach ($request->uuid_produk as $index => $uuid_produk) {
-            $item = $produk->firstWhere('uuid', $uuid_produk);
+            $item = $produk->where('uuid', $uuid_produk)->first();
+
+            if (!$item) {
+                continue; // skip jika produk tidak ditemukan
+            }
+
+            // Bersihkan harga jadi angka murni
+            $hargaBaru = (int) preg_replace('/\D/', '', $request->harga[$index]);
+
+            // Simpan detail PO
             DetailPoPusat::create([
                 'uuid_po_pusat' => $po_pusat->uuid,
-                'uuid_produk'    => $uuid_produk,
-                'qty'            => $request->qty[$index],
+                'uuid_produk'   => $uuid_produk,
+                'qty'           => $request->qty[$index],
+                'harga'         => $hargaBaru,
             ]);
+
+            // Simpan harga lama sebelum update
+            $hargaLama = (int) $item->hrg_modal;
+
+            // Update harga modal produk
+            $item->update(['hrg_modal' => $hargaBaru]);
+
+            // Tambahkan price history hanya jika modal berubah
+            if ($hargaLama !== $hargaBaru) {
+                PriceHistory::create([
+                    'uuid_produk' => $item->uuid,
+                    'harga'       => $hargaBaru,
+                ]);
+            }
         }
 
         return response()->json(['status' => 'success']);
@@ -166,7 +191,7 @@ class PoPusatController extends Controller
 
         // Ambil detail produk
         $detailProduk = DetailPoPusat::where('uuid_po_pusat', $po_pusat->uuid)
-            ->select('uuid_produk', 'qty')
+            ->select('uuid_produk', 'qty', 'harga')
             ->get();
         $po_pusat->detail_produk = $detailProduk;
 
@@ -199,13 +224,38 @@ class PoPusatController extends Controller
 
         // Simpan detail baru
         foreach ($request->uuid_produk as $index => $uuid_produk) {
-            $item = $produk->firstWhere('uuid', $uuid_produk);
+            $item = $produk->where('uuid', $uuid_produk)->first();
+
+            if (!$item) {
+                continue; // skip jika produk tidak ditemukan
+            }
+
+            // Bersihkan harga jadi angka murni
+            $hargaBaru = (int) preg_replace('/\D/', '', $request->harga[$index]);
+
+            // Simpan detail PO
             DetailPoPusat::create([
                 'uuid_po_pusat' => $po_pusat->uuid,
-                'uuid_produk'    => $uuid_produk,
-                'qty'            => $request->qty[$index],
+                'uuid_produk'   => $uuid_produk,
+                'qty'           => $request->qty[$index],
+                'harga'         => $hargaBaru,
             ]);
+
+            // Simpan harga lama sebelum update
+            $hargaLama = (int) $item->hrg_modal;
+
+            // Update harga modal produk
+            $item->update(['hrg_modal' => $hargaBaru]);
+
+            // Tambahkan price history hanya jika modal berubah
+            if ($hargaLama !== $hargaBaru) {
+                PriceHistory::create([
+                    'uuid_produk' => $item->uuid,
+                    'harga'       => $hargaBaru,
+                ]);
+            }
         }
+
 
         return response()->json(['status' => 'success']);
     }

@@ -7,6 +7,7 @@ use App\Http\Requests\StoreProdukRequest;
 use App\Http\Requests\UpdateProdukRequest;
 use App\Models\Kategori;
 use App\Models\Opname;
+use App\Models\Outlet;
 use App\Models\PriceHistory;
 use App\Models\Produk;
 use App\Models\SubKategori;
@@ -678,7 +679,17 @@ class ProdukController extends Controller
     {
         $produk = Produk::where('uuid', $params)->first();
         $module = 'Kartu Stock ' . $produk->nama_barang;
-        return view('pages.produk.kartustock', compact('module', 'produk'));
+
+        $wirehouse = Wirehouse::all();
+        $wirehouse->map(function ($item) {
+            $outlet = Outlet::where('uuid_user', $item->uuid_user)->first();
+
+            $item->nama_outlet = $outlet ? $outlet->nama_outlet : 'Pusat';
+
+            return $item;
+        });
+
+        return view('pages.produk.kartustock', compact('module', 'produk', 'wirehouse'));
     }
 
     public function get_kartu_stock(Request $request, $params)
@@ -698,17 +709,27 @@ class ProdukController extends Controller
         // Hitung total data tanpa filter
         $totalData = WirehouseStock::where('uuid_produk', $produk->uuid)->count();
 
-        // Query utama dengan join ke tabel produk
+        // Query utama
         $query = WirehouseStock::select($columns)
             ->join('produks', 'produks.uuid', '=', 'wirehouse_stocks.uuid_produk')
+            ->join('wirehouses', 'wirehouses.uuid', '=', 'wirehouse_stocks.uuid_warehouse')
             ->where('wirehouse_stocks.uuid_produk', $produk->uuid);
+
+        // 🔹 Filter berdasarkan tipe wirehouse (Gudang / Toko)
+        if (!empty($request->tipe)) {
+            $query->where('wirehouses.tipe', $request->tipe);
+        }
+
+        // 🔹 Filter berdasarkan outlet tertentu
+        if (!empty($request->uuid)) {
+            $query->where('wirehouses.uuid', $request->uuid);
+        }
 
         // Searching
         if (!empty($request->search['value'])) {
             $search = $request->search['value'];
             $query->where(function ($q) use ($search, $columns) {
                 foreach ($columns as $column) {
-                    // Hilangkan alias saat searching
                     $colName = explode(' as ', $column)[0];
                     $q->orWhere($colName, 'like', "%{$search}%");
                 }
@@ -724,7 +745,7 @@ class ProdukController extends Controller
             $orderDir = $request->order[0]['dir'];
             $query->orderBy($orderCol, $orderDir);
         } else {
-            $query->latest('created_at');
+            $query->latest('wirehouse_stocks.created_at');
         }
 
         // Pagination
@@ -733,7 +754,6 @@ class ProdukController extends Controller
         // Ambil data
         $data = $query->get();
 
-        // Response JSON untuk DataTables
         return response()->json([
             'draw' => intval($request->draw),
             'recordsTotal' => $totalData,

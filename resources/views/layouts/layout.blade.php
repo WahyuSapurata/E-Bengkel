@@ -360,6 +360,19 @@
     <script src="{{ asset('assets/sweet-alert/sweetalert2.min.js') }}"></script>
     <!--! END: Theme Customizer !-->
 
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Matikan autocomplete di semua form
+            document.querySelectorAll("form").forEach(form => {
+                form.setAttribute("autocomplete", "off");
+            });
+
+            // Matikan autocomplete di semua input, select, textarea
+            document.querySelectorAll("input, select, textarea").forEach(el => {
+                el.setAttribute("autocomplete", "off");
+            });
+        });
+    </script>
     @stack('scripts')
 
     {{-- <script>

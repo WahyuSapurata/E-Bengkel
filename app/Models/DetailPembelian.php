@@ -14,6 +14,7 @@ class DetailPembelian extends Model
         'uuid_pembelian',
         'uuid_produk',
         'qty',
+        'harga',
     ];
 
     protected static function boot()

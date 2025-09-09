@@ -14,6 +14,7 @@ class DetailPoPusat extends Model
         'uuid_po_pusat',
         'uuid_produk',
         'qty',
+        'harga',
     ];
 
     protected static function boot()
