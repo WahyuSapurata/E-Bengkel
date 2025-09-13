@@ -318,10 +318,10 @@ class PenjualanController extends Controller
                 // === Simpan ke jurnal ===
                 JurnalHelper::create(
                     now()->format('d-m-Y'),
-                    $kasir->uuid_outlet,
                     $no_bukti,
                     $judulJurnal,
-                    $entries
+                    $entries,
+                    $kasir->uuid_outlet,
                 );
             });
 

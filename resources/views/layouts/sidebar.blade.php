@@ -4,11 +4,12 @@
 @endphp
 <nav class="nxl-navigation">
     <div class="navbar-wrapper">
-        <div class="m-header">
+        <div class="m-header justify-content-center">
             <a href="index.html" class="b-brand">
                 <!-- ========   change your logo hear   ============ -->
-                <img src="{{ asset('assets/images/logo-full.png') }}" alt="" class="logo logo-lg" />
-                <img src="{{ asset('assets/images/logo-abbr.png') }}" alt="" class="logo logo-sm" />
+                <img src="{{ asset('logo.png') }}" style="width: 200px; margin-top: 6px" alt=""
+                    class="logo logo-lg" />
+                <img src="{{ asset('logo_favicon.png') }}" alt="" class="logo logo-sm" />
             </a>
         </div>
         <div class="navbar-content">

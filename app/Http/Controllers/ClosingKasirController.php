@@ -76,13 +76,13 @@ class ClosingKasirController extends Controller
         if ($totalCash > 0) {
             JurnalHelper::create(
                 $tanggal,
-                $kasir->uuid_outlet,
                 $no_bukti,
                 'Closing Kasir',
                 [
                     ['uuid_coa' => $kas->uuid,       'debit'  => $totalCash],
                     ['uuid_coa' => $kasOutlet->uuid, 'kredit' => $totalCash],
-                ]
+                ],
+                $kasir->uuid_outlet
             );
         }
 

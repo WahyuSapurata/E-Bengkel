@@ -13,7 +13,7 @@
     <title>{{ config('app.name') . ' | ' . $module }}</title>
     <!--! END:  Apps Title-->
     <!--! BEGIN: Favicon-->
-    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/favicon.ico') }}">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('logo_favicon.png') }}">
     <!--! END: Favicon-->
     <!--! BEGIN: Bootstrap CSS-->
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/bootstrap.min.css') }}">
@@ -41,22 +41,17 @@
         <div class="auth-cover-content-inner">
             <div class="auth-cover-content-wrapper">
                 <div class="auth-img">
-                    <img src="{{ asset('assets/images/auth/auth-cover-login-bg.svg') }}" alt=""
-                        class="img-fluid">
+                    <img src="{{ asset('logo_full.png') }}" alt="" class="img-fluid">
                 </div>
             </div>
         </div>
         <div class="auth-cover-sidebar-inner">
             <div class="auth-cover-card-wrapper">
                 <div class="auth-cover-card p-sm-5">
-                    <div class="wd-50 mb-5">
-                        <img src="{{ asset('assets/images/logo-abbr.png') }}" alt="" class="img-fluid">
-                    </div>
                     <h2 class="fs-20 fw-bolder mb-4">Login</h2>
-                    <h4 class="fs-13 fw-bold mb-2">Login to your account</h4>
-                    <p class="fs-12 fw-medium text-muted">Thank you for get back <strong>Nelel</strong> web
-                        applications, let's access our the best recommendation for you.</p>
-                    <form action="{{ route('login.login-proses') }}" method="POST" class="w-100 mt-4 pt-2">
+                    <h4 class="fs-13 fw-bold mb-2">Masukkan Akun Anda Untuk Login</h4>
+                    <form autocomplete="off" action="{{ route('login.login-proses') }}" method="POST"
+                        class="w-100 mt-4 pt-2">
                         @csrf
                         <div class="mb-4">
                             <input type="text" class="form-control @error('username') is-invalid @enderror"
@@ -77,17 +72,6 @@
                                     {{ $message }}
                                 </div>
                             @enderror
-                        </div>
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div>
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="rememberMe">
-                                    <label class="custom-control-label c-pointer" for="rememberMe">Remember Me</label>
-                                </div>
-                            </div>
-                            {{-- <div>
-                                <a href="auth-reset-cover.html" class="fs-11 text-primary">Forget password?</a>
-                            </div> --}}
                         </div>
                         <div class="mt-5">
                             <button type="submit" class="btn btn-lg btn-primary w-100">Login</button>
@@ -132,8 +116,8 @@
                                 for="app-skin-light">Light</label>
                         </div>
                         <div class="col-6 text-center position-relative single-option dark-button">
-                            <input type="radio" class="btn-check" id="app-skin-dark" name="app-skin"
-                                value="2" data-app-skin="app-skin-dark">
+                            <input type="radio" class="btn-check" id="app-skin-dark" name="app-skin" value="2"
+                                data-app-skin="app-skin-dark">
                             <label
                                 class="py-2 fs-9 fw-bold text-dark text-uppercase text-spacing-1 border border-gray-2 w-100 h-100 c-pointer position-relative options-label"
                                 for="app-skin-dark">Dark</label>
@@ -305,7 +289,20 @@
                 </div>
                 <!--! END: [Typography] !-->
             </div>
-            <div class="customizer-sidebar-footer px-4 ht-60 border-top d-flex align-items-center gap-2">
+            <div
+                class="customizer-sidebar-footer px-4 ht-60 border-t<script>
+                    document.addEventListener("DOMContentLoaded", function() {
+                        // Matikan autocomplete di semua form
+                        document.querySelectorAll("form").forEach(form => {
+                            form.setAttribute("autocomplete", "off");
+                        });
+
+                        // Matikan autocomplete di semua input, select, textarea
+                        document.querySelectorAll("input, select, textarea").forEach(el => {
+                            el.setAttribute("autocomplete", "off");
+                        });
+                    });
+                </script>op d-flex align-items-center gap-2">
                 <div class="flex-fill w-50">
                     <a href="javascript:void(0);" class="btn btn-danger"
                         data-style="reset-all-common-style">Reset</a>
