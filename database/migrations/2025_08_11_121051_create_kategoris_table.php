@@ -16,6 +16,7 @@ return new class extends Migration
             $table->uuid('uuid');
             $table->string('kode');
             $table->string('nama_kategori');
+            $table->json('sub_kategori');
             $table->timestamps();
         });
     }

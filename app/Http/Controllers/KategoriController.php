@@ -17,11 +17,11 @@ class KategoriController extends BaseController
 
     public function get(Request $request)
     {
-        $columns = ['uuid', 'kode', 'nama_kategori'];
+        $columns = ['uuid', 'kode', 'nama_kategori', 'sub_kategori'];
 
         $totalData = Kategori::count();
 
-        $query = Kategori::select('uuid', 'kode', 'nama_kategori');
+        $query = Kategori::select('uuid', 'kode', 'nama_kategori', 'sub_kategori');
 
         // Searching
         if (!empty($request->search['value'])) {
@@ -47,7 +47,14 @@ class KategoriController extends BaseController
         // Pagination
         $query->skip($request->start)->take($request->length);
 
-        $data = $query->get();
+        $data = $query->get()->map(function ($item) {
+            // Kalau sub_kategori null → kasih array kosong
+            $subs = json_decode($item->sub_kategori, true) ?? [];
+            // Ambil hanya value dari tagify
+            $item->sub_kategori = collect($subs)->pluck('value')->toArray();
+            return $item;
+        });
+
 
         // Format response DataTables
         return response()->json([
@@ -81,7 +88,8 @@ class KategoriController extends BaseController
 
         Kategori::create([
             'kode' => $kode,
-            'nama_kategori' => $request->nama_kategori
+            'nama_kategori' => $request->nama_kategori,
+            'sub_kategori' => $request->sub_kategori
         ]);
 
         return response()->json(['status' => 'success']);
@@ -96,7 +104,8 @@ class KategoriController extends BaseController
     {
         $kategori = Kategori::where('uuid', $params)->first();
         $kategori->update([
-            'nama_kategori' => $update->nama_kategori
+            'nama_kategori' => $update->nama_kategori,
+            'sub_kategori' => $update->sub_kategori
         ]);
 
         return response()->json(['status' => 'success']);

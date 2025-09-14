@@ -318,6 +318,68 @@
             }
         });
 
+        $('#dataTables').on('click', '.cetak-barcode', function() {
+            let uuid = $(this).data('uuid');
+
+            Swal.fire({
+                title: 'Masukkan jumlah label',
+                input: 'number',
+                inputLabel: 'Jumlah cetak',
+                inputAttributes: {
+                    min: 1
+                },
+                inputValue: 1,
+                showCancelButton: true,
+                confirmButtonText: 'Cetak',
+                cancelButtonText: 'Batal',
+                preConfirm: (value) => {
+                    if (!value || value < 1) {
+                        Swal.showValidationMessage('Jumlah minimal 1');
+                        return false;
+                    }
+                    return value;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `{{ route('outlet.cetak-barcode', ':uuid') }}`.replace(':uuid',
+                            uuid),
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            jumlah: result.value // kirim jumlah ke backend
+                        },
+                        success: function(res) {
+                            if (res.success) {
+                                Swal.fire({
+                                    title: "Sukses",
+                                    text: res.message,
+                                    icon: "success",
+                                    showConfirmButton: false,
+                                    timer: 1500,
+                                });
+                                // Refresh datatable
+                                $('#dataTables').DataTable().ajax.reload();
+                            } else {
+                                Swal.fire({
+                                    title: "Gagal",
+                                    text: res.message,
+                                    icon: "error"
+                                });
+                            }
+                        },
+                        error: function(xhr) {
+                            Swal.fire({
+                                title: "Gagal",
+                                text: xhr.responseJSON?.message || 'Terjadi kesalahan.',
+                                icon: "error"
+                            });
+                        }
+                    });
+                }
+            });
+        });
+
         $('#openModal').on('click', function() {
             // Buka modal
             $('#modal').modal('show');
@@ -449,6 +511,9 @@
                                     <a href="${urlOpname}" class="avatar-text avatar-md">
                                         <!-- Icon Delete -->
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-blocks-icon lucide-blocks"><path d="M10 22V7a1 1 0 0 0-1-1H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a1 1 0 0 0-1-1H2"/><rect x="14" y="2" width="8" height="8" rx="1"/></svg>
+                                    </a>
+                                    <a href="#" class="btn btn-outline-success btn-sm cetak-barcode" data-uuid="${data}">
+                                        Cetak Barcode
                                     </a>
                                 </div>
                     `;

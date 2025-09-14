@@ -18,6 +18,7 @@
     <!--! END: Favicon-->
     <!--! BEGIN: Bootstrap CSS-->
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/tagify.css') }}">
     <!--! END: Bootstrap CSS-->
     <!--! BEGIN: Vendors CSS-->
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/vendors.min.css') }}" />
@@ -354,6 +355,7 @@
     <script src="{{ asset('assets/js/customers-create-init.min.js') }}"></script>
     <script src="{{ asset('assets/js/theme-customizer-init.min.js') }}"></script>
     <script src="{{ asset('assets/js/analytics-init.min.js') }}"></script>
+    <script src="{{ asset('assets/js/tagify.js') }}"></script>
     <!-- DataTables JS + Bootstrap 5 support -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>

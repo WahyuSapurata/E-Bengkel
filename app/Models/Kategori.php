@@ -13,6 +13,7 @@ class Kategori extends Model
         'uuid',
         'kode',
         'nama_kategori',
+        'sub_kategori',
     ];
 
     protected static function boot()

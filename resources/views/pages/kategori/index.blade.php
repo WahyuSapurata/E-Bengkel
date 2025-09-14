@@ -68,6 +68,7 @@
                                             <th class="text-capitalize">No</th>
                                             <th class="text-capitalize">Kode</th>
                                             <th class="text-capitalize">Nama Kategori</th>
+                                            <th class="text-capitalize">Sub Kategori</th>
                                             <th class="text-end">Actions</th>
                                         </tr>
                                     </thead>
@@ -96,6 +97,11 @@
                         <div class="mb-2">
                             <label class="text-capitalize form-label">Nama Kategori</label>
                             <input type="text" name="nama_kategori" id="nama_kategori" class="form-control">
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="text-capitalize form-label">Sub Kategori</label>
+                            <input type="text" name="sub_kategori" id="sub_kategori" class="form-control">
                             <div class="invalid-feedback"></div>
                         </div>
                     </div>
@@ -281,6 +287,14 @@
                         class: 'mb-kolom-tanggal text-left align-content-center'
                     },
                     {
+                        data: 'sub_kategori',
+                        render: function(data) {
+                            if (!data) return '';
+                            return data.map(item =>
+                                `<span class="badge bg-primary me-1">${item}</span>`).join(' ');
+                        }
+                    },
+                    {
                         data: 'uuid', // akan diganti di columnDefs
                         orderable: false,
                         searchable: false
@@ -326,6 +340,8 @@
         };
 
         $(function() {
+            var input = $('#sub_kategori')[0]; // ambil element asli dari jQuery object
+            var tagify = new Tagify(input);
             initDatatable();
         });
     </script>

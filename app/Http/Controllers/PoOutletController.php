@@ -24,7 +24,7 @@ class PoOutletController extends Controller
 
     public function vw_pusat()
     {
-        $module = 'Po';
+        $module = 'Po Outlet';
         return view('pages.pooutlet.index', compact('module'));
     }
 

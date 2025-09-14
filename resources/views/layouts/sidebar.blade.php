@@ -59,12 +59,6 @@
                             </li>
                             @endcanView
 
-                            @canView('Sub Kategori')
-                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'subkategori' ? 'active' : '' }}">
-                                <a class="nxl-link" href="{{ route('superadmin.subkategori') }}">Sub Kategori</a>
-                            </li>
-                            @endcanView
-
                             @canView('Suplayer')
                             <li class="nxl-item {{ isset($path[2]) && $path[2] === 'suplayer' ? 'active' : '' }}">
                                 <a class="nxl-link" href="{{ route('superadmin.suplayer') }}">Suplayer</a>

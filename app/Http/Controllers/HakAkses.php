@@ -16,7 +16,7 @@ class HakAkses extends Controller
 
         $defaultMenus = [
             'Setup' => ['Data Pengguna'],
-            'Master Data' => ['Kategori', 'Sub Kategori', 'Suplayer', 'Jasa', 'Produk', 'Customer', 'Karyawan', 'Outlet'],
+            'Master Data' => ['Kategori', 'Suplayer', 'Jasa', 'Produk', 'Customer', 'Karyawan', 'Outlet'],
             'Transaksi'   => ['Pembelian', 'Hutang', 'PO', 'PO Outlet', 'Pengiriman Barang'],
             'Accounting'  => ['Daftar Akun', 'Gaji Karyawan', 'Biaya Lain-lain', 'Jurnal Umum', 'Buku Besar', 'Neraca', 'Laba Rugi'],
         ];

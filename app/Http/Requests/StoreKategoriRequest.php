@@ -23,6 +23,7 @@ class StoreKategoriRequest extends FormRequest
     {
         return [
             'nama_kategori' => 'required',
+            'sub_kategori' => 'required',
         ];
     }
 
@@ -30,6 +31,7 @@ class StoreKategoriRequest extends FormRequest
     {
         return [
             'nama_kategori.required' => 'Kolom nama kategori harus di isi.',
+            'sub_kategori.required' => 'Kolom nama sub kategori harus di isi.',
         ];
     }
 }

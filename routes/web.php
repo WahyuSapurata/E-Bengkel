@@ -20,6 +20,7 @@ Route::group([
     'as' => 'superadmin.'
 ], function () {
     Route::get('/dashboard-superadmin', [App\Http\Controllers\Dashboard::class, 'dashboard_superadmin'])->name('dashboard-superadmin');
+    Route::get('/get-penjualan-bulanan', [App\Http\Controllers\Dashboard::class, 'getPenjualanBulanan'])->name('get-penjualan-bulanan');
 
     Route::prefix('setup')->group(function () {
         Route::get('/data-pengguna', [App\Http\Controllers\DataPengguna::class, 'index'])->name('data-pengguna');
@@ -193,9 +194,12 @@ Route::group([
     'as' => 'outlet.'
 ], function () {
     Route::get('/dashboard-outlet', [App\Http\Controllers\Dashboard::class, 'dashboard_outlet'])->name('dashboard-outlet');
+    Route::get('/get-penjualan-bulanan', [App\Http\Controllers\Dashboard::class, 'getPenjualanBulanan'])->name('get-penjualan-bulanan');
 
     Route::get('/produk', [App\Http\Controllers\ProdukController::class, 'vw_outlet'])->name('produk');
     Route::get('/produk-get', [App\Http\Controllers\ProdukController::class, 'get_outlet'])->name('produk-get');
+
+    Route::post('/cetak-barcode/{params}', [App\Http\Controllers\ProdukController::class, 'cetakBarcode'])->name('cetak-barcode');
 
     Route::get('/opname-stock/{params}', [App\Http\Controllers\ProdukController::class, 'opname_stock_outlet'])->name('opname-stock');
     Route::post('/store_opname', [App\Http\Controllers\ProdukController::class, 'store_opname_outlet'])->name('store_opname');
