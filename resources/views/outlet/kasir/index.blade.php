@@ -20,13 +20,15 @@
                 <!-- Sidebar kiri -->
                 <div class="col-md-2 sidebar p-3 d-flex flex-column min-vh-100">
                     <div>
+                        <div class="d-flex justify-content-center"><img src="{{ asset('logo.png') }}" class="img-fluid"
+                                alt=""></div>
                         <div class="text-center mb-3">
                             <h6 class="fw-bold text-uppercase">{{ $data_outlet->nama_outlet }}</h6>
                             <small>{{ $data_outlet->alamat }}</small>
                         </div>
 
                         <div class="text-center mb-3">
-                            <h4 class="bg-success text-white p-2 rounded fs-2">{{ $nomor_urut }}</h4>
+                            <h4 class="bg-custom text-white p-2 rounded fs-2">{{ $nomor_urut }}</h4>
                             <p class="fw-bold">KASIR<br>{{ auth()->user()->nama }}</p>
                         </div>
 
@@ -50,7 +52,7 @@
                 <!-- Main Content -->
                 <div class="col-md-7 p-3 d-flex flex-column min-vh-100">
                     <!-- Judul -->
-                    <h5 class="bg-success text-white text-center py-2 rounded">BARANG BELANJA</h5>
+                    <h5 class="bg-custom text-white text-center py-2 rounded">BARANG BELANJA</h5>
                     <!-- Input scan (bisa disembunyikan kalau mau) -->
                     {{-- <input type="text" id="scanInput" class="form-control" placeholder="Scan barcode disini"
                         autofocus style="opacity:0; position:absolute; left:-9999px;"> --}}
@@ -58,7 +60,7 @@
                     <div class="flex-grow-1 overflow-auto">
                         <div class="table-wrapper mb-2">
                             <table class="table table-bordered table-striped table-sm mb-0" id="cartTable">
-                                <thead class="table-success sticky-top">
+                                <thead class="table-danger sticky-top">
                                     <tr>
                                         <th>Nama Barang</th>
                                         <th>Qty</th>
@@ -117,7 +119,7 @@
 
                 <!-- Sidebar kanan -->
                 <div class="col-md-3 p-3 d-grid align-content-between">
-                    <div class="total-box mb-3">
+                    <div class="bg-custom total-box mb-3">
                         TOTAL BELANJA <br>
                         <span class="fs-1" id="grandTotal">Rp 0</span> <br>
                         <small id="item">0 item</small>
@@ -215,7 +217,7 @@
                             </div>
 
                             <table class="table table-bordered table-striped table-sm mb-0" id="produkTable">
-                                <thead class="table-success sticky-top">
+                                <thead class="table-danger sticky-top">
                                     <tr>
                                         <th>Kode</th>
                                         <th>Nama Barang</th>
@@ -252,7 +254,7 @@
                             </div>
 
                             <table class="table table-bordered table-striped table-sm mb-0" id="produkTableModal">
-                                <thead class="table-success sticky-top">
+                                <thead class="table-danger sticky-top">
                                     <tr>
                                         <th>Kode</th>
                                         <th>Nama Barang</th>
@@ -429,7 +431,13 @@
                     const kode = kodeProdukInput.value.trim();
                     const qty = parseInt(document.getElementById("qty-produk").value) || 1;
                     if (!kode) {
-                        alert("⚠️ Masukkan kode produk terlebih dahulu!");
+                        Swal.fire({
+                            title: "Warning!",
+                            text: "⚠️ Masukkan kode produk terlebih dahulu!",
+                            icon: "warning",
+                            showConfirmButton: false,
+                            timer: 1000
+                        });
                         return;
                     }
                     tambahProduk(kode, qty);
@@ -610,7 +618,13 @@
                 if (e.key === "F4") {
                     e.preventDefault();
                     if (!selectedRow) {
-                        alert("Pilih dulu produk di tabel!");
+                        Swal.fire({
+                            title: "Warning!",
+                            text: "⚠️ Pilih dulu produk di tabel!",
+                            icon: "warning",
+                            showConfirmButton: false,
+                            timer: 1000
+                        });
                         return;
                     }
                     editQty(selectedRow);
@@ -619,7 +633,13 @@
                 if (e.key === "F3") {
                     e.preventDefault();
                     if (!selectedRow) {
-                        alert("Pilih dulu produk di tabel!");
+                        Swal.fire({
+                            title: "Warning!",
+                            text: "⚠️ Pilih dulu produk di tabel!",
+                            icon: "warning",
+                            showConfirmButton: false,
+                            timer: 1000
+                        });
                         return;
                     }
                     hapusRow(selectedRow);

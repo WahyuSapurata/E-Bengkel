@@ -30,7 +30,7 @@
     <!--! BEGIN: Custom CSS-->
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/theme.min.css') }}" />
     <!-- DataTables CSS for Bootstrap 5 -->
-    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('assets/css/dataTables.bootstrap5.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/sweet-alert/sweetalert2.min.css') }}">
     <!--! END: Custom CSS-->
     <!--! HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries !-->
@@ -357,8 +357,8 @@
     <script src="{{ asset('assets/js/analytics-init.min.js') }}"></script>
     <script src="{{ asset('assets/js/tagify.js') }}"></script>
     <!-- DataTables JS + Bootstrap 5 support -->
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="{{ asset('assets/js/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('assets/js/dataTables.bootstrap5.min.js') }}"></script>
     <script src="{{ asset('assets/sweet-alert/sweetalert2.min.js') }}"></script>
     <!--! END: Theme Customizer !-->
 

@@ -91,3 +91,7 @@ tr.selected {
     /* kuning muda */
     transition: background-color 0.8s ease;
 }
+
+.bg-custom {
+    background-color: #d81b1f;
+}

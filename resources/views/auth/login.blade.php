@@ -65,13 +65,19 @@
                         </div>
 
                         <div class="mb-3">
-                            <input type="password" class="form-control @error('password') is-invalid @enderror"
-                                id="password" name="password" placeholder="Password">
-                            @error('password')
-                                <div id="passwordFeedback" class="invalid-feedback">
-                                    {{ $message }}
-                                </div>
-                            @enderror
+                            <div class="input-group">
+                                <input type="password" class="form-control @error('password') is-invalid @enderror"
+                                    id="password" name="password" placeholder="Password"
+                                    aria-describedby="passwordFeedback">
+                                <span class="input-group-text" id="togglePassword" style="cursor: pointer;">
+                                    <i class="fas fa-eye" id="eyeIcon"></i>
+                                </span>
+                                @error('password')
+                                    <div id="passwordFeedback" class="invalid-feedback">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
                         </div>
                         <div class="mt-5">
                             <button type="submit" class="btn btn-lg btn-primary w-100">Login</button>
@@ -289,20 +295,7 @@
                 </div>
                 <!--! END: [Typography] !-->
             </div>
-            <div
-                class="customizer-sidebar-footer px-4 ht-60 border-t<script>
-                    document.addEventListener("DOMContentLoaded", function() {
-                        // Matikan autocomplete di semua form
-                        document.querySelectorAll("form").forEach(form => {
-                            form.setAttribute("autocomplete", "off");
-                        });
-
-                        // Matikan autocomplete di semua input, select, textarea
-                        document.querySelectorAll("input, select, textarea").forEach(el => {
-                            el.setAttribute("autocomplete", "off");
-                        });
-                    });
-                </script>op d-flex align-items-center gap-2">
+            <div class="customizer-sidebar-footer px-4 ht-60 border-top d-flex align-items-center gap-2">
                 <div class="flex-fill w-50">
                     <a href="javascript:void(0);" class="btn btn-danger"
                         data-style="reset-all-common-style">Reset</a>
@@ -327,6 +320,26 @@
     <script src="{{ asset('assets/js/theme-customizer-init.min.js') }}"></script>
     <!--! END: Theme Customizer !-->
     <script src="{{ asset('assets/sweet-alert/sweetalert2.min.js') }}"></script>
+
+    <script>
+        const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#password');
+        const eyeIcon = document.querySelector('#eyeIcon');
+
+        togglePassword.addEventListener('click', function() {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+
+            // ganti icon
+            if (type === 'password') {
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            } else {
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            }
+        });
+    </script>
 
     @if ($message = Session::get('failed'))
         <script>
