@@ -133,19 +133,23 @@
 
     <section class="hero-bg animate-pulse">
         <div class="hero-content">
-            <h1 class="text-5xl sm:text-6xl font-extrabold mb-6 drop-shadow-lg">
-                BengkelApp Pro Akan Segera Hadir!
+            <h1 class="text-3xl sm:text-5xl font-extrabold mb-6 drop-shadow-lg">
+                MotoCore SYSTEM Akan Segera Hadir!
             </h1>
-            <p class="text-lg sm:text-xl mb-8 drop-shadow-md max-w-xl mx-auto">
-                Solusi manajemen bengkel modern dengan fitur lengkap untuk servis, stok, dan pelanggan. Peluncuran resmi
+            <p class="text-sm sm:text-xl mb-8 drop-shadow-md mx-auto">
+                "Solusi Manajemen Bengkel Modern" <br>
+                Aplikasi ini dirancang khusus untuk mempermudah pengelolaan bengkel Anda. Dengan fitur lengkap dan mudah
+                digunakan, Anda dapat mengatur seluruh aktivitas operasional bengkel dalam satu sistem terintegrasi,
+                mulai dari manajemen produk dan stok, pencatatan transaksi kasir, hingga pengelolaan keuangan dan
+                laporan accounting yang akurat. <br>
+                Peluncuran
+                resmi
                 pada <strong id="peluncuran"></strong>.
             </p>
 
-            <form id="subscribe-form" class="flex justify-center form-row flex-wrap sm:flex-nowrap mb-10">
-                <input type="email" id="email" class="input-email" placeholder="Masukkan email Anda" required
-                    aria-label="Email untuk notifikasi peluncuran" />
-                <button type="submit" class="btn-submit">Daftar</button>
-            </form>
+            <div class="bg-white bg-opacity-50 p-2 pt-4 rounded-lg shadow-lg mb-8 flex justify-center">
+                <img src="{{ asset('logo.png') }}" class="w-[350px]" alt="">
+            </div>
 
             <div class="flex justify-center gap-6 flex-wrap">
                 <div class="countdown-card">
