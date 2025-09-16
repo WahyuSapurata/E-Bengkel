@@ -179,6 +179,7 @@ class ProdukController extends Controller
             'produks.maxstock',
             'produks.satuan',
             'produks.foto',
+            'produks.created_at',
             'kategoris.nama_kategori as kategori',
             'suplayers.nama as suplayer',
         ];
@@ -557,6 +558,7 @@ class ProdukController extends Controller
             'produks.maxstock',
             'produks.satuan',
             'produks.foto',
+            'produks.created_at',
             'kategoris.nama_kategori as kategori',
             'suplayers.nama as suplayer',
         ];
