@@ -11,7 +11,17 @@ let userOutletMap = new Map();
 const client = new Client({
     authStrategy: new LocalAuth({
         clientId: "MotoCore-bot"
-    })
+    }),
+    puppeteer: {
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-gpu',
+            '--disable-dev-shm-usage',
+            '--disable-software-rasterizer'
+        ]
+    }
 });
 
 client.on('qr', qr => {
