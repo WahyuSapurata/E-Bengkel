@@ -48,7 +48,7 @@ client.on('message', async msg => {
 
         // ✅ Outlet
         else if (text === "mulai") {
-            const response = await axios.get('http://127.0.0.1:8000/api/bot/outlet');
+            const response = await axios.get('https://adsmotor.id//api/bot/outlet');
 
             if (response.data && response.data.length > 0) {
                 const outlets = response.data;
@@ -113,7 +113,7 @@ client.on('message', async msg => {
                 const query = queryWords.join(' ');
 
                 // Kirim request ke backend dengan uuid_user
-                const response = await axios.get(`http://127.0.0.1:8000/api/bot/produk`, {
+                const response = await axios.get(`https://adsmotor.id//api/bot/produk`, {
                     params: {
                         q: query,
                         uuid_user: userData.selected.uuid_user // <-- ini dari outlet yang dipilih
