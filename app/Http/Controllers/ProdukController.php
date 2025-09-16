@@ -288,6 +288,7 @@ class ProdukController extends Controller
         $totalFiltered = $query->count();
 
         // ==== sorting
+        // ==== sorting
         if (!empty($request->order)) {
             $columnIndex = $request->order[0]['column'];
             $orderDir = $request->order[0]['dir'] ?? 'asc'; // default ke 'asc'
@@ -296,7 +297,8 @@ class ProdukController extends Controller
             $orderCol = $columns[$columnIndex] ?? 'produks.created_at';
             $orderCol = explode(' as ', $orderCol)[0];
 
-            $query->orderBy($orderCol, $orderDir);
+            $query->orderBy($orderCol, $orderDir)
+                ->orderBy('produks.created_at', 'desc'); // secondary sort
         } else {
             $query->orderBy('produks.created_at', 'desc'); // paling baru
         }
@@ -677,7 +679,8 @@ class ProdukController extends Controller
             $orderCol = $columns[$columnIndex] ?? 'produks.created_at';
             $orderCol = explode(' as ', $orderCol)[0];
 
-            $query->orderBy($orderCol, $orderDir);
+            $query->orderBy($orderCol, $orderDir)
+                ->orderBy('produks.created_at', 'desc'); // secondary sort
         } else {
             $query->orderBy('produks.created_at', 'desc'); // paling baru
         }
@@ -686,6 +689,7 @@ class ProdukController extends Controller
         $query->skip($request->start)->take($request->length);
 
         $data = $query->get();
+
 
         return response()->json([
             'draw' => intval($request->draw),
