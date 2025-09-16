@@ -289,11 +289,16 @@ class ProdukController extends Controller
 
         // ==== sorting
         if (!empty($request->order)) {
-            $orderCol = explode(' as ', $columns[$request->order[0]['column']])[0];
-            $orderDir = $request->order[0]['dir'];
+            $columnIndex = $request->order[0]['column'];
+            $orderDir = $request->order[0]['dir'] ?? 'asc'; // default ke 'asc'
+
+            // Ambil nama kolom, hilangkan alias jika ada
+            $orderCol = $columns[$columnIndex] ?? 'produks.created_at';
+            $orderCol = explode(' as ', $orderCol)[0];
+
             $query->orderBy($orderCol, $orderDir);
         } else {
-            $query->latest('produks.created_at');
+            $query->orderBy('produks.created_at', 'desc'); // paling baru
         }
 
         // ==== pagination
@@ -665,11 +670,16 @@ class ProdukController extends Controller
 
         // ==== sorting
         if (!empty($request->order)) {
-            $orderCol = explode(' as ', $columns[$request->order[0]['column']])[0];
-            $orderDir = $request->order[0]['dir'];
+            $columnIndex = $request->order[0]['column'];
+            $orderDir = $request->order[0]['dir'] ?? 'asc'; // default ke 'asc'
+
+            // Ambil nama kolom, hilangkan alias jika ada
+            $orderCol = $columns[$columnIndex] ?? 'produks.created_at';
+            $orderCol = explode(' as ', $orderCol)[0];
+
             $query->orderBy($orderCol, $orderDir);
         } else {
-            $query->latest('produks.created_at');
+            $query->orderBy('produks.created_at', 'desc'); // paling baru
         }
 
         // ==== pagination
