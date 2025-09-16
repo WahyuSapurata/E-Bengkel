@@ -300,14 +300,14 @@ class ProdukController extends Controller
             // Jika user sorting di kolom selain created_at, gunakan secondary sort by created_at
             if ($orderCol !== 'produks.created_at') {
                 $query->orderBy($orderCol, $orderDir)
-                    ->orderBy('produks.created_at', 'desc');
+                    ->orderBy('produks.created_at', 'asc');
             } else {
                 // Kalau sorting di created_at, cukup satu order
                 $query->orderBy($orderCol, $orderDir);
             }
         } else {
             // Default tampilkan data terbaru
-            $query->orderBy('produks.created_at', 'desc');
+            $query->orderBy('produks.created_at', 'asc');
         }
 
         // ==== pagination
@@ -690,14 +690,14 @@ class ProdukController extends Controller
             // Jika user sorting di kolom selain created_at, gunakan secondary sort by created_at
             if ($orderCol !== 'produks.created_at') {
                 $query->orderBy($orderCol, $orderDir)
-                    ->orderBy('produks.created_at', 'desc');
+                    ->orderBy('produks.created_at', 'asc');
             } else {
                 // Kalau sorting di created_at, cukup satu order
                 $query->orderBy($orderCol, $orderDir);
             }
         } else {
             // Default tampilkan data terbaru
-            $query->orderBy('produks.created_at', 'desc');
+            $query->orderBy('produks.created_at', 'asc');
         }
 
         // ==== pagination
