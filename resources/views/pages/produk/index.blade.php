@@ -465,9 +465,15 @@
 
                 $.each(res, function(key, value) {
                     let $field = $(`[name="${key}"]`);
+
                     if (!$field.length) return;
 
                     let type = $field.attr('type');
+
+                    if (key === 'kode') {
+                        $field.val(value).prop('readonly', true); // Kode tidak bisa diubah
+                        return;
+                    }
 
                     // Simpan harga modal
                     if (key === 'hrg_modal') {
