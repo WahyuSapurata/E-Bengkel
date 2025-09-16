@@ -289,7 +289,6 @@ class ProdukController extends Controller
         $totalFiltered = $query->count();
 
         // ==== sorting
-        // ==== sorting
         if (!empty($request->order)) {
             $columnIndex = $request->order[0]['column'];
             $orderDir = $request->order[0]['dir'] ?? 'asc'; // default ke 'asc'
@@ -298,10 +297,17 @@ class ProdukController extends Controller
             $orderCol = $columns[$columnIndex] ?? 'produks.created_at';
             $orderCol = explode(' as ', $orderCol)[0];
 
-            $query->orderBy($orderCol, $orderDir)
-                ->orderBy('produks.created_at', 'desc'); // secondary sort
+            // Jika user sorting di kolom selain created_at, gunakan secondary sort by created_at
+            if ($orderCol !== 'produks.created_at') {
+                $query->orderBy($orderCol, $orderDir)
+                    ->orderBy('produks.created_at', 'desc');
+            } else {
+                // Kalau sorting di created_at, cukup satu order
+                $query->orderBy($orderCol, $orderDir);
+            }
         } else {
-            $query->orderBy('produks.created_at', 'desc'); // paling baru
+            // Default tampilkan data terbaru
+            $query->orderBy('produks.created_at', 'desc');
         }
 
         // ==== pagination
@@ -681,10 +687,17 @@ class ProdukController extends Controller
             $orderCol = $columns[$columnIndex] ?? 'produks.created_at';
             $orderCol = explode(' as ', $orderCol)[0];
 
-            $query->orderBy($orderCol, $orderDir)
-                ->orderBy('produks.created_at', 'desc'); // secondary sort
+            // Jika user sorting di kolom selain created_at, gunakan secondary sort by created_at
+            if ($orderCol !== 'produks.created_at') {
+                $query->orderBy($orderCol, $orderDir)
+                    ->orderBy('produks.created_at', 'desc');
+            } else {
+                // Kalau sorting di created_at, cukup satu order
+                $query->orderBy($orderCol, $orderDir);
+            }
         } else {
-            $query->orderBy('produks.created_at', 'desc'); // paling baru
+            // Default tampilkan data terbaru
+            $query->orderBy('produks.created_at', 'desc');
         }
 
         // ==== pagination
