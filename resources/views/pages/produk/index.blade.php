@@ -762,10 +762,6 @@
                         },
                     },
                     {
-                        data: 'created_at',
-                        visible: false, // tetap hidden, tapi pastikan backend kirim field ini
-                    },
-                    {
                         data: 'uuid', // akan diganti di columnDefs
                         orderable: false,
                         searchable: false
