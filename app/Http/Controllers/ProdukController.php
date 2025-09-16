@@ -25,11 +25,19 @@ class ProdukController extends Controller
     {
         $module = 'Produk';
         // Ambil data kategori dan suplayer untuk dropdown
-        $kategoris = Kategori::select('uuid', 'nama_kategori')->get();
-        $sub_kategoris = SubKategori::select('uuid', 'nama_sub_kategori')->get();
+        $kategoris = Kategori::select('uuid', 'nama_kategori', 'sub_kategori')->get();
         $suplayers = Suplayer::select('uuid', 'nama')->get();
-        return view('pages.produk.index', compact('module', 'kategoris', 'sub_kategoris', 'suplayers'));
+        return view('pages.produk.index', compact('module', 'kategoris', 'suplayers'));
     }
+
+    public function getSubKategori($uuid)
+    {
+        $kategori = Kategori::where('uuid', $uuid)->firstOrFail();
+        $sub = json_decode($kategori->sub_kategori, true);
+
+        return response()->json($sub);
+    }
+
 
     public function price_history($params)
     {
@@ -160,8 +168,8 @@ class ProdukController extends Controller
         $columns = [
             'produks.uuid',
             'produks.uuid_kategori',
-            'produks.uuid_sub_kategori',
             'produks.uuid_suplayer',
+            'produks.sub_kategori',
             'produks.kode',
             'produks.nama_barang',
             'produks.merek',
@@ -172,7 +180,6 @@ class ProdukController extends Controller
             'produks.satuan',
             'produks.foto',
             'kategoris.nama_kategori as kategori',
-            'sub_kategoris.nama_sub_kategori as sub_kategori',
             'suplayers.nama as suplayer',
         ];
 
@@ -257,7 +264,6 @@ class ProdukController extends Controller
                     ) as total_stok")
         ]))
             ->leftJoin('kategoris', 'kategoris.uuid', '=', 'produks.uuid_kategori')
-            ->leftJoin('sub_kategoris', 'sub_kategoris.uuid', '=', 'produks.uuid_sub_kategori')
             ->leftJoin('suplayers', 'suplayers.uuid', '=', 'produks.uuid_suplayer');
 
         // ==== filter kategori & supplier
@@ -322,8 +328,8 @@ class ProdukController extends Controller
 
         $produk = Produk::create([
             'uuid_kategori' => $request->uuid_kategori,
-            'uuid_sub_kategori' => $request->uuid_sub_kategori,
             'uuid_suplayer' => $request->uuid_suplayer,
+            'sub_kategori' => $request->sub_kategori,
             'kode' => $kode,
             'nama_barang' => $request->nama_barang,
             'merek' => $request->merek,
@@ -478,8 +484,8 @@ class ProdukController extends Controller
 
         $produk->update([
             'uuid_kategori' => $update->uuid_kategori,
-            'uuid_sub_kategori' => $update->uuid_sub_kategori,
             'uuid_suplayer' => $update->uuid_suplayer,
+            'sub_kategori' => $update->sub_kategori,
             'kode' => $update->kode,
             'nama_barang' => $update->nama_barang,
             'merek' => $update->merek,
@@ -533,8 +539,8 @@ class ProdukController extends Controller
         $columns = [
             'produks.uuid',
             'produks.uuid_kategori',
-            'produks.uuid_sub_kategori',
             'produks.uuid_suplayer',
+            'produks.sub_kategori',
             'produks.kode',
             'produks.nama_barang',
             'produks.merek',
@@ -545,7 +551,6 @@ class ProdukController extends Controller
             'produks.satuan',
             'produks.foto',
             'kategoris.nama_kategori as kategori',
-            'sub_kategoris.nama_sub_kategori as sub_kategori',
             'suplayers.nama as suplayer',
         ];
 
@@ -635,7 +640,6 @@ class ProdukController extends Controller
                     ) as total_stok")
         ]))
             ->leftJoin('kategoris', 'kategoris.uuid', '=', 'produks.uuid_kategori')
-            ->leftJoin('sub_kategoris', 'sub_kategoris.uuid', '=', 'produks.uuid_sub_kategori')
             ->leftJoin('suplayers', 'suplayers.uuid', '=', 'produks.uuid_suplayer');
 
         // ==== filter kategori & supplier

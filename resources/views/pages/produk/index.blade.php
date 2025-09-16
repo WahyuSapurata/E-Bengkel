@@ -154,14 +154,13 @@
                             </select>
                             <div class="invalid-feedback"></div>
                         </div>
+
                         <div class="mb-2">
-                            <label for="uuid_sub_kategori" class="form-label text-capitalize">sub Kategori</label>
-                            <select name="uuid_sub_kategori" id="uuid_sub_kategori" data-placeholder="Pilih inputan"
+                            <label for="sub_kategori" class="form-label text-capitalize">Sub Kategori</label>
+                            <select name="sub_kategori" id="sub_kategori" data-placeholder="Pilih inputan"
                                 class="form-select basic-usage">
                                 <option value=""></option>
-                                @foreach ($sub_kategoris as $sk)
-                                    <option value="{{ $sk->uuid }}">{{ $sk->nama_sub_kategori }}</option>
-                                @endforeach
+                                {{-- akan diisi lewat ajax --}}
                             </select>
                             <div class="invalid-feedback"></div>
                         </div>
@@ -510,6 +509,24 @@
                     }
                 });
 
+                // Ambil sub_kategori sesuai kategori
+                if (res.uuid_kategori) {
+                    $('#sub_kategori').empty(); // benar-benar kosong
+
+                    $.get('/superadmin/master-data/get-sub-kategori/' + res.uuid_kategori, function(data) {
+                        if (data) {
+                            let options = '<option value=""></option>';
+                            data.forEach(function(item) {
+                                let selected = (item.value === res.sub_kategori) ?
+                                    'selected' : '';
+                                options += '<option value="' + item.value + '" ' +
+                                    selected + '>' + item.value + '</option>';
+                            });
+                            $('#sub_kategori').html(options); // isi sekali aja
+                        }
+                    });
+                }
+
                 // Ambil profit dari response
                 let profit = parseFloat(res.profit) || null;
                 let profit_a = parseFloat(res.profit_a) || null;
@@ -816,6 +833,24 @@
         $('#filter-kategori, #filter-suplayer').on('change', function() {
             $('#dataTables').DataTable().ajax.reload();
         });
+
+        $('#uuid_kategori').on('change', function() {
+            let uuid = $(this).val();
+            $('#sub_kategori').empty().append('<option value=""></option>'); // reset
+
+            if (uuid) {
+                $.get('/superadmin/master-data/get-sub-kategori/' + uuid, function(data) {
+                    if (data) {
+                        data.forEach(function(item) {
+                            $('#sub_kategori').append('<option value="' + item.value + '">' + item
+                                .value +
+                                '</option>');
+                        });
+                    }
+                });
+            }
+        });
+
 
         $(function() {
             initDatatable();

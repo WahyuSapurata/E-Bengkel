@@ -22,9 +22,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (request()->header('X-Forwarded-Proto') === 'https') {
+        // Hanya paksa HTTPS di production
+        if (app()->environment('production')) {
             URL::forceScheme('https');
         }
+
 
         // === Directive untuk cek hak akses ===
         Blade::if('canView', function ($menu) {

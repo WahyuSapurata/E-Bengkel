@@ -24,7 +24,7 @@ class StoreProdukRequest extends FormRequest
         return [
             'kode' => 'unique:produks,kode',
             'uuid_kategori' => 'required',
-            'uuid_sub_kategori' => 'required',
+            'sub_kategori' => 'required',
             'uuid_suplayer' => 'required',
             'nama_barang' => 'required',
             'merek' => 'required',
@@ -41,7 +41,7 @@ class StoreProdukRequest extends FormRequest
         return [
             'kode.unique' => 'Kode sudah digunakan.',
             'uuid_kategori.required' => 'Kolom nama kategori harus di isi.',
-            'uuid_sub_kategori.required' => 'Kolom nama sub kategori harus di isi.',
+            'sub_kategori.required' => 'Kolom nama sub kategori harus di isi.',
             'uuid_suplayer.required' => 'Kolom suplayer harus di isi.',
             'nama_barang.required' => 'Kolom nama barang harus di isi.',
             'merek.required' => 'Kolom merek harus di isi.',

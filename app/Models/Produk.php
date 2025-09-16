@@ -12,8 +12,8 @@ class Produk extends Model
     protected $fillable = [
         'uuid',
         'uuid_kategori',
-        'uuid_sub_kategori',
         'uuid_suplayer',
+        'sub_kategori',
         'kode',
         'nama_barang',
         'merek',

@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuid');
             $table->uuid('uuid_kategori');
-            $table->uuid('uuid_sub_kategori');
             $table->uuid('uuid_suplayer');
+            $table->string('sub_kategori');
             $table->string('kode');
             $table->string('nama_barang');
             $table->string('merek');

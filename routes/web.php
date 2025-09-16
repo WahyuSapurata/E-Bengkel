@@ -44,13 +44,6 @@ Route::group([
         Route::put('/kategori-update/{params}', [App\Http\Controllers\KategoriController::class, 'update'])->name('kategori-update');
         Route::delete('/kategori-delete/{params}', [App\Http\Controllers\KategoriController::class, 'delete'])->name('kategori-delete');
 
-        Route::get('/subkategori', [App\Http\Controllers\SubKategoriController::class, 'index'])->name('subkategori');
-        Route::get('/subkategori-get', [App\Http\Controllers\SubKategoriController::class, 'get'])->name('subkategori-get');
-        Route::post('/subkategori-store', [App\Http\Controllers\SubKategoriController::class, 'store'])->name('subkategori-store');
-        Route::get('/subkategori-edit/{params}', [App\Http\Controllers\SubKategoriController::class, 'edit'])->name('subkategori-edit');
-        Route::put('/subkategori-update/{params}', [App\Http\Controllers\SubKategoriController::class, 'update'])->name('subkategori-update');
-        Route::delete('/subkategori-delete/{params}', [App\Http\Controllers\SubKategoriController::class, 'delete'])->name('subkategori-delete');
-
         Route::get('/suplayer', [App\Http\Controllers\SuplayerController::class, 'index'])->name('suplayer');
         Route::get('/suplayer-get', [App\Http\Controllers\SuplayerController::class, 'get'])->name('suplayer-get');
         Route::post('/suplayer-store', [App\Http\Controllers\SuplayerController::class, 'store'])->name('suplayer-store');
@@ -71,6 +64,8 @@ Route::group([
         Route::get('/produk-edit/{params}', [App\Http\Controllers\ProdukController::class, 'edit'])->name('produk-edit');
         Route::post('/produk-update/{params}', [App\Http\Controllers\ProdukController::class, 'update'])->name('produk-update');
         Route::delete('/produk-delete/{params}', [App\Http\Controllers\ProdukController::class, 'delete'])->name('produk-delete');
+
+        Route::get('/get-sub-kategori/{params}', [App\Http\Controllers\ProdukController::class, 'getSubKategori'])->name('get-sub-kategori');
 
         Route::get('/price-history/{params}', [App\Http\Controllers\ProdukController::class, 'price_history'])->name('price-history');
         Route::get('/get-price-history/{params}', [App\Http\Controllers\ProdukController::class, 'get_price_history'])->name('get-price-history');
