@@ -763,7 +763,7 @@
                     },
                     {
                         data: 'created_at',
-                        visible: false
+                        visible: false, // tetap hidden, tapi pastikan backend kirim field ini
                     },
                     {
                         data: 'uuid', // akan diganti di columnDefs
