@@ -762,6 +762,10 @@
                         },
                     },
                     {
+                        data: 'created_at',
+                        visible: false
+                    },
+                    {
                         data: 'uuid', // akan diganti di columnDefs
                         orderable: false,
                         searchable: false
