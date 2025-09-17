@@ -22,11 +22,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Hanya paksa HTTPS di production
-        if (app()->environment('production')) {
+        // Paksa HTTPS hanya jika akses via domain adsmotor.id
+        if (request()->getHost() === 'adsmotor.id' || request()->getHost() === 'www.adsmotor.id') {
             URL::forceScheme('https');
         }
-
 
         // === Directive untuk cek hak akses ===
         Blade::if('canView', function ($menu) {
