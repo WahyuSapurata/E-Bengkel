@@ -18,9 +18,12 @@ const client = new Client({
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
-            '--disable-gpu',
             '--disable-dev-shm-usage',
-            '--disable-software-rasterizer'
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process', // kadang perlu di server kecil
+            '--disable-gpu'
         ]
     }
 });

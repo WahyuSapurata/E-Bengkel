@@ -190,6 +190,22 @@
                             @endcanView
                         </ul>
                     </li>
+
+                    {{-- Cetak Label --}}
+                    <li class="nxl-item nxl-hasmenu {{ $path[1] === 'tools' ? 'active' : '' }}">
+                        <a href="javascript:void(0);" class="nxl-link">
+                            <span class="nxl-micon"><i class="feather-tool"></i></span>
+                            <span class="nxl-mtext">Tools</span><span class="nxl-arrow"><i
+                                    class="feather-chevron-right"></i></span>
+                        </a>
+                        <ul class="nxl-submenu">
+                            <li
+                                class="nxl-item {{ isset($path[2]) && $path[2] === 'cetak-label-rak' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.cetak-label-rak') }}">Cetak Label
+                                    Rak</a>
+                            </li>
+                        </ul>
+                    </li>
                 </ul>
             @elseif ($role === 'outlet')
                 <ul class="nxl-navbar">

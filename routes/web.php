@@ -180,6 +180,11 @@ Route::group([
         Route::get('/vw-laba-rugi', [App\Http\Controllers\ReportController::class, 'vw_laba_rugi'])->name('vw-laba-rugi');
         Route::get('/get-laba-rugi', [App\Http\Controllers\ReportController::class, 'get_laba_rugi'])->name('get-laba-rugi');
     });
+
+    Route::prefix('tools')->group(function () {
+        Route::get('/cetak-label-rak', [App\Http\Controllers\CetakLabelRak::class, 'index'])->name('cetak-label-rak');
+        Route::get('/cetak-label-rak-get/{params}', [App\Http\Controllers\CetakLabelRak::class, 'get_produk'])->name('cetak-label-rak-get');
+    });
 });
 
 
