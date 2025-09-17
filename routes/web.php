@@ -184,6 +184,7 @@ Route::group([
     Route::prefix('tools')->group(function () {
         Route::get('/cetak-label-rak', [App\Http\Controllers\CetakLabelRak::class, 'index'])->name('cetak-label-rak');
         Route::get('/cetak-label-rak-get/{params}', [App\Http\Controllers\CetakLabelRak::class, 'get_produk'])->name('cetak-label-rak-get');
+        Route::post('/cetak-label-rak-store', [App\Http\Controllers\CetakLabelRak::class, 'cetakLabelRak'])->name('cetak-label-rak-store');
     });
 });
 

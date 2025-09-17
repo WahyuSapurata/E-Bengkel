@@ -61,6 +61,7 @@
                                             <th>Nama Barang</th>
                                             <th>Merek</th>
                                             <th>Satuan</th>
+                                            <th>Harga Jual</th>
                                             <th>Aksi</th>
                                         </tr>
                                     </thead>
@@ -100,15 +101,20 @@
                     if (json.status === "success") {
                         let produk = json.data;
 
-                        // cek kalau sudah ada di array → tambah qty
+                        // cek kalau sudah ada di array → jangan ditambahkan lagi
                         let existing = produkDipilih.find(p => p.kode === produk.kode);
-                        if (existing) {
-                            existing.qty++;
-                        } else {
-                            produk.qty = 1;
+                        if (!existing) {
                             produkDipilih.push(produk);
+                            renderTable();
+                        } else {
+                            Swal.fire({
+                                title: "Info",
+                                text: "Produk sudah ada di daftar!",
+                                icon: "info",
+                                showConfirmButton: false,
+                                timer: 1000
+                            });
                         }
-                        renderTable();
                     } else {
                         Swal.fire({
                             title: "Warning!",
@@ -130,19 +136,45 @@
             }
         });
 
+        function formatRupiah(angka) {
+            angka = angka.toString();
+            let number_string = angka.replace(/[^,\d]/g, ''),
+                split = number_string.split(','),
+                sisa = split[0].length % 3,
+                rupiah = split[0].substr(0, sisa),
+                ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+            if (ribuan) {
+                let separator = sisa ? '.' : '';
+                rupiah += separator + ribuan.join('.');
+            }
+
+            rupiah = split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
+            return rupiah ? 'Rp ' + rupiah : '';
+        }
+
         function renderTable() {
             let tbody = document.querySelector("#tabelLabel tbody");
             tbody.innerHTML = "";
+
             produkDipilih.forEach((p, i) => {
+                // Loop harga jual untuk setiap produk
+                let hargaJualHtml = p.harga_jual.map(hj => {
+                    return `<div>QTY ${hj.qty} : ${formatRupiah(hj.harga_jual)}</div>`;
+                }).join('');
+
                 tbody.innerHTML += `
-                <tr>
-                    <td>${p.kode}</td>
-                    <td>${p.nama_barang}</td>
-                    <td>${p.merek}</td>
-                    <td>${p.satuan}</td>
-                    <td><button class="btn btn-sm btn-danger" onclick="hapus(${i})">Hapus</button></td>
-                </tr>
-                `;
+            <tr>
+                <td>${p.kode}</td>
+                <td>${p.nama_barang}</td>
+                <td>${p.merek}</td>
+                <td>${p.satuan}</td>
+                <td>${hargaJualHtml}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="hapus(${i})">Hapus</button>
+                </td>
+            </tr>
+        `;
             });
         }
 
@@ -151,20 +183,45 @@
             renderTable();
         }
 
-        // // Cetak
-        // document.getElementById("btnCetak").addEventListener("click", () => {
-        //     fetch("/cetak-label", {
-        //             method: "POST",
-        //             headers: {
-        //                 "Content-Type": "application/json"
-        //             },
-        //             body: JSON.stringify(produkDipilih)
-        //         })
-        //         .then(res => res.blob())
-        //         .then(blob => {
-        //             let url = URL.createObjectURL(blob);
-        //             window.open(url, "_blank");
-        //         });
-        // });
+        // Cetak
+        document.getElementById("btnCetak").addEventListener("click", () => {
+            if (produkDipilih.length === 0) {
+                Swal.fire({
+                    title: "Warning!",
+                    text: "Tidak ada produk untuk dicetak!",
+                    icon: "warning",
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+                return;
+            }
+
+            fetch("/superadmin/tools/cetak-label-rak-store", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        produk: produkDipilih
+                    })
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error("Gagal generate label");
+                    return res.blob();
+                })
+                .then(blob => {
+                    let url = URL.createObjectURL(blob);
+                    window.open(url, "_blank"); // buka PDF di tab baru
+                })
+                .catch(err => {
+                    Swal.fire({
+                        title: "Error!",
+                        text: err.message || "Terjadi kesalahan saat cetak label",
+                        icon: "error",
+                        showConfirmButton: true
+                    });
+                });
+        });
     </script>
 @endpush
