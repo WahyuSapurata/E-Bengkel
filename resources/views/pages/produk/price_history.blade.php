@@ -7,7 +7,7 @@
                     <h5 class="m-b-10 text-capitalize">Master Data</h5>
                 </div>
                 <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="/">Home</a></li>
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
                     <li class="breadcrumb-item text-capitalize">{{ $module }}</li>
                 </ul>
             </div>

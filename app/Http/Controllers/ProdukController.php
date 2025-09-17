@@ -262,7 +262,8 @@ class ProdukController extends Controller
                                 WHERE dk.uuid_produk = produks.uuid)
                             )
                         END
-                    ) as total_stok")
+                    ) as total_stok"),
+            DB::raw('(produks.hrg_modal + (produks.hrg_modal * produks.profit / 100)) as harga_jual')
         ]))
             ->leftJoin('kategoris', 'kategoris.uuid', '=', 'produks.uuid_kategori')
             ->leftJoin('suplayers', 'suplayers.uuid', '=', 'produks.uuid_suplayer');
@@ -652,7 +653,8 @@ class ProdukController extends Controller
                                 AND tb.uuid_outlet = '" . Auth::user()->uuid . "')
                             )
                         END
-                    ) as total_stok")
+                    ) as total_stok"),
+            DB::raw('(produks.hrg_modal + (produks.hrg_modal * produks.profit / 100)) as harga_jual')
         ]))
             ->leftJoin('kategoris', 'kategoris.uuid', '=', 'produks.uuid_kategori')
             ->leftJoin('suplayers', 'suplayers.uuid', '=', 'produks.uuid_suplayer');
