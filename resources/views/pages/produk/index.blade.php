@@ -318,27 +318,60 @@
             $(this).val(formatRupiah(angka));
         });
 
+        function roundToRibuan(num) {
+            return Math.round(num / 1000) * 1000;
+        }
+
         // Fungsi untuk bind event profit/harga jual
         function bindProfitHargaJual(profitId, jualId) {
-            // Hitung harga jual jika modal dan profit persen terisi
-            $('#hrg_modal, #' + profitId).on('input', function() {
+            let isUpdating = false; // kunci biar gak saling timpa
+
+            // Saat profit diubah → update harga jual
+            $('#' + profitId).on('input', function() {
+                if (isUpdating) return;
+                isUpdating = true;
+
                 let modal = parseRupiah($('#hrg_modal').val());
-                let persen = parseFloat($('#' + profitId).val());
+                let persen = parseFloat($(this).val());
 
                 if (modal > 0 && !isNaN(persen)) {
                     let harga_jual = modal + (modal * persen / 100);
-                    $('#' + jualId).val(formatRupiah(Math.round(harga_jual)));
+                    $('#' + jualId).val(formatRupiah(roundToRibuan(harga_jual)));
                 }
+
+                isUpdating = false;
             });
 
-            // Hitung persen profit jika modal dan harga jual terisi
-            $('#hrg_modal, #' + jualId).on('input', function() {
+            // Saat harga jual diubah → update profit
+            $('#' + jualId).on('input', function() {
+                if (isUpdating) return;
+                isUpdating = true;
+
                 let modal = parseRupiah($('#hrg_modal').val());
-                let jual = parseRupiah($('#' + jualId).val());
+                let jual = parseRupiah($(this).val());
 
                 if (modal > 0 && jual > 0) {
                     let persen = ((jual - modal) / modal) * 100;
                     $('#' + profitId).val(persen.toFixed(2));
+                }
+
+                isUpdating = false;
+            });
+
+            // Saat modal diubah → update sesuai nilai terakhir
+            $('#hrg_modal').on('input', function() {
+                let modal = parseRupiah($(this).val());
+                let jual = parseRupiah($('#' + jualId).val());
+                let persen = parseFloat($('#' + profitId).val());
+
+                if (modal > 0) {
+                    if (!isNaN(persen)) {
+                        let harga_jual = modal + (modal * persen / 100);
+                        $('#' + jualId).val(formatRupiah(roundToRibuan(harga_jual)));
+                    } else if (jual > 0) {
+                        let persenBaru = ((jual - modal) / modal) * 100;
+                        $('#' + profitId).val(persenBaru.toFixed(2));
+                    }
                 }
             });
         }
@@ -541,25 +574,22 @@
                 let profit_c = parseFloat(res.profit_c) || null;
 
                 // Rumus: harga_jual = modal + (modal * profit% / 100)
+                // Rumus: harga_jual = modal + (modal * profit% / 100)
                 if (profit !== null) {
-                    $(`[name="hrg_jual"]`).val(formatRupiah((Math.round(hrg_modal + (hrg_modal * profit /
-                            100)))
-                        .toString()));
+                    let harga_jual = hrg_modal + (hrg_modal * profit / 100);
+                    $(`[name="hrg_jual"]`).val(formatRupiah(roundToRibuan(harga_jual).toString()));
                 }
                 if (profit_a !== null) {
-                    $(`[name="hrg_jual_a"]`).val(formatRupiah((Math.round(hrg_modal + (hrg_modal *
-                            profit_a / 100)))
-                        .toString()));
+                    let harga_jual_a = hrg_modal + (hrg_modal * profit_a / 100);
+                    $(`[name="hrg_jual_a"]`).val(formatRupiah(roundToRibuan(harga_jual_a).toString()));
                 }
                 if (profit_b !== null) {
-                    $(`[name="hrg_jual_b"]`).val(formatRupiah((Math.round(hrg_modal + (hrg_modal *
-                            profit_b / 100)))
-                        .toString()));
+                    let harga_jual_b = hrg_modal + (hrg_modal * profit_b / 100);
+                    $(`[name="hrg_jual_b"]`).val(formatRupiah(roundToRibuan(harga_jual_b).toString()));
                 }
                 if (profit_c !== null) {
-                    $(`[name="hrg_jual_c"]`).val(formatRupiah((Math.round(hrg_modal + (hrg_modal *
-                            profit_c / 100)))
-                        .toString()));
+                    let harga_jual_c = hrg_modal + (hrg_modal * profit_c / 100);
+                    $(`[name="hrg_jual_c"]`).val(formatRupiah(roundToRibuan(harga_jual_c).toString()));
                 }
             });
         });

@@ -264,11 +264,13 @@ class ProdukController extends Controller
                         END
                     ) as total_stok"),
             DB::raw('
-                        ROUND(
-                            CAST(produks.hrg_modal AS DECIMAL(15,2))
-                            + (CAST(produks.hrg_modal AS DECIMAL(15,2)) * CAST(produks.profit AS DECIMAL(15,2)) / 100)
-                        ) as harga_jual
-                    ')
+    ROUND(
+        (
+            CAST(produks.hrg_modal AS DECIMAL(15,2))
+            + (CAST(produks.hrg_modal AS DECIMAL(15,2)) * CAST(produks.profit AS DECIMAL(15,2)) / 100)
+        ) / 1000
+    ) * 1000 as harga_jual
+')
         ]))
             ->leftJoin('kategoris', 'kategoris.uuid', '=', 'produks.uuid_kategori')
             ->leftJoin('suplayers', 'suplayers.uuid', '=', 'produks.uuid_suplayer');
@@ -660,11 +662,13 @@ class ProdukController extends Controller
                         END
                     ) as total_stok"),
             DB::raw('
-                        ROUND(
-                            CAST(produks.hrg_modal AS DECIMAL(15,2))
-                            + (CAST(produks.hrg_modal AS DECIMAL(15,2)) * CAST(produks.profit AS DECIMAL(15,2)) / 100)
-                        ) as harga_jual
-                    ')
+    ROUND(
+        (
+            CAST(produks.hrg_modal AS DECIMAL(15,2))
+            + (CAST(produks.hrg_modal AS DECIMAL(15,2)) * CAST(produks.profit AS DECIMAL(15,2)) / 100)
+        ) / 1000
+    ) * 1000 as harga_jual
+')
         ]))
             ->leftJoin('kategoris', 'kategoris.uuid', '=', 'produks.uuid_kategori')
             ->leftJoin('suplayers', 'suplayers.uuid', '=', 'produks.uuid_suplayer');

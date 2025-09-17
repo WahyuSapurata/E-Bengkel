@@ -132,7 +132,14 @@ class PenjualanController extends Controller
                   AND dp.uuid_produk = produks.uuid
             ),0)
         ) as stock_toko"),
-            DB::raw('(produks.hrg_modal + (produks.hrg_modal * produks.profit / 100)) as harga_jual_default')
+            DB::raw('
+    ROUND(
+        (
+            CAST(produks.hrg_modal AS DECIMAL(15,2))
+            + (CAST(produks.hrg_modal AS DECIMAL(15,2)) * CAST(produks.profit AS DECIMAL(15,2)) / 100)
+        ) / 1000
+    ) * 1000 as harga_jual_default
+')
         )
             ->where('produks.kode', $kode)
             ->havingRaw('stock_toko > 0')
@@ -256,7 +263,10 @@ class PenjualanController extends Controller
 
                     // simpan detail untuk frontend
                     $produkInfo = $produk->where('uuid', $uuid_produk)->first();
-                    $hargaJual  = $produkInfo->hrg_modal + ($produkInfo->hrg_modal * $produkInfo->profit / 100);
+                    $hargaJual = round(
+                        $produkInfo->hrg_modal + ($produkInfo->hrg_modal * $produkInfo->profit / 100),
+                        -3
+                    );
 
                     $details[] = [
                         'nama'     => $produkInfo->nama_barang ?? 'Produk',
