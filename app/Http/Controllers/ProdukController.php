@@ -843,7 +843,7 @@ class ProdukController extends Controller
         $harga = number_format($harga, 0, ',', '.');
 
         // ✅ Perbaiki check digit EAN-13
-        $barcode = $this->fixEAN13($produk->kode);
+        $barcode = $produk->kode;
 
         $zpl = "";
         for ($i = 0; $i < $jumlah; $i += 2) {
@@ -886,20 +886,5 @@ class ProdukController extends Controller
             'success' => true,
             'message' => "Label produk {$produk->nama_barang} berhasil dicetak ($jumlah label)"
         ]);
-    }
-
-    /**
-     * Helper untuk memastikan kode EAN-13 valid
-     */
-    private function fixEAN13($code)
-    {
-        $code = substr(preg_replace('/\D/', '', $code), 0, 12); // ambil 12 digit
-        $sum = 0;
-        for ($i = 0; $i < 12; $i++) {
-            $digit = (int) $code[$i];
-            $sum += ($i % 2 === 0) ? $digit : $digit * 3;
-        }
-        $checkDigit = (10 - ($sum % 10)) % 10;
-        return $code . $checkDigit;
     }
 }
