@@ -14,7 +14,6 @@
 
         .row {
             display: flex;
-            flex-wrap: nowrap;
             margin-bottom: 5mm;
             page-break-inside: avoid;
         }
