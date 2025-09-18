@@ -13,21 +13,28 @@
         }
 
         .row {
-            display: flex;
+            /* container menampung float */
+            overflow: hidden;
+            /* atau gunakan clearfix */
             margin-bottom: 5mm;
         }
 
         .label {
-            width: 50mm;
+            float: left;
+            width: 90mm;
             height: 40mm;
             border: 1px solid #000;
-            /* margin: 5mm; */
             padding: 3mm;
             box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            margin-right: 5mm;
+            /* jarak antar label */
             position: relative;
+        }
+
+        .row::after {
+            content: "";
+            display: table;
+            clear: both;
         }
 
         .info {
