@@ -857,7 +857,7 @@ class ProdukController extends Controller
             $zpl .= "
             ^FO" . ($marginX) . "," . ($marginY) . "^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD$nama^FS
             ^BY2,2,40
-            ^FO" . ($marginX + 10) . "," . ($marginY + 20) . "^BEN,40,Y,N^FD$barcode^FS
+^FO" . ($marginX + 10) . "," . ($marginY + 20) . "^BCN,40,Y,N,N^FD$barcode^FS
             ^FO" . ($marginX + 10) . "," . ($marginY + 85) . "^A0N,22,22^FDRp. $harga^FS
         ";
 
@@ -867,8 +867,8 @@ class ProdukController extends Controller
             $xOffset = $singleWidth + 30 + $marginX;
             $zpl .= "
             ^FO$xOffset," . ($marginY) . "^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD$nama^FS
-            ^BY2,2,40
-            ^FO" . ($xOffset + 10) . "," . ($marginY + 20) . "^BEN,40,Y,N^FD$barcode^FS
+           ^BY2,2,40
+^FO" . ($xOffset + 10) . "," . ($marginY + 20) . "^BCN,40,Y,N,N^FD$barcode^FS
             ^FO" . ($xOffset + 10) . "," . ($marginY + 85) . "^A0N,22,22^FDRp. $harga^FS
         ";
 
