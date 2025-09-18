@@ -844,8 +844,8 @@ class ProdukController extends Controller
         $barcode = $produk->kode;
 
         // Perhitungan tinggi teks nama barang
-        $fontHeight   = 20;   // tinggi font (dot)
-        $charsPerLine = 14;   // kira2 muat 14 huruf per baris
+        $fontHeight   = 18;   // tinggi font (dot)
+        $charsPerLine = 16;   // kira2 muat 14 huruf per baris
         $calcLines    = ceil(mb_strlen($nama) / $charsPerLine);
 
         // maksimal 2 baris, minimal 1
@@ -884,7 +884,10 @@ class ProdukController extends Controller
             ^BY1,2,35
             ^FO" . ($marginX + 10) . "," . ($marginY + $barcodeYOffset) . "^BCN,35,Y,N,N^FD>:$barcode^FS
 
-            ^FO" . ($marginX + 10) . "," . ($marginY + $hargaYOffset) . "^A0N,22,22^FDRp. $harga^FS
+            ^FO" . ($marginX) . "," . ($marginY + $hargaYOffset) . "
+^A0N,22,22
+^FB" . ($singleWidth - 20) . ",1,0,C,0
+^FDRp. $harga^FS
         ";
 
             // ------------------------
@@ -900,7 +903,10 @@ class ProdukController extends Controller
             ^BY1,2,35
             ^FO" . ($xOffset + 10) . "," . ($marginY + $barcodeYOffset) . "^BCN,35,Y,N,N^FD>:$barcode^FS
 
-            ^FO" . ($xOffset + 10) . "," . ($marginY + $hargaYOffset) . "^A0N,22,22^FDRp. $harga^FS
+            ^FO" . ($xOffset) . "," . ($marginY + $hargaYOffset) . "
+^A0N,22,22
+^FB" . ($singleWidth - 20) . ",1,0,C,0
+^FDRp. $harga^FS
         ";
 
             $zpl .= "^XZ\n";
