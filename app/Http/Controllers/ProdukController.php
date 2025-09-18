@@ -904,8 +904,8 @@ class ProdukController extends Controller
             ^FO" . ($xOffset + 15) . "," . ($marginY + $barcodeYOffset) . "^BCN,35,Y,N,N^FD>:$barcode^FS
 
             ^FO" . ($xOffset) . "," . ($marginY + $hargaYOffset) . "
-^AUN,12,8
 ^FB" . ($singleWidth - 20) . ",1,0,C,0
+^AUN,12,8
 ^FDRp. $harga^FS
         ";
 
