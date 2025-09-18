@@ -822,59 +822,68 @@ class ProdukController extends Controller
         $produk = Produk::where('uuid', $params)->firstOrFail();
 
         $jumlah = (int) $request->input('jumlah', 1);
+        if ($jumlah % 2 != 0) $jumlah++; // genapkan
+
+        // Setting ukuran label (mm)
+        $dpi = 203; // DPI printer Zebra umum
+        $labelWidthMM  = 33;
+        $labelHeightMM = 15;
+
+        // Konversi mm -> dot
+        $singleWidth = round($labelWidthMM * ($dpi / 25.4));   // ~264 dot
+        $labelHeight = round($labelHeightMM * ($dpi / 25.4));  // ~120 dot
+
+        // Margin fixed (bukan dari request)
+        $marginX = 10;  // offset horizontal
+        $marginY = 10;   // offset vertical
 
         // Data produk
-        $nama    = strtoupper(substr($produk->nama_barang, 0, 30)); // max 30 char
-        $varian  = $produk->varian ?? '';       // kalau ada varian
-        $kode1   = $produk->kode1 ?? '';        // jika ada kode tambahan
-        $kode2   = $produk->kode2 ?? '';        // jika ada kode tambahan
-        $barcode = $produk->kode;               // barcode asli dari DB
-        $harga   = number_format(
-            round($produk->hrg_modal + ($produk->hrg_modal * $produk->profit / 100), -3),
-            0,
-            ',',
-            '.'
+        $nama    = strtoupper(substr($produk->nama_barang, 0, 18));
+        $harga   = round(
+            $produk->hrg_modal + ($produk->hrg_modal * $produk->profit / 100),
+            -3
         );
+        $harga   = number_format($harga, 0, ',', '.');
+        $barcode = $produk->kode;
 
-        // Buat ZPL
-        $zpl = "^XA
-^CI28
-^PW831
-^LL120
+        $zpl = "";
 
-^FO335,1^A0N,25,25^FD{$nama}^FS
-^FO47,0^A0N,25,25^FD{$nama}^FS
+        for ($i = 0; $i < $jumlah; $i += 2) {
+            $zpl .= "^XA\n^CI28\n";
+            $zpl .= "^PW" . ($singleWidth * 2) . "\n";  // lebar total halaman
+            $zpl .= "^LL$labelHeight\n";                // tinggi label
 
-^BY2,3,40
-^FO422,38^BCN,40,Y,N,N^FD{$barcode}^FS
-^FO133,37^BCN,40,Y,N,N^FD{$barcode}^FS
+            // ------------------------
+            // KOLOM KIRI
+            // ------------------------
+            $zpl .= "
+^FO" . ($marginX) . "," . ($marginY) . "^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD$nama^FS
+^BY2,2,40
+^FO" . ($marginX + 10) . "," . ($marginY + 20) . "^BCN,40,N,N,N^FD$barcode^FS
+^FO" . ($marginX + 10) . "," . ($marginY + 65) . "^A0N,22,22^FD$barcode^FS
+^FO" . ($marginX + 10) . "," . ($marginY + 85) . "^A0N,22,22^FDRp. $harga^FS
+";
 
-^FO409,72^A0N,30,30^FDRp. {$harga}^FS
-^FO120,71^A0N,30,30^FDRp. {$harga}^FS
+            // ------------------------
+            // KOLOM KANAN
+            // ------------------------
+            $xOffset = $singleWidth + 30 + $marginX;
+            $zpl .= "
+^FO$xOffset," . ($marginY) . "^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD$nama^FS
+^BY2,2,40
+^FO" . ($xOffset + 10) . "," . ($marginY + 20) . "^BCN,40,N,N,N^FD$barcode^FS
+^FO" . ($xOffset + 10) . "," . ($marginY + 65) . "^A0N,22,22^FD$barcode^FS
+^FO" . ($xOffset + 10) . "," . ($marginY + 85) . "^A0N,22,22^FDRp. $harga^FS
+";
 
-^FO335,18^A0N,25,25^FD{$varian}^FS
-^FO47,18^A0N,25,25^FD{$varian}^FS
-
-^FO335,82^A0N,18,18^FD{$kode2}^FS
-^FO47,81^A0N,18,18^FD{$kode2}^FS
-
-^FO335,67^A0N,18,18^FD{$kode1}^FS
-^FO47,67^A0N,18,18^FD{$kode1}^FS
-
-^FO335,39^A0N,18,18^FDADS MOTOR^FS
-^FO335,51^A0N,18,18^FDADS MOTOR^FS
-
-^FO47,37^A0N,18,18^FDADS MOTOR^FS
-^FO47,49^A0N,18,18^FDADS MOTOR^FS
-
-^PQ{$jumlah}
-^XZ";
+            $zpl .= "^XZ\n"; // tutup setiap 1 baris label (2 kolom)
+        }
 
         // Simpan file sementara
         $tmpFile = tempnam(sys_get_temp_dir(), 'zpl');
         file_put_contents($tmpFile, $zpl);
 
-        // Kirim ke printer (ubah ZEBRA_RAW sesuai nama printer Anda di server)
+        // Kirim ke printer (ganti ZEBRA_RAW sesuai nama printer di sistem Anda)
         exec("lp -d ZEBRA_RAW " . escapeshellarg($tmpFile));
 
         return response()->json([
