@@ -844,8 +844,8 @@ class ProdukController extends Controller
         $barcode = $produk->kode;
 
         // Perhitungan tinggi teks nama barang
-        $fontHeight = 20;              // tinggi font (dot)
-        $charsPerLine = 14;            // kira2 muat 18 huruf per baris
+        $fontHeight   = 20;   // tinggi font (dot)
+        $charsPerLine = 14;   // kira2 muat 14 huruf per baris
         $calcLines    = ceil(mb_strlen($nama) / $charsPerLine);
 
         // maksimal 2 baris, minimal 1
@@ -857,10 +857,14 @@ class ProdukController extends Controller
         }
 
         // Hitung posisi barcode berdasarkan jumlah baris nama
-        $barcodeYOffset = ($lines * $fontHeight) - 20; // posisi barcode dari marginY
-        // if ($barcodeYOffset < 30) $barcodeYOffset = 30; // minimal 30 dot
-        // if ($barcodeYOffset > 50) $barcodeYOffset = 50;
-        $hargaYOffset   = $barcodeYOffset + 55; // kasih jarak bawah barcode
+        if ($lines == 1) {
+            $barcodeYOffset = ($fontHeight * 1) + 15; // 1 baris → agak naik
+        } else {
+            $barcodeYOffset = ($fontHeight * 2) + 5;  // 2 baris → lebih turun
+        }
+
+        // Posisi harga setelah barcode
+        $hargaYOffset = $barcodeYOffset + 55;
 
         $zpl = "";
         for ($i = 0; $i < $jumlah; $i += 2) {
