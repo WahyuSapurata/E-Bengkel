@@ -838,12 +838,10 @@ class ProdukController extends Controller
         $marginY = 10;
 
         // Data produk
-        $nama = strtoupper(substr($produk->nama_barang, 0, 18));
-        $harga = round($produk->hrg_modal + ($produk->hrg_modal * $produk->profit / 100), -3);
-        $harga = number_format($harga, 0, ',', '.');
-
-        // ✅ Perbaiki check digit EAN-13
-        $barcode = $produk->kode;
+        $nama   = strtoupper($produk->nama_barang); // ambil full, tidak dipotong 18 char
+        $harga  = round($produk->hrg_modal + ($produk->hrg_modal * $produk->profit / 100), -3);
+        $harga  = number_format($harga, 0, ',', '.');
+        $barcode = $produk->kode; // ambil persis dari DB
 
         $zpl = "";
         for ($i = 0; $i < $jumlah; $i += 2) {
@@ -855,10 +853,15 @@ class ProdukController extends Controller
             // KOLOM KIRI
             // ------------------------
             $zpl .= "
-            ^FO" . ($marginX) . "," . ($marginY) . "^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD$nama^FS
-            ^BY1,2,25
-^FO" . ($marginX + 10) . "," . ($marginY + 20) . "^BCN,25,Y,N,N^FD$barcode^FS
-            ^FO" . ($marginX + 10) . "," . ($marginY + 85) . "^A0N,22,22^FDRp. $harga^FS
+            ^FO" . ($marginX) . "," . ($marginY) . "
+            ^A0N,18,18
+            ^FB" . ($singleWidth - 20) . ",2,0,C,0
+            ^FD$nama^FS
+
+            ^BY1,2,35
+            ^FO" . ($marginX + 10) . "," . ($marginY + 40) . "^BCN,35,Y,N,N^FD>:$barcode^FS
+
+            ^FO" . ($marginX + 10) . "," . ($marginY + 100) . "^A0N,22,22^FDRp. $harga^FS
         ";
 
             // ------------------------
@@ -866,10 +869,15 @@ class ProdukController extends Controller
             // ------------------------
             $xOffset = $singleWidth + 30 + $marginX;
             $zpl .= "
-            ^FO$xOffset," . ($marginY) . "^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD$nama^FS
-          ^BY1,2,25
-^FO" . ($xOffset + 10) . "," . ($marginY + 20) . "^BCN,25,Y,N,N^FD$barcode^FS
-            ^FO" . ($xOffset + 10) . "," . ($marginY + 85) . "^A0N,22,22^FDRp. $harga^FS
+            ^FO$xOffset," . ($marginY) . "
+            ^A0N,18,18
+            ^FB" . ($singleWidth - 20) . ",2,0,C,0
+            ^FD$nama^FS
+
+            ^BY1,2,35
+            ^FO" . ($xOffset + 10) . "," . ($marginY + 40) . "^BCN,35,Y,N,N^FD>:$barcode^FS
+
+            ^FO" . ($xOffset + 10) . "," . ($marginY + 100) . "^A0N,22,22^FDRp. $harga^FS
         ";
 
             $zpl .= "^XZ\n";
@@ -879,8 +887,8 @@ class ProdukController extends Controller
         $tmpFile = tempnam(sys_get_temp_dir(), 'zpl');
         file_put_contents($tmpFile, $zpl);
 
-        // Kirim ke printer
-        exec("lp -d ZEBRA_RAW " . escapeshellarg($tmpFile));
+        // Kirim ke printer (pakai raw biar tidak diubah driver)
+        exec("lp -d ZEBRA_RAW -o raw " . escapeshellarg($tmpFile));
 
         return response()->json([
             'success' => true,
