@@ -839,7 +839,10 @@ class ProdukController extends Controller
 
         // Data produk
         $nama    = strtoupper(substr($produk->nama_barang, 0, 18));
-        $harga   = $produk->hrg_modal + ($produk->hrg_modal * $produk->profit / 100);
+        $harga   = round(
+            $produk->hrg_modal + ($produk->hrg_modal * $produk->profit / 100),
+            -3
+        );
         $harga   = number_format($harga, 0, ',', '.');
         $barcode = $produk->kode;
 
