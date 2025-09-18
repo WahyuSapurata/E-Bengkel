@@ -824,21 +824,19 @@ class ProdukController extends Controller
         $jumlah = (int) $request->input('jumlah', 1);
         if ($jumlah % 2 != 0) $jumlah++; // genapkan
 
-        // Setting ukuran label (mm)
-        $dpi = 203; // DPI printer Zebra umum
-        $labelWidthMM  = 33;
-        $labelHeightMM = 15;
+        // --- Setting label ---
+        $dpi = 203; // Zebra ZD230 umumnya 203 dpi
+        $labelWidthMM  = 38;   // lebar 1 kolom (mm)
+        $labelHeightMM = 25;   // tinggi label (mm)
 
-        // Konversi mm -> dot
-        $singleWidth = round($labelWidthMM * ($dpi / 25.4));   // ~264 dot
-        $labelHeight = round($labelHeightMM * ($dpi / 25.4));  // ~120 dot
+        $singleWidth = round($labelWidthMM * ($dpi / 25.4));   // dot
+        $labelHeight = round($labelHeightMM * ($dpi / 25.4));  // dot
 
-        // Margin fixed (bukan dari request)
-        $marginX = 10;  // offset horizontal
-        $marginY = 10;   // offset vertical
+        $marginX = 10;
+        $marginY = 10;
 
-        // Data produk
-        $nama    = strtoupper(substr($produk->nama_barang, 0, 18));
+        // --- Data produk ---
+        $nama    = strtoupper(substr($produk->nama_barang, 0, 40));
         $harga   = round(
             $produk->hrg_modal + ($produk->hrg_modal * $produk->profit / 100),
             -3
@@ -846,44 +844,46 @@ class ProdukController extends Controller
         $harga   = number_format($harga, 0, ',', '.');
         $barcode = $produk->kode;
 
+        // misalnya outlet code/keterangan tambahan
+        $info1 = "MMM";
+        $info2 = "SAMATA";
+        $info3 = "899313";
+        $info4 = "7711807";
+
         $zpl = "";
 
         for ($i = 0; $i < $jumlah; $i += 2) {
             $zpl .= "^XA\n^CI28\n";
-            $zpl .= "^PW" . ($singleWidth * 2) . "\n";  // lebar total halaman
+            $zpl .= "^PW" . ($singleWidth * 2) . "\n";  // total width
             $zpl .= "^LL$labelHeight\n";                // tinggi label
 
-            // ------------------------
-            // KOLOM KIRI
-            // ------------------------
+            // === KOLOM KIRI ===
             $zpl .= "
-^FO" . ($marginX) . "," . ($marginY) . "^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD$nama^FS
-^BY2,2,40
-^FO" . ($marginX + 10) . "," . ($marginY + 20) . "^BCN,40,N,N,N^FD$barcode^FS
-^FO" . ($marginX + 10) . "," . ($marginY + 65) . "^A0N,22,22^FD$barcode^FS
-^FO" . ($marginX + 10) . "," . ($marginY + 85) . "^A0N,22,22^FDRp. $harga^FS
+^FO" . ($marginX) . ",10^A0N,20,20^FB" . ($singleWidth - 20) . ",2,0,L,0^FD$nama^FS
+^FO" . ($marginX) . ",50^BY2,2,40^BCN,40,Y,N,N^FD$barcode^FS
+^FO" . ($marginX) . ",95^A0N,18,18^FD$info1 $info2^FS
+^FO" . ($marginX) . ",115^A0N,18,18^FD$info3 $info4^FS
+^FO" . ($marginX) . ",140^A0N,24,24^FDRp. $harga^FS
 ";
 
-            // ------------------------
-            // KOLOM KANAN
-            // ------------------------
-            $xOffset = $singleWidth + 30 + $marginX;
+            // === KOLOM KANAN ===
+            $xOffset = $singleWidth + $marginX + 20;
             $zpl .= "
-^FO$xOffset," . ($marginY) . "^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD$nama^FS
-^BY2,2,40
-^FO" . ($xOffset + 10) . "," . ($marginY + 20) . "^BCN,40,N,N,N^FD$barcode^FS
-^FO" . ($xOffset + 10) . "," . ($marginY + 65) . "^A0N,22,22^FD$barcode^FS
-^FO" . ($xOffset + 10) . "," . ($marginY + 85) . "^A0N,22,22^FDRp. $harga^FS
+^FO" . ($xOffset) . ",10^A0N,20,20^FB" . ($singleWidth - 20) . ",2,0,L,0^FD$nama^FS
+^FO" . ($xOffset) . ",50^BY2,2,40^BCN,40,Y,N,N^FD$barcode^FS
+^FO" . ($xOffset) . ",95^A0N,18,18^FD$info1 $info2^FS
+^FO" . ($xOffset) . ",115^A0N,18,18^FD$info3 $info4^FS
+^FO" . ($xOffset) . ",140^A0N,24,24^FDRp. $harga^FS
 ";
 
-            $zpl .= "^XZ\n"; // tutup setiap 1 baris label (2 kolom)
+            $zpl .= "^XZ\n"; // tutup
         }
 
-        // Simpan file sementara
+        // Simpan sementara
         $tmpFile = tempnam(sys_get_temp_dir(), 'zpl');
         file_put_contents($tmpFile, $zpl);
 
-        // Kirim ke printer (ganti ZEBRA_RAW sesuai nama printer di sistem Anda)
+        // Kirim ke printer (ubah ZEBRA_RAW sesuai nama printer Anda)
         exec("lp -d ZEBRA_RAW " . escapeshellarg($tmpFile));
 
         return response()->json([
