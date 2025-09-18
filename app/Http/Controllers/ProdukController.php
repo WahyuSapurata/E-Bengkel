@@ -850,7 +850,7 @@ class ProdukController extends Controller
         if ($lines < 1) $lines = 1;    // minimal 1 baris
 
         // Hitung posisi barcode berdasarkan jumlah baris nama
-        $barcodeYOffset = ($lines * $fontHeight) - 50;
+        $barcodeYOffset = ($lines * $fontHeight) - 5;
         $hargaYOffset   = $barcodeYOffset + 55; // kasih jarak bawah barcode
 
         $zpl = "";
