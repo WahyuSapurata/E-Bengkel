@@ -834,7 +834,7 @@ class ProdukController extends Controller
         $labelHeight = round($labelHeightMM * ($dpi / 25.4));
 
         // Margin fixed
-        $marginX = 7;
+        $marginX = 5;
         $marginY = 10;
 
         // Data produk
@@ -882,7 +882,7 @@ class ProdukController extends Controller
             ^FD$nama^FS
 
             ^BY1,2,35
-            ^FO" . ($marginX + 10) . "," . ($marginY + $barcodeYOffset) . "^BCN,35,Y,N,N^FD>:$barcode^FS
+            ^FO" . ($marginX + 15) . "," . ($marginY + $barcodeYOffset) . "^BCN,35,Y,N,N^FD>:$barcode^FS
 
             ^FO" . ($marginX) . "," . ($marginY + $hargaYOffset) . "
 ^A0N,22,22
@@ -901,7 +901,7 @@ class ProdukController extends Controller
             ^FD$nama^FS
 
             ^BY1,2,35
-            ^FO" . ($xOffset + 10) . "," . ($marginY + $barcodeYOffset) . "^BCN,35,Y,N,N^FD>:$barcode^FS
+            ^FO" . ($xOffset + 15) . "," . ($marginY + $barcodeYOffset) . "^BCN,35,Y,N,N^FD>:$barcode^FS
 
             ^FO" . ($xOffset) . "," . ($marginY + $hargaYOffset) . "
 ^A0N,22,22
