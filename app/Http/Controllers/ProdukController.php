@@ -833,9 +833,9 @@ class ProdukController extends Controller
         $singleWidth = round($labelWidthMM * ($dpi / 25.4));   // ~264 dot
         $labelHeight = round($labelHeightMM * ($dpi / 25.4));  // ~120 dot
 
-        // Margin fixed (bukan dari request)
-        $marginX = 10;  // offset horizontal
-        $marginY = 10;   // offset vertical
+        // Margin fixed
+        $marginX = 10;
+        $marginY = 10;
 
         // Data produk
         $nama    = strtoupper(substr($produk->nama_barang, 0, 18));
@@ -844,7 +844,7 @@ class ProdukController extends Controller
             -3
         );
         $harga   = number_format($harga, 0, ',', '.');
-        $barcode = $produk->kode;
+        $barcode = $produk->kode; // langsung dari DB, tidak diubah
 
         $zpl = "";
 
@@ -883,7 +883,7 @@ class ProdukController extends Controller
         $tmpFile = tempnam(sys_get_temp_dir(), 'zpl');
         file_put_contents($tmpFile, $zpl);
 
-        // Kirim ke printer (ganti ZEBRA_RAW sesuai nama printer di sistem Anda)
+        // Kirim ke printer
         exec("lp -d ZEBRA_RAW " . escapeshellarg($tmpFile));
 
         return response()->json([
