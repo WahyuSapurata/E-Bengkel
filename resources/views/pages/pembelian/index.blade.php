@@ -89,7 +89,7 @@
     <!-- Modal Form -->
     <div class="modal fade" id="modal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
         aria-labelledby="modalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-fullscreen">
             <form id="form">
                 <input type="hidden" name="uuid" id="uuid">
                 <div class="modal-content">
@@ -165,20 +165,24 @@
                         <label class="text-uppercase form-label">Produk</label>
                         <div id="produk-wrapper">
                             <div class="row mb-2 produk-row">
-                                <div class="col-4">
+                                <div class="col-3">
                                     <label class="text-capitalize form-label">Produk</label>
                                     <select name="uuid_produk[]" id="uuid_produk" data-placeholder="Pilih inputan"
                                         class="form-select basic-usage">
                                         <option value=""></option>
                                     </select>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-3">
                                     <label class="text-capitalize form-label">QTY</label>
-                                    <input type="number" name="qty[]" class="form-control">
+                                    <input type="number" name="qty[]" class="form-control qty">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-3">
                                     <label class="text-capitalize form-label">Harga</label>
-                                    <input type="text" name="harga[]" class="form-control formatRupiah">
+                                    <input type="text" name="harga[]" class="form-control harga formatRupiah">
+                                </div>
+                                <div class="col-3">
+                                    <label class="text-capitalize form-label">Sub Total Harga</label>
+                                    <input type="text" class="form-control sub-total formatRupiah">
                                 </div>
                             </div>
                         </div>
@@ -186,9 +190,12 @@
                             <button type="button" id="btn-tambah" class="btn btn-success">Tambah Produk</button>
                             <button type="button" class="btn btn-danger btn-remove">Hapus</button>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-success">Simpan</button>
+                        <div class="d-flex justify-content-end mt-4">
+                            <h5 class="" id="total-harga"></h5>
+                        </div>
+                        <div class="d-flex justify-content-end mt-4">
+                            <button type="submit" class="btn btn-success">Simpan</button>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -309,6 +316,7 @@
                 let rows = $(".produk-row");
                 if (rows.length > 1) {
                     rows.last().remove();
+                    hitungTotal();
                 } else {
                     Swal.fire({
                         title: "Warning",
@@ -319,6 +327,46 @@
                     });
                 }
             });
+
+            // Event perubahan QTY atau Harga
+            $(document).on("input", ".qty, .harga", function() {
+                let row = $(this).closest('.produk-row');
+                let qty = parseFloat(row.find('.qty').val()) || 0;
+                let harga = parseRupiah(row.find('.harga').val());
+
+                // Hitung sub total
+                let subTotal = qty * harga;
+                row.find('.sub-total').val(formatRupiah(subTotal));
+
+                // Update total semua
+                hitungTotal();
+            });
+
+            // Jika ingin bisa isi Sub Total secara manual dan update harga
+            $(document).on("input", ".sub-total", function() {
+                let row = $(this).closest('.produk-row');
+                let qty = parseFloat(row.find('.qty').val()) || 0;
+                let subTotal = parseRupiah(row.find('.sub-total').val());
+
+                if (qty > 0) {
+                    let harga = subTotal / qty;
+                    row.find('.harga').val(formatRupiah(harga));
+                }
+
+                // Update total semua
+                hitungTotal();
+            });
+
+            // Fungsi hitung total semua sub total
+            function hitungTotal() {
+                let total = 0;
+                $(".sub-total").each(function() {
+                    total += parseRupiah($(this).val());
+                });
+                $("#total-harga").text("Total: " + formatRupiah(total));
+            }
+
+            hitungTotal();
         });
 
         // Fungsi parse angka dari string Rupiah
