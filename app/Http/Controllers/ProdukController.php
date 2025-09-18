@@ -886,7 +886,7 @@ class ProdukController extends Controller
 
             ^FO" . ($marginX) . "," . ($marginY + $hargaYOffset) . "
 ^FB" . ($singleWidth - 20) . ",1,0,C,0
-^AUN,12,8
+^AUN,10,6
 ^FDRp. $harga^FS
         ";
 
@@ -905,7 +905,7 @@ class ProdukController extends Controller
 
             ^FO" . ($xOffset) . "," . ($marginY + $hargaYOffset) . "
 ^FB" . ($singleWidth - 20) . ",1,0,C,0
-^AUN,12,8
+^AUN,10,6
 ^FDRp. $harga^FS
         ";
 
