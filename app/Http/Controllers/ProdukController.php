@@ -858,7 +858,7 @@ class ProdukController extends Controller
 
         // Hitung posisi barcode berdasarkan jumlah baris nama
         if ($lines == 1) {
-            $barcodeYOffset = ($fontHeight * 1) + 1; // 1 baris → agak naik
+            $barcodeYOffset = ($fontHeight * 1) - 10; // 1 baris → agak naik
         } else {
             $barcodeYOffset = ($fontHeight * 2) + 4;  // 2 baris → lebih turun
         }
