@@ -18,7 +18,7 @@
         }
 
         .label {
-            width: 90mm;
+            width: 50mm;
             height: 40mm;
             border: 1px solid #000;
             /* margin: 5mm; */
