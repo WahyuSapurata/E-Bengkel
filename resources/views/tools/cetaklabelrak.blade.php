@@ -15,7 +15,6 @@
         .row {
             display: flex;
             margin-bottom: 5mm;
-            page-break-inside: avoid;
         }
 
         .label {
