@@ -858,7 +858,7 @@ class ProdukController extends Controller
 
         // Hitung posisi barcode berdasarkan jumlah baris nama
         if ($lines == 1) {
-            $barcodeYOffset = ($fontHeight * 1) + 5; // 1 baris → agak naik
+            $barcodeYOffset = ($fontHeight * 1) + 1; // 1 baris → agak naik
         } else {
             $barcodeYOffset = ($fontHeight * 2) + 4;  // 2 baris → lebih turun
         }
@@ -885,7 +885,7 @@ class ProdukController extends Controller
             ^FO" . ($marginX + 15) . "," . ($marginY + $barcodeYOffset) . "^BCN,35,Y,N,N^FD>:$barcode^FS
 
             ^FO" . ($marginX) . "," . ($marginY + $hargaYOffset) . "
-^A0N,30,26
+^A0N,27,23
 ^FB" . ($singleWidth - 20) . ",1,0,C,0
 ^FDRp. $harga^FS
         ";
@@ -904,7 +904,7 @@ class ProdukController extends Controller
             ^FO" . ($xOffset + 15) . "," . ($marginY + $barcodeYOffset) . "^BCN,35,Y,N,N^FD>:$barcode^FS
 
             ^FO" . ($xOffset) . "," . ($marginY + $hargaYOffset) . "
-^A0N,30,26
+^A0N,27,23
 ^FB" . ($singleWidth - 20) . ",1,0,C,0
 ^FDRp. $harga^FS
         ";
