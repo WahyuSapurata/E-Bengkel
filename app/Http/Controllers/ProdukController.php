@@ -834,7 +834,7 @@ class ProdukController extends Controller
         $labelHeight = round($labelHeightMM * ($dpi / 25.4));
 
         // Margin fixed
-        $marginX = 10;
+        $marginX = 5;
         $marginY = 10;
 
         // Data produk
@@ -872,39 +872,39 @@ class ProdukController extends Controller
             // KOLOM KIRI
             // ------------------------
             $zpl .= "
-^FO" . ($marginX) . "," . ($marginY) . "
-^A0N,$fontHeight,$fontHeight
-^FB" . ($singleWidth - 20) . ",$lines,0,C,0
-^FD$nama^FS
+            ^FO" . ($marginX) . "," . ($marginY) . "
+            ^A0N,$fontHeight,$fontHeight
+            ^FB" . ($singleWidth - 20) . ",$lines,0,C,0
+            ^FD$nama^FS
 
-^BY1,2,35
-^FO" . ($marginX + ($singleWidth / 2) - 50) . "," . ($marginY + $barcodeYOffset) . "^BCN,35,Y,N,N^FD$barcode^FS
+            ^BY1,2,35
+            ^FO" . ($marginX + 10) . "," . ($marginY + $barcodeYOffset) . "^BCN,35,Y,N,N^FD>:$barcode^FS
 
-^FO" . ($marginX) . "," . ($marginY + $hargaYOffset) . "
+            ^FO" . ($marginX) . "," . ($marginY + $hargaYOffset) . "
 ^A0N,22,22
 ^FB" . ($singleWidth - 20) . ",1,0,C,0
 ^FDRp. $harga^FS
-";
+
+        ";
 
             // ------------------------
             // KOLOM KANAN
             // ------------------------
             $xOffset = $singleWidth + 30 + $marginX;
             $zpl .= "
-^FO$xOffset," . ($marginY) . "
-^A0N,$fontHeight,$fontHeight
-^FB" . ($singleWidth - 20) . ",$lines,0,C,0
-^FD$nama^FS
+            ^FO$xOffset," . ($marginY) . "
+            ^A0N,$fontHeight,$fontHeight
+            ^FB" . ($singleWidth - 20) . ",$lines,0,C,0
+            ^FD$nama^FS
 
-^BY1,2,35
-^FO" . ($xOffset + ($singleWidth / 2) - 50) . "," . ($marginY + $barcodeYOffset) . "^BCN,35,Y,N,N^FD$barcode^FS
+            ^BY1,2,35
+            ^FO" . ($xOffset + 10) . "," . ($marginY + $barcodeYOffset) . "^BCN,35,Y,N,N^FD>:$barcode^FS
 
-^FO" . ($xOffset) . "," . ($marginY + $hargaYOffset) . "
+            ^FO" . ($xOffset) . "," . ($marginY + $hargaYOffset) . "
 ^A0N,22,22
 ^FB" . ($singleWidth - 20) . ",1,0,C,0
 ^FDRp. $harga^FS
-";
-
+        ";
 
             $zpl .= "^XZ\n";
         }
