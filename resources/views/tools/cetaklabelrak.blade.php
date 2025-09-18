@@ -42,6 +42,20 @@
             line-height: 1.3;
         }
 
+        .info .nama-barang {
+            display: inline-block;
+            /* supaya bisa dibatasi lebar */
+            width: 50mm;
+            /* maksimal lebar sebelum turun */
+            white-space: normal;
+            /* kata bisa wrap */
+            word-wrap: break-word;
+            /* pecah kata panjang */
+            overflow: hidden;
+            /* optional, supaya tidak keluar */
+        }
+
+
         .harga-list {
             margin-top: 2mm;
             font-size: 9pt;
@@ -83,7 +97,7 @@
             @foreach ($chunk as $p)
                 <div class="label">
                     <div class="info">
-                        <strong>{{ $p['nama_barang'] }}</strong><br>
+                        <strong class="nama-barang">{{ $p['nama_barang'] }}</strong><br>
                         {{ $p['merek'] }} | {{ $p['satuan'] }}
                         <div class="harga-list">
                             @foreach ($p['harga_jual'] as $hj)
