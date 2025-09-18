@@ -835,7 +835,7 @@ class ProdukController extends Controller
 
         // Margin fixed (bukan dari request)
         $marginX = 10;  // offset horizontal
-        $marginY = 5;   // offset vertical
+        $marginY = 10;   // offset vertical
 
         // Data produk
         $nama    = strtoupper(substr($produk->nama_barang, 0, 18));
@@ -856,19 +856,19 @@ class ProdukController extends Controller
             $zpl .= "
 ^FO" . ($marginX) . "," . ($marginY) . "^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD$nama^FS
 ^BY2,2,40
-^FO" . ($marginX + 10) . "," . ($marginY + 25) . "^BEN,40,Y,N^FD$barcode^FS
-^FO" . ($marginX + 10) . "," . ($marginY + 75) . "^A0N,22,22^FDRp. $harga^FS
+^FO" . ($marginX + 10) . "," . ($marginY + 20) . "^BEN,40,Y,N^FD$barcode^FS
+^FO" . ($marginX + 10) . "," . ($marginY + 85) . "^A0N,22,22^FDRp. $harga^FS
 ";
 
             // ------------------------
             // KOLOM KANAN
             // ------------------------
-            $xOffset = $singleWidth + $marginX;
+            $xOffset = $singleWidth + 30 + $marginX;
             $zpl .= "
 ^FO$xOffset," . ($marginY) . "^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD$nama^FS
 ^BY2,2,40
-^FO" . ($xOffset + 10) . "," . ($marginY + 25) . "^BEN,40,Y,N^FD$barcode^FS
-^FO" . ($xOffset + 10) . "," . ($marginY + 75) . "^A0N,22,22^FDRp. $harga^FS
+^FO" . ($xOffset + 10) . "," . ($marginY + 20) . "^BEN,40,Y,N^FD$barcode^FS
+^FO" . ($xOffset + 10) . "," . ($marginY + 85) . "^A0N,22,22^FDRp. $harga^FS
 ";
 
             $zpl .= "^XZ\n"; // tutup setiap 1 baris label (2 kolom)
