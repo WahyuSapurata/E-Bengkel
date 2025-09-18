@@ -8,7 +8,7 @@
         }
 
         body {
-            margin: 10mm;
+            margin: 5mm;
             font-family: Arial, sans-serif;
         }
 
