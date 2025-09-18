@@ -834,7 +834,7 @@ class ProdukController extends Controller
         $labelHeight = round($labelHeightMM * ($dpi / 25.4));
 
         // Margin fixed
-        $marginX = 10;
+        $marginX = 7;
         $marginY = 10;
 
         // Data produk
@@ -844,8 +844,8 @@ class ProdukController extends Controller
         $barcode = $produk->kode;
 
         // Perhitungan tinggi teks nama barang
-        $fontHeight   = 18;   // tinggi font (dot)
-        $charsPerLine = 16;   // kira2 muat 14 huruf per baris
+        $fontHeight   = 16;   // tinggi font (dot)
+        $charsPerLine = 17;   // kira2 muat 14 huruf per baris
         $calcLines    = ceil(mb_strlen($nama) / $charsPerLine);
 
         // maksimal 2 baris, minimal 1
@@ -860,7 +860,7 @@ class ProdukController extends Controller
         if ($lines == 1) {
             $barcodeYOffset = ($fontHeight * 1) + 15; // 1 baris → agak naik
         } else {
-            $barcodeYOffset = ($fontHeight * 2) + 5;  // 2 baris → lebih turun
+            $barcodeYOffset = ($fontHeight * 2) + 4;  // 2 baris → lebih turun
         }
 
         // Posisi harga setelah barcode
