@@ -838,10 +838,20 @@ class ProdukController extends Controller
         $marginY = 10;
 
         // Data produk
-        $nama   = strtoupper($produk->nama_barang); // ambil full nama barang
+        $nama   = strtoupper($produk->nama_barang);
         $harga  = round($produk->hrg_modal + ($produk->hrg_modal * $produk->profit / 100), -3);
         $harga  = number_format($harga, 0, ',', '.');
-        $barcode = $produk->kode; // ambil persis dari DB
+        $barcode = $produk->kode;
+
+        // Perhitungan tinggi teks nama barang
+        $fontHeight = 20;              // tinggi font (dot)
+        $charsPerLine = 18;            // kira2 muat 18 huruf per baris
+        $lines = ceil(mb_strlen($nama) / $charsPerLine);
+        if ($lines < 1) $lines = 1;    // minimal 1 baris
+
+        // Hitung posisi barcode berdasarkan jumlah baris nama
+        $barcodeYOffset = ($lines * $fontHeight) + 10;
+        $hargaYOffset   = $barcodeYOffset + 55; // kasih jarak bawah barcode
 
         $zpl = "";
         for ($i = 0; $i < $jumlah; $i += 2) {
@@ -854,14 +864,14 @@ class ProdukController extends Controller
             // ------------------------
             $zpl .= "
             ^FO" . ($marginX) . "," . ($marginY) . "
-            ^A0N,18,18
-            ^FB" . ($singleWidth - 20) . ",0,0,C,0
+            ^A0N,$fontHeight,$fontHeight
+            ^FB" . ($singleWidth - 20) . ",$lines,0,C,0
             ^FD$nama^FS
 
             ^BY1,2,35
-            ^FO" . ($marginX + 10) . ",+10^BCN,35,Y,N,N^FD>:$barcode^FS
+            ^FO" . ($marginX + 10) . "," . ($marginY + $barcodeYOffset) . "^BCN,35,Y,N,N^FD>:$barcode^FS
 
-            ^FO" . ($marginX + 10) . ",+75^A0N,22,22^FDRp. $harga^FS
+            ^FO" . ($marginX + 10) . "," . ($marginY + $hargaYOffset) . "^A0N,22,22^FDRp. $harga^FS
         ";
 
             // ------------------------
@@ -870,14 +880,14 @@ class ProdukController extends Controller
             $xOffset = $singleWidth + 30 + $marginX;
             $zpl .= "
             ^FO$xOffset," . ($marginY) . "
-            ^A0N,18,18
-            ^FB" . ($singleWidth - 20) . ",0,0,C,0
+            ^A0N,$fontHeight,$fontHeight
+            ^FB" . ($singleWidth - 20) . ",$lines,0,C,0
             ^FD$nama^FS
 
             ^BY1,2,35
-            ^FO" . ($xOffset + 10) . ",+10^BCN,35,Y,N,N^FD>:$barcode^FS
+            ^FO" . ($xOffset + 10) . "," . ($marginY + $barcodeYOffset) . "^BCN,35,Y,N,N^FD>:$barcode^FS
 
-            ^FO" . ($xOffset + 10) . ",+75^A0N,22,22^FDRp. $harga^FS
+            ^FO" . ($xOffset + 10) . "," . ($marginY + $hargaYOffset) . "^A0N,22,22^FDRp. $harga^FS
         ";
 
             $zpl .= "^XZ\n";
