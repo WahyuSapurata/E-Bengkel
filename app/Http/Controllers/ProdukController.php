@@ -822,7 +822,7 @@ class ProdukController extends Controller
         $produk = Produk::where('uuid', $params)->firstOrFail();
 
         $jumlah = (int) $request->input('jumlah', 1);
-        if ($jumlah % 2 != 0) $jumlah++; // genapkan
+        if ($jumlah % 2 != 0) $jumlah++; // genapkan supaya genap
 
         // Setting ukuran label (mm)
         $dpi = 203; // DPI printer Zebra umum
@@ -833,7 +833,7 @@ class ProdukController extends Controller
         $singleWidth = round($labelWidthMM * ($dpi / 25.4));   // ~264 dot
         $labelHeight = round($labelHeightMM * ($dpi / 25.4));  // ~120 dot
 
-        // Margin fixed
+        // Margin
         $marginX = 10;
         $marginY = 10;
 
@@ -857,11 +857,11 @@ class ProdukController extends Controller
             // KOLOM KIRI
             // ------------------------
             $zpl .= "
-^FO" . ($marginX) . "," . ($marginY) . "^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD$nama^FS
+^FO{$marginX},{$marginY}^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD{$nama}^FS
 ^BY2,2,40
-^FO" . ($marginX + 10) . "," . ($marginY + 20) . "^BCN,40,N,N,N^FD$barcode^FS
-^FO" . ($marginX + 10) . "," . ($marginY + 65) . "^A0N,22,22^FD$barcode^FS
-^FO" . ($marginX + 10) . "," . ($marginY + 85) . "^A0N,22,22^FDRp. $harga^FS
+^FO" . ($marginX + 10) . "," . ($marginY + 20) . "^BCN,40,Y,N,N^FD{$barcode}^FS
+^FO" . ($marginX + 10) . "," . ($marginY + 70) . "^A0N,22,22^FD{$barcode}^FS
+^FO" . ($marginX + 10) . "," . ($marginY + 95) . "^A0N,22,22^FDRp. {$harga}^FS
 ";
 
             // ------------------------
@@ -869,14 +869,14 @@ class ProdukController extends Controller
             // ------------------------
             $xOffset = $singleWidth + 30 + $marginX;
             $zpl .= "
-^FO$xOffset," . ($marginY) . "^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD$nama^FS
+^FO{$xOffset},{$marginY}^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD{$nama}^FS
 ^BY2,2,40
-^FO" . ($xOffset + 10) . "," . ($marginY + 20) . "^BCN,40,N,N,N^FD$barcode^FS
-^FO" . ($xOffset + 10) . "," . ($marginY + 65) . "^A0N,22,22^FD$barcode^FS
-^FO" . ($xOffset + 10) . "," . ($marginY + 85) . "^A0N,22,22^FDRp. $harga^FS
+^FO" . ($xOffset + 10) . "," . ($marginY + 20) . "^BCN,40,Y,N,N^FD{$barcode}^FS
+^FO" . ($xOffset + 10) . "," . ($marginY + 70) . "^A0N,22,22^FD{$barcode}^FS
+^FO" . ($xOffset + 10) . "," . ($marginY + 95) . "^A0N,22,22^FDRp. {$harga}^FS
 ";
 
-            $zpl .= "^XZ\n"; // tutup setiap 1 baris label (2 kolom)
+            $zpl .= "^XZ\n"; // tutup label
         }
 
         // Simpan file sementara
