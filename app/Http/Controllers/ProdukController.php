@@ -822,7 +822,7 @@ class ProdukController extends Controller
         $produk = Produk::where('uuid', $params)->firstOrFail();
 
         $jumlah = (int) $request->input('jumlah', 1);
-        if ($jumlah % 2 != 0) $jumlah++; // genapkan supaya genap
+        if ($jumlah % 2 != 0) $jumlah++; // genapkan
 
         // Setting ukuran label (mm)
         $dpi = 203; // DPI printer Zebra umum
@@ -830,53 +830,49 @@ class ProdukController extends Controller
         $labelHeightMM = 15;
 
         // Konversi mm -> dot
-        $singleWidth = round($labelWidthMM * ($dpi / 25.4));   // ~264 dot
-        $labelHeight = round($labelHeightMM * ($dpi / 25.4));  // ~120 dot
+        $singleWidth = round($labelWidthMM * ($dpi / 25.4));
+        $labelHeight = round($labelHeightMM * ($dpi / 25.4));
 
-        // Margin
+        // Margin fixed
         $marginX = 10;
         $marginY = 10;
 
         // Data produk
-        $nama    = strtoupper(substr($produk->nama_barang, 0, 18));
-        $harga   = round(
-            $produk->hrg_modal + ($produk->hrg_modal * $produk->profit / 100),
-            -3
-        );
-        $harga   = number_format($harga, 0, ',', '.');
-        $barcode = $produk->kode; // langsung dari DB, tidak diubah
+        $nama = strtoupper(substr($produk->nama_barang, 0, 18));
+        $harga = round($produk->hrg_modal + ($produk->hrg_modal * $produk->profit / 100), -3);
+        $harga = number_format($harga, 0, ',', '.');
+
+        // ✅ Perbaiki check digit EAN-13
+        $barcode = $this->fixEAN13($produk->kode);
 
         $zpl = "";
-
         for ($i = 0; $i < $jumlah; $i += 2) {
             $zpl .= "^XA\n^CI28\n";
-            $zpl .= "^PW" . ($singleWidth * 2) . "\n";  // lebar total halaman
-            $zpl .= "^LL$labelHeight\n";                // tinggi label
+            $zpl .= "^PW" . ($singleWidth * 2) . "\n";
+            $zpl .= "^LL$labelHeight\n";
 
             // ------------------------
             // KOLOM KIRI
             // ------------------------
             $zpl .= "
-^FO{$marginX},{$marginY}^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD{$nama}^FS
-^BY2,2,40
-^FO" . ($marginX + 10) . "," . ($marginY + 20) . "^BCN,40,Y,N,N^FD{$barcode}^FS
-^FO" . ($marginX + 10) . "," . ($marginY + 70) . "^A0N,22,22^FD{$barcode}^FS
-^FO" . ($marginX + 10) . "," . ($marginY + 95) . "^A0N,22,22^FDRp. {$harga}^FS
-";
+            ^FO" . ($marginX) . "," . ($marginY) . "^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD$nama^FS
+            ^BY2,2,40
+            ^FO" . ($marginX + 10) . "," . ($marginY + 20) . "^BEN,40,Y,N^FD$barcode^FS
+            ^FO" . ($marginX + 10) . "," . ($marginY + 85) . "^A0N,22,22^FDRp. $harga^FS
+        ";
 
             // ------------------------
             // KOLOM KANAN
             // ------------------------
             $xOffset = $singleWidth + 30 + $marginX;
             $zpl .= "
-^FO{$xOffset},{$marginY}^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD{$nama}^FS
-^BY2,2,40
-^FO" . ($xOffset + 10) . "," . ($marginY + 20) . "^BCN,40,Y,N,N^FD{$barcode}^FS
-^FO" . ($xOffset + 10) . "," . ($marginY + 70) . "^A0N,22,22^FD{$barcode}^FS
-^FO" . ($xOffset + 10) . "," . ($marginY + 95) . "^A0N,22,22^FDRp. {$harga}^FS
-";
+            ^FO$xOffset," . ($marginY) . "^A0N,20,20^FB" . ($singleWidth - 20) . ",1,0,C,0^FD$nama^FS
+            ^BY2,2,40
+            ^FO" . ($xOffset + 10) . "," . ($marginY + 20) . "^BEN,40,Y,N^FD$barcode^FS
+            ^FO" . ($xOffset + 10) . "," . ($marginY + 85) . "^A0N,22,22^FDRp. $harga^FS
+        ";
 
-            $zpl .= "^XZ\n"; // tutup label
+            $zpl .= "^XZ\n";
         }
 
         // Simpan file sementara
@@ -890,5 +886,20 @@ class ProdukController extends Controller
             'success' => true,
             'message' => "Label produk {$produk->nama_barang} berhasil dicetak ($jumlah label)"
         ]);
+    }
+
+    /**
+     * Helper untuk memastikan kode EAN-13 valid
+     */
+    private function fixEAN13($code)
+    {
+        $code = substr(preg_replace('/\D/', '', $code), 0, 12); // ambil 12 digit
+        $sum = 0;
+        for ($i = 0; $i < 12; $i++) {
+            $digit = (int) $code[$i];
+            $sum += ($i % 2 === 0) ? $digit : $digit * 3;
+        }
+        $checkDigit = (10 - ($sum % 10)) % 10;
+        return $code . $checkDigit;
     }
 }
