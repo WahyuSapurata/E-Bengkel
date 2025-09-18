@@ -13,14 +13,11 @@
         }
 
         .row {
-            overflow: hidden;
-            /* untuk menampung float */
+            display: flex;
             margin-bottom: 5mm;
         }
 
         .label {
-            float: left;
-            /* buat berdampingan */
             width: 90mm;
             height: 40mm;
             border: 1px solid #000;
