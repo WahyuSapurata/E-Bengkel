@@ -45,7 +45,7 @@
         .info .nama-barang {
             display: inline-block;
             /* supaya bisa dibatasi lebar */
-            width: 50mm;
+            width: 55mm;
             /* maksimal lebar sebelum turun */
             white-space: normal;
             /* kata bisa wrap */
