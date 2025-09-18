@@ -846,15 +846,15 @@ class ProdukController extends Controller
         // Perhitungan tinggi teks nama barang
         $fontHeight = 20;              // tinggi font (dot)
         $charsPerLine = 14;            // kira2 muat 18 huruf per baris
-        $lines = ceil(mb_strlen($nama) / $charsPerLine);
+        $calcLines    = ceil(mb_strlen($nama) / $charsPerLine);
 
-        // batasi hanya 2 baris
-        if ($lines > 2) {
-            $lines = 2;
-            $nama = mb_substr($nama, 0, $charsPerLine * 2); // potong supaya tidak lebih dari 2 baris
+        // maksimal 2 baris, minimal 1
+        $lines = min(2, max(1, $calcLines));
+
+        // kalau lebih dari 2 → potong teks
+        if ($calcLines > 2) {
+            $nama = mb_substr($nama, 0, $charsPerLine * 2);
         }
-
-        if ($lines < 1) $lines = 1;    // minimal 1 baris
 
         // Hitung posisi barcode berdasarkan jumlah baris nama
         $barcodeYOffset = ($lines * $fontHeight) - 20; // posisi barcode dari marginY
