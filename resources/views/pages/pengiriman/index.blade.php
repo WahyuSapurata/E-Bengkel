@@ -164,6 +164,39 @@
                 initSelect2($(this));
             });
 
+            $('#uuid_po_outlet').on('change', function() {
+                let uuid = $(this).val();
+                if (!uuid) return;
+
+                let url = "{{ route('superadmin.from-po-pusat', ':uuid') }}".replace(':uuid', uuid);
+
+                $.get(url, function(res) {
+                    if (res.status === 'success') {
+                        // kosongkan produk lama
+                        $('#produk-wrapper').empty();
+
+                        // generate produk dari PO
+                        res.details.forEach((item, i) => {
+                            let row = `
+                                        <div class="row mb-2 produk-row">
+                                            <div class="col-6">
+                                                <label class="form-label">Produk</label>
+                                                <select name="uuid_produk[]" class="form-select basic-usage">
+                                                    <option value="${item.uuid_produk}" selected>${item.nama_barang}</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label">QTY</label>
+                                                <input type="number" name="qty[]" class="form-control" value="${item.qty}">
+                                            </div>
+                                        </div>
+                                    `;
+                            $('#produk-wrapper').append(row);
+                        });
+                    }
+                });
+            });
+
             // Tambah produk
             $("#btn-tambah").click(function() {
                 let firstRow = $(".produk-row").first();

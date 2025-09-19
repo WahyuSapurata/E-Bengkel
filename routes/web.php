@@ -132,6 +132,8 @@ Route::group([
         Route::get('/po-vw-outlet-get', [App\Http\Controllers\PoOutletController::class, 'get_vw_outlet'])->name('po-vw-outlet-get');
         Route::post('/aprove-po-outlet/{params}', [App\Http\Controllers\PoOutletController::class, 'aprove_po_outlet'])->name('aprove-po-outlet');
 
+        Route::get('/from-po-pusat/{params}', [App\Http\Controllers\PengirimanBarangController::class, 'form_po_pusat'])->name('from-po-pusat');
+
         Route::get('/pengiriman', [App\Http\Controllers\PengirimanBarangController::class, 'index'])->name('pengiriman');
         Route::get('/pengiriman-get', [App\Http\Controllers\PengirimanBarangController::class, 'get'])->name('pengiriman-get');
         Route::post('/pengiriman-store', [App\Http\Controllers\PengirimanBarangController::class, 'store'])->name('pengiriman-store');

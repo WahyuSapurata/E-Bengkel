@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePengirimanBarangRequest;
 use App\Http\Requests\UpdatePengirimanBarangRequest;
 use App\Models\DetailPengirimanBarang;
+use App\Models\DetailPoOutlet;
 use App\Models\Outlet;
 use App\Models\PengirimanBarang;
 use App\Models\PoOutlet;
@@ -25,6 +26,35 @@ class PengirimanBarangController extends Controller
             ->where('status', 'aprove')
             ->get();
         return view('pages.pengiriman.index', compact('module', 'produk', 'po_outlet'));
+    }
+
+    public function form_po_pusat($uuid)
+    {
+        $po = PoOutlet::where('uuid', $uuid)->first();
+
+        if (!$po) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'PO Outlet tidak ditemukan'
+            ]);
+        }
+
+        // ambil detail PO
+        $details = DetailPoOutlet::where('uuid_po_outlet', $po->uuid)->get();
+
+        $detailsFormatted = $details->map(function ($d) {
+            $produk = Produk::where('uuid', $d->uuid_produk)->first();
+            return [
+                'uuid_produk' => $d->uuid_produk,
+                'nama_barang' => $produk ? $produk->nama_barang : null,
+                'qty' => $d->qty,
+            ];
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'details' => $detailsFormatted
+        ]);
     }
 
     public function get(Request $request)

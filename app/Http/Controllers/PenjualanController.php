@@ -417,14 +417,18 @@ class PenjualanController extends Controller
             }
         }
 
+        if (!empty($data['totalJasa']) && $data['totalJasa'] > 0) {
+            $struk .= str_pad("Total Jasa", 20, " ", STR_PAD_LEFT);
+            $struk .= str_pad("1", 5, " ", STR_PAD_LEFT);
+            $struk .= str_pad($harga, 10, " ", STR_PAD_LEFT);
+            $struk .= str_pad(number_format($data['totalJasa'], 0, ',', '.'), 15, " ", STR_PAD_LEFT) . "\n";
+        }
+
         // ===============================
         // TOTAL
         // ===============================
         $struk .= str_repeat("-", $width) . "\n";
-        if (!empty($data['totalJasa']) && $data['totalJasa'] > 0) {
-            $struk .= str_pad("Total Jasa", $width - 15, " ", STR_PAD_LEFT);
-            $struk .= str_pad(number_format($data['totalJasa'], 0, ',', '.'), 15, " ", STR_PAD_LEFT) . "\n";
-        }
+
         if (!empty($data['totalItem'])) {
             $struk .= str_pad("Total Item", $width - 15, " ", STR_PAD_LEFT);
             $struk .= str_pad(number_format($data['totalItem'], 0, ',', '.'), 15, " ", STR_PAD_LEFT) . "\n";
@@ -442,7 +446,7 @@ class PenjualanController extends Controller
         $struk .= $this->centerText("tidak dapat ditukar/dikembalikan", $width) . "\n";
 
         // Feed kosong (biar struk tidak kepotong)
-        $struk .= "\n\n\n";
+        $struk .= "\n\n";
 
         // CUT PAPER (GS V A 0 = full cut)
         $struk .= chr(29) . chr(86) . chr(65) . chr(0);
