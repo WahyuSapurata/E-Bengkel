@@ -504,10 +504,10 @@
 
                     let type = $field.attr('type');
 
-                    if (key === 'kode') {
-                        $field.val(value).prop('readonly', true); // Kode tidak bisa diubah
-                        return;
-                    }
+                    // if (key === 'kode') {
+                    //     $field.val(value).prop('readonly', true); // Kode tidak bisa diubah
+                    //     return;
+                    // }
 
                     // Simpan harga modal
                     if (key === 'hrg_modal') {
