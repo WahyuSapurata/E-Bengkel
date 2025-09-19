@@ -362,7 +362,7 @@ class PenjualanController extends Controller
 
         // Ambil semua penjualan hari ini
         $penjualans = Penjualan::where('uuid_outlet', $kasir->uuid_outlet)
-            ->where('tanggal_transaksi', now()->format('d-m-Y'))
+            // ->where('tanggal_transaksi', now()->format('d-m-Y'))
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -408,10 +408,7 @@ class PenjualanController extends Controller
                     return [
                         'nama'     => $detail->nama_barang ?? '-',
                         'qty'      => $detail->qty,
-                        'harga'    => round(
-                            $detail->hrg_modal + ($detail->hrg_modal * $detail->profit / 100),
-                            -3
-                        ),
+                        'harga'    => $detail->total_harga / $detail->qty,
                         'subtotal' => $detail->total_harga,
                     ];
                 }),
