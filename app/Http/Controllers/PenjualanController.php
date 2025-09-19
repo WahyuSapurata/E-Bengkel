@@ -371,53 +371,75 @@ class PenjualanController extends Controller
 
     function printStruk($data)
     {
+        $width = 48; // lebar karakter untuk kertas 80mm
         $struk = "";
-        $struk .= $this->centerText($data['outlet_nama'], 32) . "\n";
-        $struk .= $this->centerText($data['outlet_alamat'], 32) . "\n";
-        $struk .= $this->centerText("Telp: " . $data['outlet_telp'], 32) . "\n";
-        $struk .= str_repeat("-", 32) . "\n";
 
+        // ===============================
+        // HEADER
+        // ===============================
+        $struk .= $this->centerText($data['outlet_nama'], $width) . "\n";
+        $struk .= $this->centerText($data['outlet_alamat'], $width) . "\n";
+        $struk .= $this->centerText("Telp: " . $data['outlet_telp'], $width) . "\n";
+        $struk .= str_repeat("=", $width) . "\n";
+
+        // ===============================
         // INFO TRANSAKSI
-        $struk .= "No: " . $data['no_bukti'] . "\n";
-        $struk .= "Tgl: " . $data['tanggal'] . "\n";
-        $struk .= "Kasir: " . $data['kasir'] . "\n";
-        $struk .= "Pembayaran: " . $data['pembayaran'] . "\n";
-        $struk .= str_repeat("-", 32) . "\n";
+        // ===============================
+        $struk .= "No       : " . $data['no_bukti'] . "\n";
+        $struk .= "Tanggal  : " . $data['tanggal'] . "\n";
+        $struk .= "Kasir    : " . $data['kasir'] . "\n";
+        $struk .= "Bayar    : " . $data['pembayaran'] . "\n";
+        $struk .= str_repeat("-", $width) . "\n";
 
+        // ===============================
         // ITEMS
-        $struk .= str_pad("Barang", 15) . str_pad("Qty", 5) .
-            str_pad("Harga", 6, " ", STR_PAD_LEFT) .
-            str_pad("Sub", 6, " ", STR_PAD_LEFT) . "\n";
+        // ===============================
+        $struk .= str_pad("Barang", 20);
+        $struk .= str_pad("Qty", 5, " ", STR_PAD_LEFT);
+        $struk .= str_pad("Harga", 10, " ", STR_PAD_LEFT);
+        $struk .= str_pad("Sub", 13, " ", STR_PAD_LEFT) . "\n";
+        $struk .= str_repeat("-", $width) . "\n";
 
         foreach ($data['items'] as $item) {
-            $struk .= str_pad(substr($item['nama'], 0, 15), 15);
-            $struk .= str_pad($item['qty'], 5);
-            $struk .= str_pad(number_format($item['harga'], 0, ',', '.'), 6, " ", STR_PAD_LEFT);
-            $struk .= str_pad(number_format($item['subtotal'], 0, ',', '.'), 6, " ", STR_PAD_LEFT) . "\n";
+            $nama = substr($item['nama'], 0, 20);
+            $qty = $item['qty'];
+            $harga = number_format($item['harga'], 0, ',', '.');
+            $subtotal = number_format($item['subtotal'], 0, ',', '.');
+
+            $struk .= str_pad($nama, 20);
+            $struk .= str_pad($qty, 5, " ", STR_PAD_LEFT);
+            $struk .= str_pad($harga, 10, " ", STR_PAD_LEFT);
+            $struk .= str_pad($subtotal, 13, " ", STR_PAD_LEFT) . "\n";
+
+            // Kalau nama produk panjang > 20, cetak di baris kedua
+            if (strlen($item['nama']) > 20) {
+                $struk .= " " . substr($item['nama'], 20, $width) . "\n";
+            }
         }
 
-        // Jika ada total jasa
+        // ===============================
+        // TOTAL
+        // ===============================
+        $struk .= str_repeat("-", $width) . "\n";
         if (!empty($data['totalJasa']) && $data['totalJasa'] > 0) {
-            $struk .= str_repeat("-", 32) . "\n";
-            $struk .= str_pad("Total Jasa", 26, " ", STR_PAD_LEFT) .
-                str_pad(number_format($data['totalJasa'], 0, ',', '.'), 6, " ", STR_PAD_LEFT) . "\n";
+            $struk .= str_pad("Total Jasa", $width - 15, " ", STR_PAD_LEFT);
+            $struk .= str_pad(number_format($data['totalJasa'], 0, ',', '.'), 15, " ", STR_PAD_LEFT) . "\n";
         }
-
-        // Jika ada total item
         if (!empty($data['totalItem'])) {
-            $struk .= str_pad("Total Item", 26, " ", STR_PAD_LEFT) .
-                str_pad(number_format($data['totalItem'], 0, ',', '.'), 6, " ", STR_PAD_LEFT) . "\n";
+            $struk .= str_pad("Total Item", $width - 15, " ", STR_PAD_LEFT);
+            $struk .= str_pad(number_format($data['totalItem'], 0, ',', '.'), 15, " ", STR_PAD_LEFT) . "\n";
         }
+        $struk .= str_repeat("-", $width) . "\n";
+        $struk .= str_pad("Grand Total", $width - 15, " ", STR_PAD_LEFT);
+        $struk .= str_pad(number_format($data['grandTotal'], 0, ',', '.'), 15, " ", STR_PAD_LEFT) . "\n";
+        $struk .= str_repeat("=", $width) . "\n";
 
-        // Grand total
-        $struk .= str_repeat("-", 32) . "\n";
-        $struk .= str_pad("Grand Total", 26, " ", STR_PAD_LEFT) .
-            str_pad(number_format($data['grandTotal'], 0, ',', '.'), 6, " ", STR_PAD_LEFT) . "\n";
-        $struk .= str_repeat("-", 32) . "\n";
-
+        // ===============================
         // FOOTER
-        $struk .= $this->centerText("--- Terima Kasih ---", 32) . "\n";
-        $struk .= $this->centerText("Barang yang sudah dibeli tidak dapat ditukar/dikembalikan", 32) . "\n";
+        // ===============================
+        $struk .= $this->centerText("*** Terima Kasih ***", $width) . "\n";
+        $struk .= $this->centerText("Barang yang sudah dibeli", $width) . "\n";
+        $struk .= $this->centerText("tidak dapat ditukar/dikembalikan", $width) . "\n";
 
         // Feed kosong (biar struk tidak kepotong)
         $struk .= "\n\n\n";
@@ -425,7 +447,7 @@ class PenjualanController extends Controller
         // CUT PAPER (GS V A 0 = full cut)
         $struk .= chr(29) . chr(86) . chr(65) . chr(0);
 
-        // SIMPAN & PRINT (raw mode, pakai default printer)
+        // SIMPAN & PRINT (raw mode)
         $tmpFile = '/tmp/struk.txt';
         file_put_contents($tmpFile, $struk);
         shell_exec("lp -o raw $tmpFile");
@@ -434,7 +456,7 @@ class PenjualanController extends Controller
     // ===============================
     // Helper: Center Text
     // ===============================
-    function centerText($text, $width = 32)
+    function centerText($text, $width = 48)
     {
         $len = strlen($text);
         if ($len >= $width) return $text;
