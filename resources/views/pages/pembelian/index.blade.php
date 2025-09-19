@@ -357,21 +357,21 @@
                 hitungTotal();
             });
 
-            // Fungsi hitung total semua sub total
-            function hitungTotal() {
-                let total = 0;
-                $(".sub-total").each(function() {
-                    total += parseRupiah($(this).val());
-                });
-                $("#total-harga").text("Total: " + formatRupiah(total));
-            }
-
             hitungTotal();
         });
 
         // Fungsi parse angka dari string Rupiah
         function parseRupiah(value) {
             return parseInt(value.replace(/[^0-9]/g, ''), 10) || 0;
+        }
+
+        // Fungsi hitung total semua sub total
+        function hitungTotal() {
+            let total = 0;
+            $(".sub-total").each(function() {
+                total += parseRupiah($(this).val());
+            });
+            $("#total-harga").text("Total: " + formatRupiah(total));
         }
 
         // Fungsi format ke Rupiah
@@ -546,38 +546,48 @@
                 // Bersihkan produk-wrapper
                 $('#produk-wrapper').empty();
 
-                // Loop produk di detail
-                res.details.forEach(function(item) {
-                    // Ambil produk dari supplier yang sesuai
-                    $.getJSON(
-                        `/superadmin/transaksi/pembelian-get-produk-by-suplayer/${res.uuid_suplayer}`,
-                        function(data) {
-                            let row = `
-                        <div class="row mb-2 produk-row">
-                            <div class="col-4">
-                                <select name="uuid_produk[]" class="form-select basic-usage" data-placeholder="Pilih produk">
-                                    ${produkOptions(data, item.uuid_produk)}
-                                </select>
-                            </div>
-                            <div class="col-4">
-                                <input type="number" name="qty[]" class="form-control" value="${item.qty}">
-                            </div>
-                            <div class="col-4">
-                                <input type="text" name="harga[]" class="form-control formatRupiah" value="${formatRupiah(parseRupiah(item.harga))}">
-                            </div>
-                        </div>
-                    `;
-                            $('#produk-wrapper').append(row);
+                // Ambil produk dari supplier sekali saja
+                $.getJSON(`/superadmin/transaksi/pembelian-get-produk-by-suplayer/${res.uuid_suplayer}`,
+                    function(data) {
 
-                            // Re-init select2 setelah append
-                            $('.basic-usage').select2({
-                                theme: "bootstrap-5",
-                                width: '100%',
-                                placeholder: $(this).data('placeholder'),
-                                dropdownParent: $('#modal').find('.modal-body')
-                            });
+                        res.details.forEach(function(item) {
+                            let harga = parseRupiah(item.harga);
+                            let subTotal = item.qty * harga;
+
+                            let row = `
+                    <div class="row mb-2 produk-row">
+                        <div class="col-3">
+                            <select name="uuid_produk[]" class="form-select basic-usage" data-placeholder="Pilih produk">
+                                ${produkOptions(data, item.uuid_produk)}
+                            </select>
+                        </div>
+                        <div class="col-3">
+                            <input type="number" name="qty[]" class="form-control qty" value="${item.qty}">
+                        </div>
+                        <div class="col-3">
+                            <input type="text" name="harga[]" class="form-control harga formatRupiah" value="${formatRupiah(harga)}">
+                        </div>
+                        <div class="col-3">
+                            <input type="text" class="form-control sub-total formatRupiah" value="${formatRupiah(subTotal)}">
+                        </div>
+                    </div>
+                `;
+                            $('#produk-wrapper').append(row);
                         });
-                });
+
+                        // Re-init select2 setelah semua row masuk
+                        $('.basic-usage').select2({
+                            theme: "bootstrap-5",
+                            width: '100%',
+                            placeholder: function() {
+                                return $(this).data('placeholder');
+                            },
+                            dropdownParent: $('#modal').find('.modal-body')
+                        });
+
+                        // Hitung ulang total semua sub total
+                        hitungTotal();
+                    });
             });
         });
 
