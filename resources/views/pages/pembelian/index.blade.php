@@ -362,7 +362,10 @@
 
         // Fungsi parse angka dari string Rupiah
         function parseRupiah(value) {
-            return parseInt(value.replace(/[^0-9]/g, ''), 10) || 0;
+            if (!value) return 0;
+            value = value.replace(/[^0-9,]/g, ''); // hapus selain angka dan koma
+            value = value.replace(',', '.'); // ubah koma jadi titik
+            return parseFloat(value) || 0;
         }
 
         // Fungsi hitung total semua sub total
@@ -376,8 +379,9 @@
 
         // Fungsi format ke Rupiah
         function formatRupiah(angka) {
-            angka = angka.toString();
-            let number_string = angka.replace(/[^,\d]/g, ''),
+            // Konversi ke string tanpa desimal
+            let rounded = Math.floor(angka); // gunakan floor agar tidak lebih besar
+            let number_string = rounded.toString().replace(/[^,\d]/g, ''),
                 split = number_string.split(','),
                 sisa = split[0].length % 3,
                 rupiah = split[0].substr(0, sisa),
@@ -388,7 +392,6 @@
                 rupiah += separator + ribuan.join('.');
             }
 
-            rupiah = split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
             return rupiah ? 'Rp ' + rupiah : '';
         }
 
