@@ -13,6 +13,7 @@ use App\Models\Wirehouse;
 use App\Models\WirehouseStock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PengirimanBarangController extends Controller
 {
@@ -182,7 +183,7 @@ class PengirimanBarangController extends Controller
             WirehouseStock::create([
                 'uuid_warehouse' => $warehousePusat->uuid,
                 'uuid_produk'    => $uuid_produk,
-                'qty'            => $request->qty[$index],
+                'qty'            => -$request->qty[$index],
                 'jenis'          => 'keluar',
                 'sumber'         => 'delivery order',
                 'keterangan'     => 'Pengiriman ke outlet: ' . Outlet::where('uuid_user', $po->uuid_user)->first()->nama_outlet,
@@ -369,17 +370,49 @@ class PengirimanBarangController extends Controller
         ]);
     }
 
-    public function aprove_do_outlet(Request $request, $params)
+    public function aprove_do_outlet(Request $request, $uuidPengiriman)
     {
-        // Cari po_outlet yang mau diapprove
-        $po_outlet = PengirimanBarang::where('uuid', $params)->firstOrFail();
+        DB::beginTransaction();
 
-        // Update status atau field yang diperlukan
-        $po_outlet->status = $request->status;
-        $po_outlet->save();
+        try {
+            // Ambil PO/DO yang mau diapprove
+            $po_outlet = PengirimanBarang::where('uuid', $uuidPengiriman)->firstOrFail();
 
-        // Tambahkan logika lain jika perlu, seperti mengirim notifikasi
+            // Update status
+            $po_outlet->status = $request->status;
+            $po_outlet->save();
 
-        return response()->json(['status' => 'success', 'message' => 'PO Outlet berhasil diapprove.']);
+            // Ambil outlet
+            $outlet = Outlet::where('uuid_user', $po_outlet->uuid_outlet)->firstOrFail();
+
+            // Ambil detail pengiriman
+            $detailBarang = DetailPengirimanBarang::where('uuid_pengiriman_barang', $po_outlet->uuid)->get();
+
+            $warehouseOutlet = Wirehouse::where('tipe', 'gudang')->where('lokasi', 'outlet')->where('uuid_user', $outlet->uuid_user)->first();
+
+            foreach ($detailBarang as $detail) {
+                // Catat stok masuk di warehouse outlet
+                WirehouseStock::create([
+                    'uuid_warehouse' => $warehouseOutlet->uuid,
+                    'uuid_produk'    => $detail->uuid_produk,
+                    'qty'            => $detail->qty,
+                    'jenis'          => 'masuk',
+                    'sumber'         => 'delivery order',
+                    'keterangan'     => 'Penerimaan dari gudang pusat',
+                ]);
+            }
+
+            DB::commit();
+            return response()->json([
+                'status' => 'success',
+                'message' => 'PO Outlet berhasil diapprove dan stok outlet diperbarui.'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

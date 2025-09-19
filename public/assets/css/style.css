@@ -18,21 +18,21 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #28a745, #218838) !important;
+    background: linear-gradient(180deg, #cf5254, #d81b1f) !important;
     /* hijau gradasi */
     border-radius: 10px !important;
     transition: background 0.3s !important;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #218838, #1e7e34) !important;
+    background: linear-gradient(180deg, #d81b1f, #793132) !important;
     /* lebih gelap saat hover */
 }
 
 /* Firefox support */
 * {
     scrollbar-width: thin;
-    scrollbar-color: #28a745 #f1f1f1;
+    scrollbar-color: #d81b1f #f1f1f1;
 }
 
 body {

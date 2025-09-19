@@ -152,13 +152,10 @@
                                             </div>
                                         </div>
                                         <div class="img-group lh-0 ms-3 justify-content-start d-none d-sm-flex">
-                                            @foreach (json_decode($po->detail_produk, true) as $produk)
-                                                <a href="javascript:void(0)" class="avatar-text avatar-md"
-                                                    data-bs-toggle="tooltip" data-bs-trigger="hover"
-                                                    title="{{ $produk['nama_barang'] }}">
-                                                    {{ strtoupper(substr($produk['nama_barang'], 0, 1)) }}
-                                                </a>
-                                            @endforeach
+                                            <a href="{{ route('superadmin.po-vw-outlet') }}"
+                                                class="btn btn-primary btn-sm">
+                                                Detail PO
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
