@@ -1442,7 +1442,6 @@
                     console.error("Gagal ambil riwayat struk:", err);
                 }
             }
-            s
 
             // ---------------------------
             // Search filter
