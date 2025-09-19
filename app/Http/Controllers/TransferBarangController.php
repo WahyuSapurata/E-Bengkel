@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTransferBarangRequest;
 use App\Http\Requests\UpdateTransferBarangRequest;
+use App\Models\DetailPengirimanBarang;
 use App\Models\DetailTransferBarang;
 use App\Models\Outlet;
+use App\Models\PengirimanBarang;
 use App\Models\Produk;
 use App\Models\TransferBarang;
 use App\Models\Wirehouse;
@@ -20,7 +22,37 @@ class TransferBarangController extends Controller
     {
         $module = 'Transfer Barang';
         $produk = Produk::select('uuid', 'nama_barang')->get();
-        return view('outlet.transfer.index', compact('module', 'produk'));
+        $do = PengirimanBarang::select('uuid', 'no_do')->where('uuid_outlet', Auth::user()->uuid)->where('status', 'diterima')->get();
+        return view('outlet.transfer.index', compact('module', 'produk', 'do'));
+    }
+
+    public function form_do($uuid)
+    {
+        $do = PengirimanBarang::where('uuid', $uuid)->first();
+
+        if (!$do) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Do tidak ditemukan'
+            ]);
+        }
+
+        // ambil detail PO
+        $details = DetailPengirimanBarang::where('uuid_pengiriman_barang', $do->uuid)->get();
+
+        $detailsFormatted = $details->map(function ($d) {
+            $produk = Produk::where('uuid', $d->uuid_produk)->first();
+            return [
+                'uuid_produk' => $d->uuid_produk,
+                'nama_barang' => $produk ? $produk->nama_barang : null,
+                'qty' => $d->qty,
+            ];
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'details' => $detailsFormatted
+        ]);
     }
 
     public function get(Request $request)

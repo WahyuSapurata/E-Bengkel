@@ -94,6 +94,16 @@
                     </div>
                     <div class="modal-body">
                         <div class="mb-2">
+                            <label class="text-capitalize form-label">Nomor DO</label>
+                            <select id="uuid_do" data-placeholder="Pilih inputan" class="form-select basic-usage">
+                                <option value=""></option>
+                                @foreach ($do as $d)
+                                    <option value="{{ $d->uuid }}">{{ $d->no_do }}</option>
+                                @endforeach
+                            </select>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-2">
                             <label class="text-capitalize form-label">tanggal transfer</label>
                             <input type="text" name="tanggal_transfer" id="tanggal_transfer"
                                 class="form-control dateofBirth">
@@ -147,6 +157,39 @@
             // Init select2 pertama kali
             $('.basic-usage').each(function() {
                 initSelect2($(this));
+            });
+
+            $('#uuid_do').on('change', function() {
+                let uuid = $(this).val();
+                if (!uuid) return;
+
+                let url = "{{ route('outlet.from-do', ':uuid') }}".replace(':uuid', uuid);
+
+                $.get(url, function(res) {
+                    if (res.status === 'success') {
+                        // kosongkan produk lama
+                        $('#produk-wrapper').empty();
+
+                        // generate produk dari PO
+                        res.details.forEach((item, i) => {
+                            let row = `
+                                        <div class="row mb-2 produk-row">
+                                            <div class="col-6">
+                                                <label class="form-label">Produk</label>
+                                                <select name="uuid_produk[]" class="form-select basic-usage">
+                                                    <option value="${item.uuid_produk}" selected>${item.nama_barang}</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label">QTY</label>
+                                                <input type="number" name="qty[]" class="form-control" value="${item.qty}">
+                                            </div>
+                                        </div>
+                                    `;
+                            $('#produk-wrapper').append(row);
+                        });
+                    }
+                });
             });
 
             // Tambah produk
