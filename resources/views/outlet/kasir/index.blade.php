@@ -106,7 +106,8 @@
                         <button type="button" id="btn-f4" class="btn btn-outline-warning btn-sm shortcut-btn">F4
                             Edit Qty</button>
                         <button type="button" class="btn btn-outline-info btn-sm shortcut-btn">F5 Reload</button>
-                        {{-- <button type="button" id="btn-f6" class="btn btn-outline-dark btn-sm shortcut-btn">F6 Cari</button> --}}
+                        <button type="button" id="btn-f6" class="btn btn-outline-dark btn-sm shortcut-btn">F6 Cetak
+                            Ulang</button>
                         {{-- <button type="button" id="btn-f7" class="btn btn-outline-secondary btn-sm shortcut-btn">F7 Hold</button>  --}}
                         <button type="button" id="btn-f8" class="btn btn-outline-success btn-sm shortcut-btn">F8
                             Simpan</button>
@@ -273,6 +274,36 @@
         </div>
     </div>
 
+    <div class="modal fade" id="CetakUlangModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="CetakUlangModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="CetakUlangModalLabel">List Produk</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="flex-grow-1 overflow-auto">
+                        <div class="table-wrapper mb-2">
+                            <table class="table table-bordered table-striped table-sm mb-0" id="cetakUlangTableModal">
+                                <thead class="table-danger sticky-top">
+                                    <tr>
+                                        <th>No Bukti</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="{{ asset('assets/vendors/js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('assets/sweet-alert/sweetalert2.min.js') }}"></script>
     <script>
@@ -288,6 +319,8 @@
 
             const modalSearch = document.getElementById("SearchModal");
             const searchSearch = document.getElementById("searchInputModal");
+
+            const modalCetakUlang = document.getElementById("CetakUlangModal");
 
             // variabel penting
             const cartTable = document.getElementById("cartTable");
@@ -348,6 +381,19 @@
                         modal.hide();
                     } else {
                         loadProduk();
+                        modal.show();
+                    }
+                }
+            });
+
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "F6") {
+                    e.preventDefault();
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalCetakUlang);
+                    if (modalCetakUlang.classList.contains("show")) {
+                        modal.hide();
+                    } else {
+                        loadPenjualanHariIni();
                         modal.show();
                     }
                 }
@@ -1273,6 +1319,130 @@
                     console.error("Gagal ambil stok:", err);
                 }
             }
+
+            async function loadPenjualanHariIni() {
+                try {
+                    const res = await fetch('/kasir/get-penjualan');
+                    const data = await res.json();
+
+                    const tbody = document.querySelector("#cetakUlangTableModal tbody");
+                    tbody.innerHTML = "";
+
+                    if (data.length === 0) {
+                        tbody.innerHTML = `
+                <tr><td colspan="1" class="text-center">Belum Riwayat Struk</td></tr>
+            `;
+                    } else {
+                        data.forEach(p => {
+                            const tr = document.createElement("tr");
+                            tr.innerHTML =
+                                `<td class="text-primary fw-bold cursor-pointer">${p.no_bukti}</td>`;
+
+                            // klik nomor bukti untuk detail
+                            tr.querySelector("td").addEventListener("click", async () => {
+                                try {
+                                    const detailRes = await fetch(
+                                        `/kasir/get-penjualan-detail/${p.uuid}`);
+                                    const res = await detailRes.json();
+
+                                    if (res.status === "success") {
+                                        const itemsHtml = res.data.items.map(i => `
+                                <tr>
+                                    <td>${i.nama}</td>
+                                    <td>${i.qty}</td>
+                                    <td>${i.harga.toLocaleString()}</td>
+                                    <td>${i.subtotal.toLocaleString()}</td>
+                                </tr>
+                            `).join("");
+
+                                        const detailHtml = `
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Nama</th>
+                                                <th>Qty</th>
+                                                <th>Harga</th>
+                                                <th>Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${itemsHtml}
+                                            <tr>
+                                                <td colspan="3" class="text-end fw-bold">Jasa</td>
+                                                <td>${res.data.totalJasa.toLocaleString()}</td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="3" class="text-end fw-bold">Grand Total</td>
+                                                <td>${res.data.grandTotal.toLocaleString()}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `;
+
+                                        Swal.fire({
+                                            title: `Detail Struk - ${res.data.no_bukti}`,
+                                            html: detailHtml,
+                                            width: 600,
+                                            showCancelButton: true,
+                                            confirmButtonText: "🖨 Cetak Struk",
+                                            cancelButtonText: "Tutup"
+                                        }).then(result => {
+                                            if (result.isConfirmed) {
+                                                const totalJasa = res.data
+                                                    .totalJasa ?? 0;
+                                                const strukData = {
+                                                    outlet_nama: "{{ $data_outlet->nama_outlet }}",
+                                                    outlet_alamat: "{{ $data_outlet->alamat }}",
+                                                    outlet_telp: "{{ $data_outlet->telepon }}",
+                                                    no_bukti: res.data.no_bukti,
+                                                    tanggal: res.data.tanggal,
+                                                    kasir: res.data.kasir,
+                                                    pembayaran: res.data
+                                                        .pembayaran,
+                                                    items: res.data.items.map(
+                                                        i => ({
+                                                            nama: i
+                                                                .nama,
+                                                            qty: i.qty,
+                                                            harga: i
+                                                                .harga,
+                                                            subtotal: i
+                                                                .subtotal
+                                                        })),
+                                                    totalJasa: totalJasa,
+                                                    totalItem: res.data
+                                                        .totalItem,
+                                                    grandTotal: res.data
+                                                        .grandTotal + totalJasa
+                                                };
+
+                                                cetakStruk(strukData);
+                                            }
+                                        });
+                                    }
+                                } catch (err) {
+                                    console.error("❌ Gagal ambil detail penjualan:", err);
+                                }
+                            });
+
+                            tbody.appendChild(tr);
+                        });
+
+                        // row no-data tersembunyi
+                        const noDataRow = document.createElement("tr");
+                        noDataRow.id = "no-data-modal";
+                        noDataRow.classList.add("d-none");
+                        noDataRow.innerHTML =
+                            `<td colspan="3" class="text-center">Tidak ada produk ditemukan</td>`;
+                        tbody.appendChild(noDataRow);
+                    }
+                } catch (err) {
+                    console.error("Gagal ambil riwayat struk:", err);
+                }
+            }
+            s
 
             // ---------------------------
             // Search filter

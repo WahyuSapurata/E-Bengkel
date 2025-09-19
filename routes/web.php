@@ -250,6 +250,9 @@ Route::group([
     Route::get('/get-stock', [App\Http\Controllers\PenjualanController::class, 'get_stock'])->name('get-stock');
 
     Route::post('/closing', [App\Http\Controllers\ClosingKasirController::class, 'store'])->name('closing');
+
+    Route::get('/get-penjualan', [App\Http\Controllers\PenjualanController::class, 'get_penjualan'])->name('get-penjualan');
+    Route::get('/get-penjualan-detail/{params}', [App\Http\Controllers\PenjualanController::class, 'get_detail_penjualan'])->name('get-penjualan-detail');
 });
 
 Route::get('/logout', [App\Http\Controllers\Auth::class, 'logout'])->name('logout');

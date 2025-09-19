@@ -34,4 +34,9 @@ class Penjualan extends Model
     {
         return $this->hasMany(DetailPenjualan::class, 'uuid_penjualans', 'uuid');
     }
+
+    public function jasa()
+    {
+        return $this->belongsTo(Jasa::class, 'uuid_jasa', 'uuid');
+    }
 }

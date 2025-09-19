@@ -356,6 +356,73 @@ class PenjualanController extends Controller
         }
     }
 
+    public function get_penjualan()
+    {
+        $kasir = KasirOutlet::where('uuid_user', Auth::user()->uuid)->first();
+
+        // Ambil semua penjualan hari ini
+        $penjualans = Penjualan::where('uuid_outlet', $kasir->uuid_outlet)
+            ->where('tanggal_transaksi', now()->format('d-m-Y'))
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($penjualans);
+    }
+
+    public function get_detail_penjualan($uuid)
+    {
+        // Ambil data penjualan utama
+        $penjualan = Penjualan::where('uuid', $uuid)->firstOrFail();
+
+        // Ambil detail penjualan + produk (JOIN manual)
+        $details = DB::table('detail_penjualans')
+            ->leftJoin('produks', 'detail_penjualans.uuid_produk', '=', 'produks.uuid')
+            ->where('detail_penjualans.uuid_penjualans', $penjualan->uuid)
+            ->select(
+                'detail_penjualans.qty',
+                'detail_penjualans.total_harga',
+                'produks.nama_barang',
+                'produks.hrg_modal',
+                'produks.profit'
+            )
+            ->get();
+
+        // Hitung total
+        $totalItem  = $details->sum('qty');
+        $grandTotal = $details->sum('total_harga');
+
+        // Ambil jasa (kalau ada)
+        $jasa = null;
+        if ($penjualan->uuid_jasa) {
+            $jasa = DB::table('jasas')->where('uuid', $penjualan->uuid_jasa)->first();
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => [
+                'no_bukti'   => $penjualan->no_bukti,
+                'tanggal'    => $penjualan->tanggal_transaksi,
+                'kasir'      => $penjualan->created_by,
+                'pembayaran' => $penjualan->pembayaran,
+                'items'      => $details->map(function ($detail) {
+                    return [
+                        'nama'     => $detail->nama_barang ?? '-',
+                        'qty'      => $detail->qty,
+                        'harga'    => round(
+                            $detail->hrg_modal + ($detail->hrg_modal * $detail->profit / 100),
+                            -3
+                        ),
+                        'subtotal' => $detail->total_harga,
+                    ];
+                }),
+                'grandTotal' => $grandTotal,
+                'totalItem'  => $totalItem,
+                'totalJasa'  => $jasa ? $jasa->harga : 0,
+            ]
+        ]);
+    }
+
+
     public function cetakStrukThermal(Request $request)
     {
         $data = $request->all(); // ambil semua data dari frontend
