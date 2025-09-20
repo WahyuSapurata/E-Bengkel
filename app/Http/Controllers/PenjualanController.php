@@ -89,8 +89,6 @@ class PenjualanController extends Controller
 
     public function get_jasa()
     {
-        $jamLalu = Carbon::now()->subHour();
-
         $jasa = Jasa::all();
         return response()->json($jasa);
     }
