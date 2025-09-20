@@ -1029,9 +1029,8 @@
                     tbody.querySelectorAll("tr").forEach(row => {
                         let uuid = row.getAttribute("data-uuid");
                         let qty = parseInt(row.querySelector(".qty")?.innerText) || 0;
-                        let jumlah = row.querySelector(".jumlah")?.innerText.replace(/Rp\s?|,/g,
-                            "");
-                        jumlah = parseInt(jumlah) || 0;
+                        let jumlah = row.querySelector(".jumlah")?.innerText || "0";
+                        jumlah = jumlah.replace(/[^0-9]/g, "");
 
                         formData.append("uuid_produk[]", uuid);
                         formData.append("qty[]", qty);
