@@ -20,6 +20,8 @@ Route::group([
     'as' => 'superadmin.'
 ], function () {
     Route::get('/dashboard-superadmin', [App\Http\Controllers\Dashboard::class, 'dashboard_superadmin'])->name('dashboard-superadmin');
+    // Route::get('/get-penjualan-bulanan', [App\Http\Controllers\Dashboard::class, 'getPenjualanBulanan'])->name('get-penjualan-bulanan');
+    Route::get('/get-penjualan-harian', [App\Http\Controllers\Dashboard::class, 'getPenjualanHarian'])->name('get-penjualan-harian');
     Route::get('/get-penjualan-bulanan', [App\Http\Controllers\Dashboard::class, 'getPenjualanBulanan'])->name('get-penjualan-bulanan');
 
     Route::prefix('setup')->group(function () {
@@ -197,6 +199,9 @@ Route::group([
     'as' => 'outlet.'
 ], function () {
     Route::get('/dashboard-outlet', [App\Http\Controllers\Dashboard::class, 'dashboard_outlet'])->name('dashboard-outlet');
+    // Route::get('/get-penjualan-bulanan', [App\Http\Controllers\Dashboard::class, 'getPenjualanBulanan'])->name('get-penjualan-bulanan');
+
+    Route::get('/get-penjualan-harian', [App\Http\Controllers\Dashboard::class, 'getPenjualanHarian'])->name('get-penjualan-harian');
     Route::get('/get-penjualan-bulanan', [App\Http\Controllers\Dashboard::class, 'getPenjualanBulanan'])->name('get-penjualan-bulanan');
 
     Route::get('/produk', [App\Http\Controllers\ProdukController::class, 'vw_outlet'])->name('produk');
@@ -232,6 +237,9 @@ Route::group([
     Route::get('/transfer-edit/{params}', [App\Http\Controllers\TransferBarangController::class, 'edit'])->name('transfer-edit');
     Route::post('/transfer-update/{params}', [App\Http\Controllers\TransferBarangController::class, 'update'])->name('transfer-update');
     Route::delete('/transfer-delete/{params}', [App\Http\Controllers\TransferBarangController::class, 'delete'])->name('transfer-delete');
+
+    Route::get('sumary-report', [App\Http\Controllers\ClosingKasirController::class, 'sumaryreport'])->name('sumary-report');
+    Route::get('/history-summary/{params}', [App\Http\Controllers\ClosingKasirController::class, 'history_summary'])->name('history-summary');
 });
 
 Route::group([
@@ -253,6 +261,8 @@ Route::group([
 
     Route::get('/get-penjualan', [App\Http\Controllers\PenjualanController::class, 'get_penjualan'])->name('get-penjualan');
     Route::get('/get-penjualan-detail/{params}', [App\Http\Controllers\PenjualanController::class, 'get_detail_penjualan'])->name('get-penjualan-detail');
+
+    Route::get('/sumary-report/{params}', [App\Http\Controllers\ClosingKasirController::class, 'index'])->name('sumary-report');
 });
 
 Route::get('/logout', [App\Http\Controllers\Auth::class, 'logout'])->name('logout');

@@ -9,6 +9,7 @@ use App\Models\ClosingKasir;
 use App\Models\Coa;
 use App\Models\Costumer;
 use App\Models\DetailPenjualan;
+use App\Models\HargaBackupPenjualan;
 use App\Models\Jasa;
 use App\Models\KasirOutlet;
 use App\Models\Outlet;
@@ -259,6 +260,12 @@ class PenjualanController extends Controller
                         $produkInfo->hrg_modal + ($produkInfo->hrg_modal * $produkInfo->profit / 100),
                         -3
                     );
+
+                    HargaBackupPenjualan::create([
+                        'uuid_detail_penjualan' => $detail->uuid,
+                        'harga_modal' => $produkInfo->hrg_modal,
+                        'harga_jual' => $hargaJual,
+                    ]);
 
                     $details[] = [
                         'nama'     => $produkInfo->nama_barang ?? 'Produk',

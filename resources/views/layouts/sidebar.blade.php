@@ -248,6 +248,12 @@
                             <span class="nxl-mtext">Transfer Barang</span>
                         </a>
                     </li>
+                    <li class="nxl-item nxl-hasmenu {{ $path[1] === 'sumary-report' ? 'active' : '' }}">
+                        <a href="{{ route('outlet.sumary-report') }}" class="nxl-link">
+                            <span class="nxl-micon"><i class="feather-repeat"></i></span>
+                            <span class="nxl-mtext">Sumary Report</span>
+                        </a>
+                    </li>
                 </ul>
             @endif
             {{-- <div class="card text-center">

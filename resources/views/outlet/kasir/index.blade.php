@@ -1670,6 +1670,8 @@
                                         text: 'Data closing kasir sudah disimpan!',
                                         confirmButtonText: 'OK'
                                     }).then(() => {
+                                        window.open("/kasir/sumary-report/" + res.data
+                                            .uuid, "_blank");
                                         localStorage.setItem("closing_done", "1");
                                         location.reload();
                                     });

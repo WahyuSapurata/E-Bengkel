@@ -35,7 +35,7 @@
                 <!-- [Payment Records] start -->
                 <div class="col-xxl-8">
                     <div class="card stretch stretch-full">
-                        <div class="card-header">
+                        {{-- <div class="card-header">
                             <h5 class="card-title">Penjualan Bulanan</h5>
                             <div class="card-header-action">
                                 <div class="card-header-btn">
@@ -56,6 +56,63 @@
                         </div>
                         <div class="card-body custom-card-action p-0">
                             <div id="payment-records-chart"></div>
+                        </div> --}}
+                        <div class="card-header">
+                            <h5 class="card-title">Penjualan Harian</h5>
+                            <div class="card-header-action">
+                                <div class="card-header-btn">
+                                    <div data-bs-toggle="tooltip" title="Refresh">
+                                        <a href="javascript:void(0);" class="avatar-text avatar-xs bg-warning"
+                                            data-bs-toggle="refresh"> </a>
+                                    </div>
+                                    <div data-bs-toggle="tooltip" title="Maximize/Minimize">
+                                        <a href="javascript:void(0);" class="avatar-text avatar-xs bg-success"
+                                            data-bs-toggle="expand"> </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body custom-card-action p-0">
+                            {{-- <div id="payment-records-chart"></div> --}}
+                            <div class="table-responsive p-3">
+                                <table id="tabel-penjualan" class="table table-bordered table-striped">
+                                    <thead class="text-center">
+                                        <tr>
+                                            <th>Tanggal</th>
+                                            <th>Total Penjualan</th>
+                                            <th>Total Modal</th>
+                                            <th>Profit</th>
+                                            <th>% Profit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="harian-body">
+                                        <!-- Data akan diisi lewat JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="card-header">
+                            <h5 class="card-title">Penjualan Bulanan</h5>
+                        </div>
+                        <div class="card-body custom-card-action p-0">
+                            {{-- <div id="payment-records-chart"></div> --}}
+                            <div class="table-responsive p-3">
+                                <table id="tabel-penjualan-bulanan" class="table table-bordered table-striped">
+                                    <thead class="text-center">
+                                        <tr>
+                                            <th>Bulan</th>
+                                            <th>Total Penjualan</th>
+                                            <th>Total Modal</th>
+                                            <th>Profit</th>
+                                            <th>% Profit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bulanan-body">
+                                        <!-- Data akan diisi lewat JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                         <div class="card-footer">
                             <div class="row g-4">
@@ -94,74 +151,162 @@
     <script src="{{ asset('assets/js/dashboard-init.min.js') }}"></script>
     <script>
         $(document).ready(function() {
-            let chart; // simpan chart supaya bisa di-destroy
+            // let chart; // simpan chart supaya bisa di-destroy
 
-            function loadChart() {
-                $.get("/outlet/get-penjualan-bulanan", {
-                    uuid_outlet: "{{ Auth::user()->uuid }}"
+            // function loadChart() {
+            //     $.get("/outlet/get-penjualan-bulanan", {
+            //         uuid_outlet: "{{ Auth::user()->uuid }}"
+            //     }, function(res) {
+            //         if (chart) chart.destroy(); // hapus chart lama
+
+            //         let options = {
+            //             chart: {
+            //                 height: 380,
+            //                 width: "100%",
+            //                 stacked: false,
+            //                 toolbar: {
+            //                     show: false
+            //                 }
+            //             },
+            //             stroke: {
+            //                 width: [2],
+            //                 curve: "smooth",
+            //                 lineCap: "round"
+            //             },
+            //             colors: ["#3454d1"],
+            //             series: [{
+            //                 name: "Total Penjualan",
+            //                 type: "bar",
+            //                 data: res.series
+            //             }],
+            //             xaxis: {
+            //                 categories: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+            //                     "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+            //                 ],
+            //                 labels: {
+            //                     style: {
+            //                         fontSize: "10px",
+            //                         colors: "#A0ACBB"
+            //                     }
+            //                 }
+            //             },
+            //             yaxis: {
+            //                 labels: {
+            //                     formatter: function(e) {
+            //                         return "Rp " + e.toLocaleString("id-ID");
+            //                     },
+            //                     style: {
+            //                         color: "#A0ACBB"
+            //                     }
+            //                 }
+            //             },
+            //             dataLabels: {
+            //                 enabled: false
+            //             },
+            //             tooltip: {
+            //                 y: {
+            //                     formatter: function(e) {
+            //                         return "Rp " + e.toLocaleString("id-ID");
+            //                     }
+            //                 }
+            //             }
+            //         };
+
+            //         chart = new ApexCharts(document.querySelector("#payment-records-chart"), options);
+            //         chart.render();
+            //     });
+            // }
+
+            // // pertama kali load (semua outlet)
+            // loadChart();
+
+
+            function loadPenjualanHarian(uuidOutlet = "") {
+                $.get("/superadmin/get-penjualan-harian", {
+                    uuid_user: "{{ Auth::user()->uuid }}"
                 }, function(res) {
-                    if (chart) chart.destroy(); // hapus chart lama
+                    let tbody = $("#harian-body");
+                    tbody.empty(); // kosongkan isi tabel
 
-                    let options = {
-                        chart: {
-                            height: 380,
-                            width: "100%",
-                            stacked: false,
-                            toolbar: {
-                                show: false
-                            }
-                        },
-                        stroke: {
-                            width: [2],
-                            curve: "smooth",
-                            lineCap: "round"
-                        },
-                        colors: ["#3454d1"],
-                        series: [{
-                            name: "Total Penjualan",
-                            type: "bar",
-                            data: res.series
-                        }],
-                        xaxis: {
-                            categories: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN",
-                                "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
-                            ],
-                            labels: {
-                                style: {
-                                    fontSize: "10px",
-                                    colors: "#A0ACBB"
-                                }
-                            }
-                        },
-                        yaxis: {
-                            labels: {
-                                formatter: function(e) {
-                                    return "Rp " + e.toLocaleString("id-ID");
-                                },
-                                style: {
-                                    color: "#A0ACBB"
-                                }
-                            }
-                        },
-                        dataLabels: {
-                            enabled: false
-                        },
-                        tooltip: {
-                            y: {
-                                formatter: function(e) {
-                                    return "Rp " + e.toLocaleString("id-ID");
-                                }
-                            }
-                        }
-                    };
+                    if (!res.data || res.data.length === 0) {
+                        tbody.append(`
+                <tr>
+                    <td colspan="5" class="text-center">Tidak ada data</td>
+                </tr>
+            `);
+                        return;
+                    }
 
-                    chart = new ApexCharts(document.querySelector("#payment-records-chart"), options);
-                    chart.render();
+                    res.data.forEach(item => {
+                        let penjualan = item.total_penjualan ?? 0;
+                        let modal = item.total_modal ?? 0;
+                        let profit = item.total_profit ?? 0;
+                        let persen = item.persen_profit ?? 0;
+
+                        tbody.append(`
+                <tr>
+                    <td class="text-center">${item.tanggal}</td>
+                    <td class="text-end">Rp ${Number(penjualan).toLocaleString("id-ID")}</td>
+                    <td class="text-end">Rp ${Number(modal).toLocaleString("id-ID")}</td>
+                    <td class="text-end">Rp ${Number(profit).toLocaleString("id-ID")}</td>
+                    <td class="text-center">${persen} %</td>
+                </tr>
+            `);
+                    });
+                }).fail(function() {
+                    $("#harian-body").html(`
+            <tr>
+                <td colspan="5" class="text-center text-danger">Gagal memuat data</td>
+            </tr>
+        `);
                 });
             }
 
-            // pertama kali load (semua outlet)
-            loadChart();
+            loadPenjualanHarian(); // Panggil fungsi untuk load penjualan harian
+
+
+            function loadPenjualanBulanan(uuidOutlet = "") {
+                $.get("/superadmin/get-penjualan-bulanan", {
+                    uuid_user: "{{ Auth::user()->uuid }}",
+                }, function(res) {
+                    let tbody = $("#bulanan-body");
+                    tbody.empty(); // kosongkan isi tabel
+
+                    if (!res.data || res.data.length === 0) {
+                        tbody.append(`
+                <tr>
+                    <td colspan="5" class="text-center">Tidak ada data</td>
+                </tr>
+            `);
+                        return;
+                    }
+
+                    res.data.forEach(item => {
+                        let penjualan = item.total_penjualan ?? 0;
+                        let modal = item.total_modal ?? 0;
+                        let profit = item.total_profit ?? 0;
+                        let persen = item.persen_profit ?? 0;
+
+                        tbody.append(`
+                <tr>
+                    <td class="text-center">${item.bulan}</td>
+                    <td class="text-end">Rp ${Number(penjualan).toLocaleString("id-ID")}</td>
+                    <td class="text-end">Rp ${Number(modal).toLocaleString("id-ID")}</td>
+                    <td class="text-end">Rp ${Number(profit).toLocaleString("id-ID")}</td>
+                    <td class="text-center">${persen} %</td>
+                </tr>
+            `);
+                    });
+                }).fail(function() {
+                    $("#bulanan-body").html(`
+            <tr>
+                <td colspan="5" class="text-center text-danger">Gagal memuat data</td>
+            </tr>
+        `);
+                });
+            }
+
+            loadPenjualanBulanan();
         });
     </script>
 @endpush
