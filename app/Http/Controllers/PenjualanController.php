@@ -361,8 +361,8 @@ class PenjualanController extends Controller
         $kasir = KasirOutlet::where('uuid_user', Auth::user()->uuid)->first();
 
         // Cek apakah sudah closing hari ini
-        $closing = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid)
-            ->whereDate('tanggal_closing', now()->toDateString())
+        $closing = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid_outlet)
+            ->where('tanggal_closing', now()->format('d-m-Y'))
             ->first();
 
         if ($closing) {

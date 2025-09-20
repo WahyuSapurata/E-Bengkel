@@ -1022,8 +1022,8 @@
                                                 harga: Number(i
                                                     .harga), // pastikan number
                                                 subtotal: Number(i
-                                                        .subtotal
-                                                        ) // pastikan number
+                                                    .subtotal
+                                                ) // pastikan number
                                             })),
                                             totalJasa: Number(totalJasa), // pastikan number
                                             totalItem: Number(res.data.totalItem),
@@ -1338,20 +1338,21 @@
                 <tr><td colspan="1" class="text-center">Belum Riwayat Struk</td></tr>
             `;
                     } else {
-                        data.forEach(p => {
-                            const tr = document.createElement("tr");
-                            tr.innerHTML =
-                                `<td class="text-primary fw-bold cursor-pointer">${p.no_bukti}</td>`;
+                        if (data.status == true) {
+                            data.forEach(p => {
+                                const tr = document.createElement("tr");
+                                tr.innerHTML =
+                                    `<td class="text-primary fw-bold cursor-pointer">${p.no_bukti}</td>`;
 
-                            // klik nomor bukti untuk detail
-                            tr.querySelector("td").addEventListener("click", async () => {
-                                try {
-                                    const detailRes = await fetch(
-                                        `/kasir/get-penjualan-detail/${p.uuid}`);
-                                    const res = await detailRes.json();
+                                // klik nomor bukti untuk detail
+                                tr.querySelector("td").addEventListener("click", async () => {
+                                    try {
+                                        const detailRes = await fetch(
+                                            `/kasir/get-penjualan-detail/${p.uuid}`);
+                                        const res = await detailRes.json();
 
-                                    if (res.status === "success") {
-                                        const itemsHtml = res.data.items.map(i => `
+                                        if (res.status === "success") {
+                                            const itemsHtml = res.data.items.map(i => `
                                 <tr>
                                     <td>${i.nama}</td>
                                     <td>${i.qty}</td>
@@ -1360,7 +1361,7 @@
                                 </tr>
                             `).join("");
 
-                                        const detailHtml = `
+                                            const detailHtml = `
                                 <div class="table-responsive">
                                     <table class="table table-bordered">
                                         <thead>
@@ -1386,64 +1387,74 @@
                                 </div>
                             `;
 
-                                        Swal.fire({
-                                            title: `Detail Struk - ${res.data.no_bukti}`,
-                                            html: detailHtml,
-                                            width: 600,
-                                            showCancelButton: true,
-                                            confirmButtonText: "🖨 Cetak Struk",
-                                            cancelButtonText: "Tutup"
-                                        }).then(result => {
-                                            if (result.isConfirmed) {
-                                                const totalJasa = res.data
-                                                    .totalJasa ?? 0;
-                                                const strukData = {
-                                                    outlet_nama: "{{ $data_outlet->nama_outlet }}",
-                                                    outlet_alamat: "{{ $data_outlet->alamat }}",
-                                                    outlet_telp: "{{ $data_outlet->telepon }}",
-                                                    no_bukti: res.data.no_bukti,
-                                                    tanggal: res.data.tanggal,
-                                                    kasir: res.data.kasir,
-                                                    pembayaran: res.data
-                                                        .pembayaran,
-                                                    items: res.data.items.map(
-                                                        i => ({
-                                                            nama: i
-                                                                .nama,
-                                                            qty: Number(
-                                                                i
-                                                                .qty
-                                                            ),
-                                                            harga: Number(
-                                                                i
-                                                                .harga
-                                                            ),
-                                                            subtotal: Number(
-                                                                i
-                                                                .subtotal
-                                                            )
-                                                        })),
-                                                    totalJasa: Number(
-                                                        totalJasa),
-                                                    totalItem: Number(res.data
-                                                        .totalItem),
-                                                    grandTotal: Number(res.data
-                                                            .grandTotal) +
-                                                        Number(totalJasa)
-                                                };
+                                            Swal.fire({
+                                                title: `Detail Struk - ${res.data.no_bukti}`,
+                                                html: detailHtml,
+                                                width: 600,
+                                                showCancelButton: true,
+                                                confirmButtonText: "🖨 Cetak Struk",
+                                                cancelButtonText: "Tutup"
+                                            }).then(result => {
+                                                if (result.isConfirmed) {
+                                                    const totalJasa = res.data
+                                                        .totalJasa ?? 0;
+                                                    const strukData = {
+                                                        outlet_nama: "{{ $data_outlet->nama_outlet }}",
+                                                        outlet_alamat: "{{ $data_outlet->alamat }}",
+                                                        outlet_telp: "{{ $data_outlet->telepon }}",
+                                                        no_bukti: res.data
+                                                            .no_bukti,
+                                                        tanggal: res.data
+                                                            .tanggal,
+                                                        kasir: res.data.kasir,
+                                                        pembayaran: res.data
+                                                            .pembayaran,
+                                                        items: res.data.items
+                                                            .map(
+                                                                i => ({
+                                                                    nama: i
+                                                                        .nama,
+                                                                    qty: Number(
+                                                                        i
+                                                                        .qty
+                                                                    ),
+                                                                    harga: Number(
+                                                                        i
+                                                                        .harga
+                                                                    ),
+                                                                    subtotal: Number(
+                                                                        i
+                                                                        .subtotal
+                                                                    )
+                                                                })),
+                                                        totalJasa: Number(
+                                                            totalJasa),
+                                                        totalItem: Number(res
+                                                            .data
+                                                            .totalItem),
+                                                        grandTotal: Number(res
+                                                                .data
+                                                                .grandTotal) +
+                                                            Number(totalJasa)
+                                                    };
 
-                                                cetakStruk(strukData);
-                                            }
-                                        });
+                                                    cetakStruk(strukData);
+                                                }
+                                            });
+                                        }
+                                    } catch (err) {
+                                        console.error("❌ Gagal ambil detail penjualan:",
+                                            err);
                                     }
-                                } catch (err) {
-                                    console.error("❌ Gagal ambil detail penjualan:", err);
-                                }
+                                });
+
+                                tbody.appendChild(tr);
                             });
-
+                        } else {
+                            const tr = document.createElement("tr");
+                            tr.innerHTML = `<td colspan="1" class="text-center">${data.message}</td>`;
                             tbody.appendChild(tr);
-                        });
-
+                        }
                         // row no-data tersembunyi
                         const noDataRow = document.createElement("tr");
                         noDataRow.id = "no-data-modal";
