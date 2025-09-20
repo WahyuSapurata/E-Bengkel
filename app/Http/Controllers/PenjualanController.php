@@ -364,7 +364,7 @@ class PenjualanController extends Controller
         $today = now()->format('d-m-Y');
 
         // cek apakah sudah closing untuk tanggal hari ini
-        $closing = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid_outlet)
+        $closing = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid_user)
             ->where('tanggal_closing', $today)
             ->first();
 
@@ -376,10 +376,14 @@ class PenjualanController extends Controller
             ]);
         }
 
+        $closingDates = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid_user)
+            ->pluck('tanggal_closing')
+            ->toArray();
+
         // ambil penjualan untuk tanggal hari ini
         $penjualans = Penjualan::where('uuid_outlet', $kasir->uuid_outlet)
             ->where('created_by', Auth::user()->nama)
-            ->where('tanggal_transaksi', $today)
+            ->whereNotIn('tanggal_transaksi', $closingDates)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -388,7 +392,6 @@ class PenjualanController extends Controller
             'penjualans' => $penjualans
         ]);
     }
-
 
     public function get_detail_penjualan($uuid)
     {

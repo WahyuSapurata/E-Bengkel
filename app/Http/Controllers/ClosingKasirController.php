@@ -32,8 +32,13 @@ class ClosingKasirController extends Controller
 
         $tanggal = Carbon::now()->format('d-m-Y');
 
-        $penjualans = Penjualan::where('uuid_outlet', $request->uuid_kasir_outlet)
-            ->where('tanggal_transaksi', $tanggal)
+        $closingDates = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid_user)
+            ->pluck('tanggal_closing')
+            ->toArray();
+
+        $penjualans = Penjualan::where('uuid_outlet', $kasir->uuid_outlet)
+            ->where('created_by', Auth::user()->nama)
+            ->whereNotIn('tanggal_transaksi', $closingDates)
             ->with('detailPenjualans') // ✅ ambil detail
             ->get();
 

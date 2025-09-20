@@ -1423,15 +1423,15 @@
                                                             qty: Number(
                                                                 i
                                                                 .qty
-                                                                ),
+                                                            ),
                                                             harga: Number(
                                                                 i
                                                                 .harga
-                                                                ),
+                                                            ),
                                                             subtotal: Number(
                                                                 i
                                                                 .subtotal
-                                                                )
+                                                            )
                                                         })),
                                                     totalJasa: Number(
                                                         totalJasa),
@@ -1576,7 +1576,7 @@
                     if (result.isConfirmed) {
                         let data = {
                             total_fisik: result.value,
-                            uuid_kasir_outlet: "{{ $kasir_login->uuid_outlet ?? '' }}"
+                            uuid_kasir_outlet: "{{ $kasir_login->uuid_user ?? '' }}"
                         };
 
                         fetch("{{ route('kasir.closing') }}", {
