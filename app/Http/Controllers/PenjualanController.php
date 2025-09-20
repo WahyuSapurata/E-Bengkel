@@ -529,9 +529,7 @@ class PenjualanController extends Controller
         // SIMPAN & PRINT (raw mode)
         $tmpFile = '/tmp/struk.txt';
         file_put_contents($tmpFile, $struk);
-
-        // kirim langsung ke device printer
-        file_put_contents("/dev/usb/lp0", $struk);
+        shell_exec("lp -d Codeshop -o raw " . escapeshellarg($tmpFile));
     }
 
     // ===============================
