@@ -91,13 +91,7 @@ class PenjualanController extends Controller
     {
         $jamLalu = Carbon::now()->subHour();
 
-        $jasa = Jasa::whereNotIn('uuid', function ($q) use ($jamLalu) {
-            $q->select('uuid_jasa')
-                ->from('penjualans')
-                ->whereNotNull('uuid_jasa')
-                ->where('created_at', '>=', $jamLalu);
-        })
-            ->get();
+        $jasa = Jasa::all();
         return response()->json($jasa);
     }
 
