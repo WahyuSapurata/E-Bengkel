@@ -360,15 +360,32 @@ class PenjualanController extends Controller
     {
         $kasir = KasirOutlet::where('uuid_user', Auth::user()->uuid)->first();
 
+        // Cek apakah sudah closing hari ini
+        $closing = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid)
+            ->whereDate('tanggal_closing', now()->toDateString())
+            ->first();
+
+        if ($closing) {
+            // Jika sudah closing, jangan tampilkan data
+            return response()->json([
+                'status' => false,
+                'message' => 'Data penjualan sudah ditutup (closing)',
+                'penjualans' => []
+            ]);
+        }
+
         // Ambil semua penjualan hari ini
         $penjualans = Penjualan::where('uuid_outlet', $kasir->uuid_outlet)
             ->where('created_by', Auth::user()->nama)
-            // ->where('tanggal_transaksi', now()->format('d-m-Y'))
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json($penjualans);
+        return response()->json([
+            'status' => true,
+            'penjualans' => $penjualans
+        ]);
     }
+
 
     public function get_detail_penjualan($uuid)
     {
