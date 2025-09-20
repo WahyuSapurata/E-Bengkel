@@ -383,6 +383,8 @@ class PenjualanController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        dd($penjualans);
+
         return response()->json([
             'status' => true,
             'penjualans' => $penjualans
