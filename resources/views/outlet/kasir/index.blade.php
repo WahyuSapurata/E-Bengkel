@@ -1017,13 +1017,18 @@
                                             pembayaran: res.data.pembayaran,
                                             items: res.data.items.map(i => ({
                                                 nama: i.nama,
-                                                qty: i.qty,
-                                                harga: i.harga,
-                                                subtotal: i.subtotal
+                                                qty: Number(i
+                                                    .qty), // pastikan number
+                                                harga: Number(i
+                                                    .harga), // pastikan number
+                                                subtotal: Number(i
+                                                        .subtotal
+                                                        ) // pastikan number
                                             })),
-                                            totalJasa: totalJasa,
-                                            totalItem: res.data.totalItem,
-                                            grandTotal: res.data.grandTotal + totalJasa
+                                            totalJasa: Number(totalJasa), // pastikan number
+                                            totalItem: Number(res.data.totalItem),
+                                            grandTotal: Number(res.data.grandTotal) +
+                                                Number(totalJasa) // penjumlahan aman
                                         };
 
                                         // kirim ke backend print
