@@ -166,7 +166,6 @@ class PenjualanController extends Controller
 
     public function store(Request $request)
     {
-        dd($request->all());
         try {
             $penjualan = null;
             $details   = [];
@@ -249,7 +248,7 @@ class PenjualanController extends Controller
                         'uuid_penjualans'  => $penjualan->uuid,
                         'uuid_produk'      => $uuid_produk,
                         'qty'              => $qty,
-                        'total_harga'      => (string) $total_harga,
+                        'total_harga'      => $total_harga,
                     ]);
 
                     // Catat keluar stok dari toko
