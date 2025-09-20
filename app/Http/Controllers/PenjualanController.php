@@ -360,13 +360,15 @@ class PenjualanController extends Controller
     {
         $kasir = KasirOutlet::where('uuid_user', Auth::user()->uuid)->first();
 
-        // Cek apakah sudah closing hari ini
+        // tanggal hari ini (d-m-Y)
+        $today = now()->format('d-m-Y');
+
+        // cek apakah sudah closing untuk tanggal hari ini
         $closing = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid_outlet)
-            ->where('tanggal_closing', now()->format('d-m-Y'))
+            ->where('tanggal_closing', $today)
             ->first();
 
         if ($closing) {
-            // Jika sudah closing, jangan tampilkan data
             return response()->json([
                 'status' => false,
                 'message' => 'Data penjualan sudah ditutup (closing)',
@@ -374,9 +376,10 @@ class PenjualanController extends Controller
             ]);
         }
 
-        // Ambil semua penjualan hari ini
+        // ambil penjualan untuk tanggal hari ini
         $penjualans = Penjualan::where('uuid_outlet', $kasir->uuid_outlet)
             ->where('created_by', Auth::user()->nama)
+            ->where('tanggal_transaksi', $today)
             ->orderBy('created_at', 'desc')
             ->get();
 
