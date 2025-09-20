@@ -108,7 +108,8 @@
                         <button type="button" class="btn btn-outline-info btn-sm shortcut-btn">F5 Reload</button>
                         <button type="button" id="btn-f6" class="btn btn-outline-dark btn-sm shortcut-btn">F6 Cetak
                             Ulang</button>
-                        {{-- <button type="button" id="btn-f7" class="btn btn-outline-secondary btn-sm shortcut-btn">F7 Hold</button>  --}}
+                        <button type="button" id="btn-f7" class="btn btn-outline-secondary btn-sm shortcut-btn">F7
+                            Discount</button>
                         <button type="button" id="btn-f8" class="btn btn-outline-success btn-sm shortcut-btn">F8
                             Simpan</button>
                         <button type="button" id="btn-f9" class="btn btn-outline-danger btn-sm shortcut-btn">F9
@@ -666,7 +667,7 @@
                     if (!selectedRow) {
                         Swal.fire({
                             title: "Warning!",
-                            text: "⚠️ Pilih dulu produk di tabel!",
+                            text: "⚠️ Pilih dulu produk di tabel yang ingin di edit!",
                             icon: "warning",
                             showConfirmButton: false,
                             timer: 1000
@@ -681,7 +682,7 @@
                     if (!selectedRow) {
                         Swal.fire({
                             title: "Warning!",
-                            text: "⚠️ Pilih dulu produk di tabel!",
+                            text: "⚠️ Pilih dulu produk di tabel yang ingin di hapus!",
                             icon: "warning",
                             showConfirmButton: false,
                             timer: 1000
@@ -689,6 +690,21 @@
                         return;
                     }
                     hapusRow(selectedRow);
+                }
+
+                if (e.key === "F7") {
+                    e.preventDefault();
+                    if (!selectedRow) {
+                        Swal.fire({
+                            title: "Warning!",
+                            text: "⚠️ Pilih dulu produk di tabel yang ingin di discount!",
+                            icon: "warning",
+                            showConfirmButton: false,
+                            timer: 1000
+                        });
+                        return;
+                    }
+                    editDiscount(selectedRow);
                 }
             });
 
@@ -878,6 +894,54 @@
                             confirmButtonText: "OK"
                         });
                     });
+            }
+
+            // === EDIT DISCOUNT (F7) ===
+            function editDiscount(row) {
+                const currentDiscount = row.dataset.discount || "0"; // bisa "5000" atau "10%"
+                const hargaDefault = Number(row.dataset.hargaDefault) || 0;
+                const qty = parseInt(row.querySelector(".qty")?.innerText, 10) || 1;
+
+                Swal.fire({
+                    title: "Tambah Discount",
+                    input: "text",
+                    inputValue: currentDiscount,
+                    inputLabel: "Isi nominal (5000) atau persen (10%)",
+                    showCancelButton: true,
+                    confirmButtonText: "Simpan",
+                    cancelButtonText: "Batal",
+                    preConfirm: (v) => {
+                        if (!v) return "0";
+                        return v.trim();
+                    }
+                }).then(r => {
+                    if (!r.isConfirmed) return;
+
+                    let discount = r.value;
+                    row.dataset.discount = discount;
+
+                    // hitung subtotal baru
+                    let harga = hargaDefault * qty;
+                    let potongan = 0;
+
+                    if (discount.includes("%")) {
+                        let persen = parseFloat(discount.replace("%", "")) || 0;
+                        potongan = harga * (persen / 100);
+                    } else {
+                        potongan = parseFloat(discount) || 0;
+                    }
+
+                    if (potongan > harga) potongan = harga; // jaga-jaga biar ga minus
+
+                    let jumlahAkhir = harga - potongan;
+
+                    const jumlahCell = row.querySelector(".jumlah");
+                    if (jumlahCell) {
+                        jumlahCell.innerText = "Rp " + Math.round(jumlahAkhir).toLocaleString();
+                    }
+
+                    hitungTotal();
+                });
             }
 
             // ----------------
@@ -1307,6 +1371,16 @@
                                 setTimeout(() => {
                                     tr.classList.remove("tr-highlight");
                                 }, 800);
+
+                                // tutup modal setelah klik
+                                const modalEl = document.getElementById(
+                                    "modalProduk"); // ganti ID sesuai modal kamu
+                                if (modalEl) {
+                                    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                                    if (modalInstance) {
+                                        modalInstance.hide();
+                                    }
+                                }
                             });
 
                             tbody.appendChild(tr);
