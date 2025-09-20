@@ -1405,17 +1405,26 @@
                                                         i => ({
                                                             nama: i
                                                                 .nama,
-                                                            qty: i.qty,
-                                                            harga: i
-                                                                .harga,
-                                                            subtotal: i
+                                                            qty: Number(
+                                                                i
+                                                                .qty
+                                                            ),
+                                                            harga: Number(
+                                                                i
+                                                                .harga
+                                                            ),
+                                                            subtotal: Number(
+                                                                i
                                                                 .subtotal
+                                                            )
                                                         })),
-                                                    totalJasa: totalJasa,
-                                                    totalItem: res.data
-                                                        .totalItem,
-                                                    grandTotal: res.data
-                                                        .grandTotal + totalJasa
+                                                    totalJasa: Number(
+                                                        totalJasa),
+                                                    totalItem: Number(res.data
+                                                        .totalItem),
+                                                    grandTotal: Number(res.data
+                                                            .grandTotal) +
+                                                        Number(totalJasa)
                                                 };
 
                                                 cetakStruk(strukData);
