@@ -248,7 +248,7 @@ class PenjualanController extends Controller
                         'uuid_penjualans'  => $penjualan->uuid,
                         'uuid_produk'      => $uuid_produk,
                         'qty'              => $qty,
-                        'total_harga'      => $total_harga,
+                        'total_harga'      => (string) $total_harga,
                     ]);
 
                     // Catat keluar stok dari toko
