@@ -516,9 +516,12 @@ class PenjualanController extends Controller
         $struk .= chr(29) . chr(86) . chr(65) . chr(0);
 
         // SIMPAN & PRINT (raw mode)
+        // simpan file (opsional, kalau mau cek isi struk)
         $tmpFile = '/tmp/struk.txt';
         file_put_contents($tmpFile, $struk);
-        shell_exec("lp -o raw $tmpFile");
+
+        // kirim langsung ke device printer
+        file_put_contents("/dev/usb/lp0", $struk);
     }
 
     // ===============================
