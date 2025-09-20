@@ -362,6 +362,7 @@ class PenjualanController extends Controller
 
         // Ambil semua penjualan hari ini
         $penjualans = Penjualan::where('uuid_outlet', $kasir->uuid_outlet)
+            ->where('created_by', Auth::user()->nama)
             // ->where('tanggal_transaksi', now()->format('d-m-Y'))
             ->orderBy('created_at', 'desc')
             ->get();
@@ -456,7 +457,8 @@ class PenjualanController extends Controller
         $struk .= str_repeat("-", $width) . "\n";
 
         // ===============================
-        // ITEMS
+        // ITEMS (lebar total = 48)
+        // Nama: 20 | Qty: 5 | Harga: 10 | Sub: 13
         // ===============================
         $struk .= str_pad("Barang", 20);
         $struk .= str_pad("Qty", 5, " ", STR_PAD_LEFT);
@@ -465,27 +467,35 @@ class PenjualanController extends Controller
         $struk .= str_repeat("-", $width) . "\n";
 
         foreach ($data['items'] as $item) {
-            $nama = substr($item['nama'], 0, 20);
+            $nama = $item['nama'];
             $qty = $item['qty'];
             $harga = number_format($item['harga'], 0, ',', '.');
             $subtotal = number_format($item['subtotal'], 0, ',', '.');
 
-            $struk .= str_pad($nama, 20);
+            // Cetak nama produk (maks 20 char di baris utama)
+            $struk .= str_pad(substr($nama, 0, 20), 20);
             $struk .= str_pad($qty, 5, " ", STR_PAD_LEFT);
             $struk .= str_pad($harga, 10, " ", STR_PAD_LEFT);
             $struk .= str_pad($subtotal, 13, " ", STR_PAD_LEFT) . "\n";
 
-            // Kalau nama produk panjang > 20, cetak di baris kedua
-            if (strlen($item['nama']) > 20) {
-                $struk .= " " . substr($item['nama'], 20, $width) . "\n";
+            // Kalau nama produk panjang, lanjutkan di baris bawah
+            if (strlen($nama) > 20) {
+                $sisa = wordwrap(substr($nama, 20), $width - 1, "\n", true);
+                $lines = explode("\n", $sisa);
+                foreach ($lines as $line) {
+                    $struk .= " " . $line . "\n";
+                }
             }
         }
 
+        // ===============================
+        // TOTAL JASA (jika ada)
+        // ===============================
         if (!empty($data['totalJasa']) && $data['totalJasa'] > 0) {
-            $struk .= str_pad("Total Jasa", 20, " ", STR_PAD_LEFT);
+            $struk .= str_pad("Jasa", 20);
             $struk .= str_pad("1", 5, " ", STR_PAD_LEFT);
-            $struk .= str_pad($harga, 10, " ", STR_PAD_LEFT);
-            $struk .= str_pad(number_format($data['totalJasa'], 0, ',', '.'), 15, " ", STR_PAD_LEFT) . "\n";
+            $struk .= str_pad(number_format($data['totalJasa'], 0, ',', '.'), 10, " ", STR_PAD_LEFT);
+            $struk .= str_pad(number_format($data['totalJasa'], 0, ',', '.'), 13, " ", STR_PAD_LEFT) . "\n";
         }
 
         // ===============================
@@ -497,6 +507,7 @@ class PenjualanController extends Controller
             $struk .= str_pad("Total Item", $width - 15, " ", STR_PAD_LEFT);
             $struk .= str_pad(number_format($data['totalItem'], 0, ',', '.'), 15, " ", STR_PAD_LEFT) . "\n";
         }
+
         $struk .= str_repeat("-", $width) . "\n";
         $struk .= str_pad("Grand Total", $width - 15, " ", STR_PAD_LEFT);
         $struk .= str_pad(number_format($data['grandTotal'], 0, ',', '.'), 15, " ", STR_PAD_LEFT) . "\n";
@@ -516,7 +527,6 @@ class PenjualanController extends Controller
         $struk .= chr(29) . chr(86) . chr(65) . chr(0);
 
         // SIMPAN & PRINT (raw mode)
-        // simpan file (opsional, kalau mau cek isi struk)
         $tmpFile = '/tmp/struk.txt';
         file_put_contents($tmpFile, $struk);
 
