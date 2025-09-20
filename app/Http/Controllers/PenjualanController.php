@@ -362,6 +362,7 @@ class PenjualanController extends Controller
 
         // tanggal hari ini (d-m-Y)
         $today = now()->format('d-m-Y');
+        dd($today);
 
         // cek apakah sudah closing untuk tanggal hari ini
         $closing = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid_outlet)
