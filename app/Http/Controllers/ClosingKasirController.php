@@ -8,11 +8,13 @@ use App\Models\Coa;
 use App\Models\KasirOutlet;
 use App\Models\Outlet;
 use App\Models\Penjualan;
+use App\Models\StatusBarang;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ClosingKasirController extends Controller
@@ -24,7 +26,7 @@ class ClosingKasirController extends Controller
     {
         $request->validate(
             [
-                'total_fisik'       => 'required', // uang fisik dari kasir
+                'total_fisik' => 'required', // uang fisik dari kasir
             ],
             [
                 'total_fisik.required' => 'Kolom total fisik harus di isi.'
@@ -32,7 +34,6 @@ class ClosingKasirController extends Controller
         );
 
         $kasir = KasirOutlet::where('uuid_user', Auth::user()->uuid)->firstOrFail();
-
         $tanggal = Carbon::now()->format('d-m-Y');
 
         $closingDates = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid_user)
@@ -42,21 +43,39 @@ class ClosingKasirController extends Controller
         $penjualans = Penjualan::where('uuid_outlet', $kasir->uuid_outlet)
             ->where('created_by', Auth::user()->nama)
             ->whereNotIn('tanggal_transaksi', $closingDates)
-            ->with('detailPenjualans') // ✅ ambil detail
+            ->with('detailPenjualans') // ambil detail
             ->get();
 
-        // Total penjualan dihitung dari detail
+        // Total penjualan dihitung dari detail + jasa
         $totalPenjualan = $penjualans->sum(function ($p) {
-            return $p->detailPenjualans->sum('total_harga');
+            $totalDetail = $p->detailPenjualans->sum('total_harga');
+            $totalJasa = 0;
+            if ($p->uuid_jasa) {
+                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
+                $totalJasa = $jasa ? $jasa->harga : 0;
+            }
+            return $totalDetail + $totalJasa;
         });
 
-        // Total cash & transfer
+        // Total cash & transfer termasuk jasa
         $totalCash = $penjualans->where('pembayaran', 'Tunai')->sum(function ($p) {
-            return $p->detailPenjualans->sum('total_harga');
+            $totalDetail = $p->detailPenjualans->sum('total_harga');
+            $totalJasa = 0;
+            if ($p->uuid_jasa) {
+                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
+                $totalJasa = $jasa ? $jasa->harga : 0;
+            }
+            return $totalDetail + $totalJasa;
         });
 
         $totalTransfer = $penjualans->where('pembayaran', 'Transfer Bank')->sum(function ($p) {
-            return $p->detailPenjualans->sum('total_harga');
+            $totalDetail = $p->detailPenjualans->sum('total_harga');
+            $totalJasa = 0;
+            if ($p->uuid_jasa) {
+                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
+                $totalJasa = $jasa ? $jasa->harga : 0;
+            }
+            return $totalDetail + $totalJasa;
         });
 
         // Hitung selisih antara sistem vs fisik
@@ -65,20 +84,24 @@ class ClosingKasirController extends Controller
         // Simpan ke tabel closing_kasirs
         $closing = ClosingKasir::create([
             'uuid_kasir_outlet' => $request->uuid_kasir_outlet,
-            'tanggal_closing'  => $tanggal,
-            'total_penjualan'  => $totalPenjualan,
-            'total_cash'       => $totalCash,
-            'total_transfer'   => $totalTransfer,
-            'total_fisik'      => $request->total_fisik,
-            'selisih'          => $selisih,
+            'tanggal_closing'   => $tanggal,
+            'total_penjualan'   => $totalPenjualan,
+            'total_cash'        => $totalCash,
+            'total_transfer'    => $totalTransfer,
+            'total_fisik'       => $request->total_fisik,
+            'selisih'           => $selisih,
         ]);
 
-        // === Catat Jurnal Closing ===
+        StatusBarang::create([
+            'uuid_log_barang' => $closing->uuid,
+            'ref' => 'closing',
+            'ketarangan' => Auth::user()->nama . ' Telah melakukan closing',
+        ]);
+
+        // Catat Jurnal Closing
         $kasOutlet = Coa::where('nama', 'Kas Outlet')->firstOrFail();
         $kas       = Coa::where('nama', 'Kas')->firstOrFail();
-
-        // Buat nomor bukti khusus closing
-        $no_bukti = 'CLS-' . strtoupper(Str::random(6));
+        $no_bukti  = 'CLS-' . strtoupper(Str::random(6));
 
         // Setor seluruh cash dari kas outlet ke kas pusat
         if ($totalCash > 0) {
@@ -106,9 +129,7 @@ class ClosingKasirController extends Controller
     public function index($params)
     {
         $kasir = KasirOutlet::where('uuid_user', Auth::user()->uuid)->firstOrFail();
-
-        $outelet = Outlet::where('uuid_user', $kasir->uuid_outlet)->first();
-
+        $outlet = Outlet::where('uuid_user', $kasir->uuid_outlet)->first();
         $tanggal = Carbon::now()->format('d-m-Y');
 
         $closingDates = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid_user)
@@ -119,65 +140,84 @@ class ClosingKasirController extends Controller
         $penjualans = Penjualan::where('uuid_outlet', $kasir->uuid_outlet)
             ->where('created_by', Auth::user()->nama)
             ->whereIn('tanggal_transaksi', $closingDates)
-            ->with('detailPenjualans') // ✅ ambil detail
+            ->with('detailPenjualans')
             ->get();
 
-        // Total penjualan dihitung dari detail
+        // Hitung total penjualan termasuk jasa
         $totalPenjualan = $penjualans->sum(function ($p) {
-            return $p->detailPenjualans->sum('total_harga');
+            $totalDetail = $p->detailPenjualans->sum('total_harga');
+            $totalJasa = 0;
+            if ($p->uuid_jasa) {
+                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
+                $totalJasa = $jasa ? $jasa->harga : 0;
+            }
+            return $totalDetail + $totalJasa;
         });
 
-        // Total cash & transfer
         $totalCash = $penjualans->where('pembayaran', 'Tunai')->sum(function ($p) {
-            return $p->detailPenjualans->sum('total_harga');
+            $totalDetail = $p->detailPenjualans->sum('total_harga');
+            $totalJasa = 0;
+            if ($p->uuid_jasa) {
+                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
+                $totalJasa = $jasa ? $jasa->harga : 0;
+            }
+            return $totalDetail + $totalJasa;
         });
 
         $totalTransfer = $penjualans->where('pembayaran', 'Transfer Bank')->sum(function ($p) {
-            return $p->detailPenjualans->sum('total_harga');
+            $totalDetail = $p->detailPenjualans->sum('total_harga');
+            $totalJasa = 0;
+            if ($p->uuid_jasa) {
+                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
+                $totalJasa = $jasa ? $jasa->harga : 0;
+            }
+            return $totalDetail + $totalJasa;
         });
 
-        // Tambahkan setelah proses closing
-        $saldoAwal = 0; // kalau ada tabel saldo awal, ambil dari situ
-
-        // total penjualan non tunai = transfer
         $totalNonTunai = $totalTransfer;
 
-        // summary detail non tunai
         $detailNonTunai = $penjualans->where('pembayaran', '!=', 'Tunai')->map(function ($p) {
+            $totalDetail = $p->detailPenjualans->sum('total_harga');
+            $totalJasa = 0;
+            if ($p->uuid_jasa) {
+                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
+                $totalJasa = $jasa ? $jasa->harga : 0;
+            }
             return [
-                'jenis'     => $p->pembayaran, // contoh: Transfer Bank, QRIS, dll
+                'jenis'      => $p->pembayaran,
                 'no_invoice' => $p->no_bukti,
-                'nominal'   => $p->detailPenjualans->sum('total_harga')
+                'nominal'    => $totalDetail + $totalJasa,
             ];
         })->values();
 
         $summaryReport = [
-            'tanggal'          => $tanggal,
-            'kasir'            => Auth::user()->nama,
-            'saldo_awal'       => $saldoAwal,
+            'tanggal'            => $tanggal,
+            'kasir'              => Auth::user()->nama,
+            'saldo_awal'         => 0,
             'penjualan_non_tunai' => $totalNonTunai,
-            'penjualan_tunai'  => $totalCash,
-            'total_penjualan'  => $totalPenjualan + $saldoAwal,
-            'detail_non_tunai' => $detailNonTunai,
-            'total_non_tunai'  => $totalNonTunai,
-            'setoran_tunai'    => $totalCash,
-            'batal'            => 0 // kalau ada transaksi batal bisa ditarik dari tabel
+            'penjualan_tunai'    => $totalCash,
+            'total_penjualan'    => $totalPenjualan,
+            'detail_non_tunai'   => $detailNonTunai,
+            'total_non_tunai'    => $totalNonTunai,
+            'setoran_tunai'      => $totalCash,
+            'batal'              => 0
         ];
 
-        // return view('kasir.sumaryreport.index', [
-        //     'report' => $summaryReport,
-        //     'outlet' => $outelet->nama_outlet,
-        //     'alamat' => $outelet->alamat,
-        // ]);
-
-        $report = $summaryReport;
-        $outlet = $outelet->nama_outlet;
-        $alamat = $outelet->alamat;
-
-        $pdf = Pdf::loadView('kasir.sumaryreport.index', compact('report', 'outlet', 'alamat'));
+        $pdf = Pdf::loadView('kasir.sumaryreport.index', [
+            'report' => $summaryReport,
+            'outlet' => $outlet->nama_outlet,
+            'alamat' => $outlet->alamat
+        ]);
 
         return $pdf->stream('summary-report.pdf');
     }
+
+    // public function history_summary($params)
+    // {
+    //     // Sama dengan index, bisa dipanggil ulang dari index() untuk menghindari duplikasi
+    //     return $this->index($params);
+    // }
+
 
     public function sumaryreport()
     {
@@ -195,10 +235,9 @@ class ClosingKasirController extends Controller
 
     public function history_summary($params)
     {
-        $outelet = Outlet::where('uuid_user', Auth::user()->uuid)->first();
+        $outlet = Outlet::where('uuid_user', Auth::user()->uuid)->first();
 
         $kasir = KasirOutlet::where('uuid_outlet', Auth::user()->uuid)->first();
-
         $namaKasir = User::where('uuid', $kasir->uuid_user)->first();
 
         $tanggal = Carbon::now()->format('d-m-Y');
@@ -211,62 +250,78 @@ class ClosingKasirController extends Controller
         $penjualans = Penjualan::where('uuid_outlet', Auth::user()->uuid)
             ->where('created_by', $namaKasir->nama)
             ->whereIn('tanggal_transaksi', $closingDates)
-            ->with('detailPenjualans') // ✅ ambil detail
+            ->with('detailPenjualans')
             ->get();
 
-        // Total penjualan dihitung dari detail
+        // Total penjualan termasuk jasa
         $totalPenjualan = $penjualans->sum(function ($p) {
-            return $p->detailPenjualans->sum('total_harga');
+            $totalDetail = $p->detailPenjualans->sum('total_harga');
+            $totalJasa = 0;
+            if ($p->uuid_jasa) {
+                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
+                $totalJasa = $jasa ? $jasa->harga : 0;
+            }
+            return $totalDetail + $totalJasa;
         });
 
-        // Total cash & transfer
+        // Total cash & transfer termasuk jasa
         $totalCash = $penjualans->where('pembayaran', 'Tunai')->sum(function ($p) {
-            return $p->detailPenjualans->sum('total_harga');
+            $totalDetail = $p->detailPenjualans->sum('total_harga');
+            $totalJasa = 0;
+            if ($p->uuid_jasa) {
+                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
+                $totalJasa = $jasa ? $jasa->harga : 0;
+            }
+            return $totalDetail + $totalJasa;
         });
 
         $totalTransfer = $penjualans->where('pembayaran', 'Transfer Bank')->sum(function ($p) {
-            return $p->detailPenjualans->sum('total_harga');
+            $totalDetail = $p->detailPenjualans->sum('total_harga');
+            $totalJasa = 0;
+            if ($p->uuid_jasa) {
+                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
+                $totalJasa = $jasa ? $jasa->harga : 0;
+            }
+            return $totalDetail + $totalJasa;
         });
 
-        // Tambahkan setelah proses closing
-        $saldoAwal = 0; // kalau ada tabel saldo awal, ambil dari situ
-
-        // total penjualan non tunai = transfer
         $totalNonTunai = $totalTransfer;
 
-        // summary detail non tunai
+        // summary detail non-tunai termasuk jasa
         $detailNonTunai = $penjualans->where('pembayaran', '!=', 'Tunai')->map(function ($p) {
+            $totalDetail = $p->detailPenjualans->sum('total_harga');
+            $totalJasa = 0;
+            if ($p->uuid_jasa) {
+                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
+                $totalJasa = $jasa ? $jasa->harga : 0;
+            }
             return [
-                'jenis'     => $p->pembayaran, // contoh: Transfer Bank, QRIS, dll
+                'jenis'      => $p->pembayaran,
                 'no_invoice' => $p->no_bukti,
-                'nominal'   => $p->detailPenjualans->sum('total_harga')
+                'nominal'    => $totalDetail + $totalJasa,
             ];
         })->values();
 
+        $saldoAwal = 0; // kalau ada tabel saldo awal, ambil dari situ
+
         $summaryReport = [
-            'tanggal'          => $tanggal,
-            'kasir'            => Auth::user()->nama,
-            'saldo_awal'       => $saldoAwal,
+            'tanggal'             => $tanggal,
+            'kasir'               => Auth::user()->nama,
+            'saldo_awal'          => $saldoAwal,
             'penjualan_non_tunai' => $totalNonTunai,
-            'penjualan_tunai'  => $totalCash,
-            'total_penjualan'  => $totalPenjualan + $saldoAwal,
-            'detail_non_tunai' => $detailNonTunai,
-            'total_non_tunai'  => $totalNonTunai,
-            'setoran_tunai'    => $totalCash,
-            'batal'            => 0 // kalau ada transaksi batal bisa ditarik dari tabel
+            'penjualan_tunai'     => $totalCash,
+            'total_penjualan'     => $totalPenjualan + $saldoAwal,
+            'detail_non_tunai'    => $detailNonTunai,
+            'total_non_tunai'     => $totalNonTunai,
+            'setoran_tunai'       => $totalCash,
+            'batal'               => 0,
         ];
 
-        // return view('kasir.sumaryreport.index', [
-        //     'report' => $summaryReport,
-        //     'outlet' => $outelet->nama_outlet,
-        //     'alamat' => $outelet->alamat,
-        // ]);
-
-        $report = $summaryReport;
-        $outlet = $outelet->nama_outlet;
-        $alamat = $outelet->alamat;
-
-        $pdf = Pdf::loadView('kasir.sumaryreport.index', compact('report', 'outlet', 'alamat'));
+        $pdf = Pdf::loadView('kasir.sumaryreport.index', [
+            'report' => $summaryReport,
+            'outlet' => $outlet->nama_outlet,
+            'alamat' => $outlet->alamat
+        ]);
 
         return $pdf->stream('summary-report.pdf');
     }

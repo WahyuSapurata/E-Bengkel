@@ -97,6 +97,17 @@
                     </div>
                     <div class="modal-body">
                         <div class="mb-2">
+                            <label class="text-capitalize form-label">suplayer</label>
+                            <select name="uuid_suplayer" id="uuid_suplayer" data-placeholder="Pilih inputan"
+                                class="form-select basic-usage">
+                                <option value=""></option>
+                                @foreach ($suplayers as $s)
+                                    <option value="{{ $s->uuid }}">{{ $s->nama }}</option>
+                                @endforeach
+                            </select>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-2">
                             <label class="text-capitalize form-label">tanggal transaksi</label>
                             <input type="text" name="tanggal_transaksi" id="tanggal_transaksi"
                                 class="form-control dateofBirth">
@@ -156,6 +167,22 @@
             $('.basic-usage').each(function() {
                 initSelect2($(this));
             });
+
+            // $('#uuid_suplayer').on('change', function() {
+            //     let uuid = $(this).val();
+            //     let $produkSelect = $('#uuid_produk');
+
+            //     $produkSelect.html('<option value="">Loading...</option>');
+
+            //     if (uuid) {
+            //         $.getJSON(`/outlet/po-get-produk-by-suplayer/${uuid}`, function(
+            //             data) {
+            //             $produkSelect.html(produkOptions(data));
+            //         });
+            //     } else {
+            //         $produkSelect.html('<option value=""></option>');
+            //     }
+            // });
 
             // Tambah produk
             $("#btn-tambah").click(function() {
@@ -242,7 +269,17 @@
 
             // Kalau pakai select2, reset juga semua select2 di form
             $('#form').find('select').each(function() {
-                $(this).val('').trigger('change');
+                let $el = $(this);
+
+                // Reset value
+                $el.val('');
+
+                // Kalau select2 sudah terpasang → reset juga select2
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    $el.trigger('change.select2');
+                } else {
+                    $el.trigger('change');
+                }
             });
 
             // Bersihkan field hidden UUID
@@ -342,21 +379,93 @@
             return html;
         }
 
-        // Edit pembelian
+        // === Saat ganti supplier manual ===
+        $('#uuid_suplayer').on('change', function() {
+            let uuid = $(this).val();
+
+            // Reset produk-wrapper biar nggak nyisa produk dari supplier lain
+            $('#produk-wrapper').empty();
+
+            if (uuid) {
+                $.getJSON(`/outlet/po-get-produk-by-suplayer/${uuid}`, function(data) {
+                    // Render ulang baris produk kosong tapi list produk sudah sesuai supplier
+                    let row = `
+                <div class="row mb-2 produk-row">
+                    <div class="col-6">
+                        <select name="uuid_produk[]" class="form-select basic-usage" data-placeholder="Pilih produk">
+                            ${produkOptions(data)}
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <input type="number" name="qty[]" class="form-control" value="1">
+                    </div>
+                </div>
+            `;
+                    $('#produk-wrapper').append(row);
+
+                    // Select2
+                    $('.basic-usage').select2({
+                        theme: "bootstrap-5",
+                        width: '100%',
+                        placeholder: "Pilih produk",
+                        dropdownParent: $('#modal').find('.modal-body')
+                    });
+                });
+            } else {
+                // Kalau supplier kosong → pakai global produkData
+                let row = `
+            <div class="row mb-2 produk-row">
+                <div class="col-6">
+                    <select name="uuid_produk[]" class="form-select basic-usage" data-placeholder="Pilih produk">
+                        ${produkOptions(produkData)}
+                    </select>
+                </div>
+                <div class="col-6">
+                    <input type="number" name="qty[]" class="form-control" value="1">
+                </div>
+            </div>
+        `;
+                $('#produk-wrapper').append(row);
+
+                $('.basic-usage').select2({
+                    theme: "bootstrap-5",
+                    width: '100%',
+                    placeholder: "Pilih produk",
+                    dropdownParent: $('#modal').find('.modal-body')
+                });
+            }
+        });
+
+        // === Saat Edit Pembelian ===
         $('#dataTables').on('click', '.edit', function() {
             // Reset modal error
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
             $('#modal').modal('show');
 
+            $('#form').find('input').val('');
+            $('#form').find('select').val('');
+            $('#form').find('select').each(function() {
+                let $el = $(this);
+
+                // Reset value
+                $el.val('');
+
+                // Kalau select2 sudah terpasang → reset juga select2
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    $el.trigger('change.select2');
+                } else {
+                    $el.trigger('change');
+                }
+            });
+
             let uuid = $(this).data('uuid');
-            let editUrl = `{{ route('outlet.po-outlet-edit', ':uuid') }}`;
-            editUrl = editUrl.replace(':uuid', uuid);
+            let editUrl = `{{ route('outlet.po-outlet-edit', ':uuid') }}`.replace(':uuid', uuid);
 
             $.get(editUrl, function(res) {
                 // Isi form utama
                 $.each(res, function(key, value) {
-                    if (key !== 'details') {
+                    if (key !== 'detail_produk') {
                         $(`[name="${key}"]`).val(value);
                     }
                     if ($(`[name="${key}"]`).hasClass('formatRupiah')) {
@@ -367,24 +476,26 @@
                 // Bersihkan produk-wrapper
                 $('#produk-wrapper').empty();
 
-                // Loop produk di detail
-                res.detail_produk.forEach(function(item) {
-                    let row = `
-                                    <div class="row mb-2 produk-row">
-                                        <div class="col-6">
-                                            <select name="uuid_produk[]" class="form-select basic-usage" data-placeholder="Pilih produk">
-                                                ${produkOptions(produkData, item.uuid_produk)}
-                                            </select>
-                                        </div>
-                                        <div class="col-6">
-                                            <input type="number" name="qty[]" class="form-control" value="${item.qty}">
-                                        </div>
-                                    </div>
-                                `;
-                    $('#produk-wrapper').append(row);
-                });
+                // Kalau ada detail produk → render
+                if (res.detail_produk && res.detail_produk.length > 0) {
+                    res.detail_produk.forEach(function(item) {
+                        let row = `
+                    <div class="row mb-2 produk-row">
+                        <div class="col-6">
+                            <select name="uuid_produk[]" class="form-select basic-usage" data-placeholder="Pilih produk">
+                                ${produkOptions(produkData, item.uuid_produk)}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <input type="number" name="qty[]" class="form-control" value="${item.qty}">
+                        </div>
+                    </div>
+                `;
+                        $('#produk-wrapper').append(row);
+                    });
+                }
 
-                // Re-init select2 setelah semua row ditambahkan
+                // Re-init select2
                 $('.basic-usage').select2({
                     theme: "bootstrap-5",
                     width: '100%',

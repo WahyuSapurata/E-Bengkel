@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreOpnameRequest;
 use App\Http\Requests\StoreProdukRequest;
 use App\Http\Requests\UpdateProdukRequest;
+use App\Models\DetailPembelian;
 use App\Models\Kategori;
 use App\Models\Opname;
 use App\Models\Outlet;
+use App\Models\Pembelian;
 use App\Models\PriceHistory;
 use App\Models\Produk;
+use App\Models\StatusBarang;
 use App\Models\SubKategori;
 use App\Models\Suplayer;
 use App\Models\Wirehouse;
@@ -404,6 +407,12 @@ class ProdukController extends Controller
             'keterangan'  => $store->keterangan,
         ]);
 
+        StatusBarang::create([
+            'uuid_log_barang' => $opname->uuid,
+            'ref' => $produk->nama_barang,
+            'ketarangan' => $store->keterangan
+        ]);
+
         // Selisih antara stok fisik dengan stok sistem
         $selisih = $store->stock - $stok_sistem;
 
@@ -414,7 +423,7 @@ class ProdukController extends Controller
                 'qty'            => $store->stock,
                 'jenis'          => $selisih > 0 ? 'masuk' : 'keluar',
                 'sumber'         => 'opname',
-                'keterangan'     => 'Penyesuaian stok opname #' . $opname->id,
+                'keterangan'     => 'Penyesuaian stok opname #' . $produk->nama_barang,
             ]);
         }
 
@@ -458,6 +467,12 @@ class ProdukController extends Controller
                 'uuid_user'    => Auth::user()->uuid,
                 'stock'        => $store->stock,
                 'keterangan'   => $store->keterangan,
+            ]);
+
+            StatusBarang::create([
+                'uuid_log_barang' => $opname->uuid,
+                'ref' => $produk->nama_barang,
+                'ketarangan' => $store->keterangan
             ]);
 
             // Hitung selisih stok
@@ -535,6 +550,17 @@ class ProdukController extends Controller
     public function delete($params)
     {
         $produk = Produk::where('uuid', $params)->first();
+
+        // Cek apakah produk sudah pernah dipakai di detail pembelian
+        $cekDetail = DetailPembelian::where('uuid_produk', $produk->uuid)->exists();
+
+        if ($cekDetail) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Produk tidak bisa dihapus karena sudah tercatat di pembelian.'
+            ], 400);
+        }
+
         // Hapus foto jika ada
         if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
             Storage::disk('public')->delete($produk->foto);
@@ -620,7 +646,8 @@ class ProdukController extends Controller
                                     SELECT COALESCE(SUM(dk.qty),0)
                                     FROM detail_pengiriman_barangs dk
                                     JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
-                                    WHERE dk.uuid_produk = produks.uuid
+                                    WHERE pk.status = 'diterima'
+                                    AND dk.uuid_produk = produks.uuid
                                     AND pk.uuid_outlet = '" . Auth::user()->uuid . "'
                                     AND pk.created_at > (
                                         SELECT o2.created_at FROM opnames o2
@@ -650,7 +677,8 @@ class ProdukController extends Controller
                                 (SELECT COALESCE(SUM(dk.qty),0)
                                 FROM detail_pengiriman_barangs dk
                                 JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
-                                WHERE dk.uuid_produk = produks.uuid
+                                WHERE pk.status = 'diterima'
+                                AND dk.uuid_produk = produks.uuid
                                 AND pk.uuid_outlet = '" . Auth::user()->uuid . "')
                                 -
                                 (SELECT COALESCE(SUM(dt.qty),0)

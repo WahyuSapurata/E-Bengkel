@@ -9,6 +9,7 @@ use App\Models\DetailTransferBarang;
 use App\Models\Outlet;
 use App\Models\PengirimanBarang;
 use App\Models\Produk;
+use App\Models\StatusBarang;
 use App\Models\TransferBarang;
 use App\Models\Wirehouse;
 use App\Models\WirehouseStock;
@@ -23,6 +24,7 @@ class TransferBarangController extends Controller
         $module = 'Transfer Barang';
         $produk = Produk::select('uuid', 'nama_barang')->get();
         $do = PengirimanBarang::select('uuid', 'no_do')->where('uuid_outlet', Auth::user()->uuid)->where('status', 'diterima')->get();
+        // dd($do);
         return view('outlet.transfer.index', compact('module', 'produk', 'do'));
     }
 
@@ -146,7 +148,51 @@ class TransferBarangController extends Controller
                 throw new \Exception('Ada produk yang tidak ditemukan.');
             }
 
-            // Generate nomor transfer
+            $outlet = Outlet::where('uuid_user', Auth::user()->uuid)->first();
+
+            // Gudang outlet
+            $warehouseGudang = Wirehouse::where('uuid_user', Auth::user()->uuid)
+                ->where('tipe', 'gudang')
+                ->first();
+
+            if (!$warehouseGudang) {
+                $warehouseGudang = Wirehouse::create([
+                    'uuid_user'  => Auth::user()->uuid,
+                    'tipe'       => 'gudang',
+                    'lokasi'     => 'outlet',
+                    'keterangan' => 'Gudang outlet ' . $outlet->nama_outlet,
+                ]);
+            }
+
+            // Toko outlet
+            $warehouseToko = Wirehouse::where('uuid_user', Auth::user()->uuid)
+                ->where('tipe', 'toko')
+                ->first();
+
+            if (!$warehouseToko) {
+                $warehouseToko = Wirehouse::create([
+                    'uuid_user'  => Auth::user()->uuid,
+                    'tipe'       => 'toko',
+                    'lokasi'     => 'outlet',
+                    'keterangan' => 'Toko outlet ' . $outlet->nama_outlet,
+                ]);
+            }
+
+            // 🔎 Step 1: validasi stok semua produk dulu
+            foreach ($request->uuid_produk as $i => $uuid_produk) {
+                $qty = $request->qty[$i];
+                $item = $produk->firstWhere('uuid', $uuid_produk);
+
+                $stokGudang = WirehouseStock::where('uuid_warehouse', $warehouseGudang->uuid)
+                    ->where('uuid_produk', $uuid_produk)
+                    ->sum('qty');
+
+                if ($stokGudang < $qty) {
+                    throw new \Exception('Stok gudang tidak cukup untuk produk ' . $item->nama_barang);
+                }
+            }
+
+            // 🔎 Step 2: kalau stok cukup → generate nomor transfer
             $today = now()->format('dmy');
             $prefix = "TRF-" . $today;
             $lastDo = TransferBarang::whereDate('created_at', now()->toDateString())
@@ -159,82 +205,48 @@ class TransferBarangController extends Controller
 
             // Simpan header
             $transfer = TransferBarang::create([
-                'uuid_outlet'       => Auth::user()->uuid, // pastikan ambil outlet user
+                'uuid_outlet'       => Auth::user()->uuid,
                 'no_bukti'          => $no_bukti,
                 'tanggal_transfer'  => $request->tanggal_transfer,
                 'created_by'        => Auth::user()->nama,
             ]);
 
-            // Gudang outlet
-            $warehouseGudang = Wirehouse::where('uuid_user', $transfer->uuid_outlet)
-                ->where('tipe', 'gudang') // gunakan 'tipe' bukan 'lokasi'
-                ->first();
+            // Catat status barang
+            StatusBarang::create([
+                'uuid_log_barang' => $transfer->uuid,
+                'ref'             => $no_bukti,
+                'ketarangan'      => 'Pengiriman barang dari outlet ' . $outlet->nama_outlet . ' ke toko',
+            ]);
 
-            if (!$warehouseGudang) {
-                $namaOutlet = Outlet::where('uuid_user', $transfer->uuid_outlet)->value('nama_outlet');
-
-                $warehouseGudang = Wirehouse::create([
-                    'uuid_user'  => $transfer->uuid_outlet,
-                    'tipe'       => 'gudang',
-                    'lokasi'     => 'outlet',
-                    'keterangan' => 'Gudang outlet ' . $namaOutlet,
-                ]);
-            }
-
-            // Toko outlet
-            $warehouseToko = Wirehouse::where('uuid_user', $transfer->uuid_outlet)
-                ->where('tipe', 'toko')
-                ->first();
-
-            if (!$warehouseToko) {
-                $namaOutlet = Outlet::where('uuid_user', $transfer->uuid_outlet)->value('nama_outlet');
-
-                $warehouseToko = Wirehouse::create([
-                    'uuid_user'  => $transfer->uuid_outlet,
-                    'tipe'       => 'toko',
-                    'lokasi'     => 'outlet',
-                    'keterangan' => 'Toko outlet ' . $namaOutlet,
-                ]);
-            }
-
+            // 🔎 Step 3: simpan detail + pergerakan stok
             foreach ($request->uuid_produk as $i => $uuid_produk) {
-                $qty = $request->qty[$i];
+                $qty  = $request->qty[$i];
                 $item = $produk->firstWhere('uuid', $uuid_produk);
 
-                // Simpan detail transfer
                 DetailTransferBarang::create([
                     'uuid_transfer_barangs' => $transfer->uuid,
                     'uuid_produk'           => $uuid_produk,
                     'qty'                   => $qty,
                 ]);
 
-                // Hitung stok gudang
-                $stokGudang = WirehouseStock::where('uuid_warehouse', $warehouseGudang->uuid)
-                    ->where('uuid_produk', $uuid_produk)
-                    ->sum('qty');
-
-                if ($stokGudang < $qty) {
-                    throw new \Exception('Stok gudang tidak cukup untuk produk ' . $item->nama_barang);
-                }
-
-                // Catat keluar dari gudang
+                // keluar gudang
                 WirehouseStock::create([
                     'uuid_warehouse' => $warehouseGudang->uuid,
                     'uuid_produk'    => $uuid_produk,
                     'qty'            => -$qty,
                     'jenis'          => 'keluar',
                     'sumber'         => 'transfer',
-                    'keterangan'     => 'Transfer ke toko',
+                    'keterangan'     => 'Transfer ' . $no_bukti . ' ke toko ' . $outlet->nama_outlet,
                 ]);
 
-                // Catat masuk ke toko
+                // masuk toko
                 WirehouseStock::create([
                     'uuid_warehouse' => $warehouseToko->uuid,
                     'uuid_produk'    => $uuid_produk,
                     'qty'            => $qty,
                     'jenis'          => 'masuk',
                     'sumber'         => 'transfer',
-                    'keterangan'     => 'Transfer dari gudang',
+                    'keterangan'     => 'Transfer ' . $no_bukti . ' dari gudang ' . $outlet->nama_outlet,
                 ]);
             }
         });
@@ -260,47 +272,111 @@ class TransferBarangController extends Controller
 
     public function update(StoreTransferBarangRequest $request, $uuid)
     {
-        // Cari data transfer
-        $transfer = TransferBarang::where('uuid', $uuid)->firstOrFail();
+        DB::transaction(function () use ($request, $uuid) {
+            $transfer = TransferBarang::where('uuid', $uuid)->firstOrFail();
 
-        // Ambil produk berdasarkan UUID
-        $produk = Produk::whereIn('uuid', $request->uuid_produk)->get();
-        if ($produk->count() !== count($request->uuid_produk)) {
-            return response()->json(['status' => 'error', 'message' => 'Ada produk yang tidak ditemukan.'], 404);
-        }
+            $produk = Produk::whereIn('uuid', $request->uuid_produk)->get();
+            if ($produk->count() !== count($request->uuid_produk)) {
+                throw new \Exception('Ada produk yang tidak ditemukan.');
+            }
 
-        // Update header transfer
-        $transfer->update([
-            'tanggal_transfer' => $request->tanggal_transfer,
-            'updated_by'       => Auth::user()->nama,
-        ]);
+            $outlet = Outlet::where('uuid_user', $transfer->uuid_outlet)->first();
+            $warehouseGudang = Wirehouse::where('uuid_user', $transfer->uuid_outlet)
+                ->where('tipe', 'gudang')->first();
+            $warehouseToko = Wirehouse::where('uuid_user', $transfer->uuid_outlet)
+                ->where('tipe', 'toko')->first();
 
-        // Hapus detail lama
-        DetailTransferBarang::where('uuid_transfer_barangs', $transfer->uuid)->delete();
+            // 🔎 Ambil detail lama dulu (supaya stok bisa dikembalikan sementara)
+            $oldDetails = DetailTransferBarang::where('uuid_transfer_barangs', $transfer->uuid)->get();
 
-        // Simpan detail baru
-        foreach ($request->uuid_produk as $index => $uuid_produk) {
-            DetailTransferBarang::create([
-                'uuid_transfer_barangs' => $transfer->uuid,
-                'uuid_produk'           => $uuid_produk,
-                'qty'                   => $request->qty[$index],
+            // 🔎 Step 1: Validasi stok cukup
+            foreach ($request->uuid_produk as $i => $uuid_produk) {
+                $qtyBaru = $request->qty[$i];
+                $item = $produk->firstWhere('uuid', $uuid_produk);
+
+                // stok tersedia sekarang
+                $stokGudang = WirehouseStock::where('uuid_warehouse', $warehouseGudang->uuid)
+                    ->where('uuid_produk', $uuid_produk)
+                    ->sum('qty');
+
+                if ($stokGudang < $qtyBaru) {
+                    throw new \Exception('Stok gudang tidak cukup untuk produk ' . $item->nama_barang);
+                }
+            }
+
+            // 🔎 Step 2: Update header
+            $transfer->update([
+                'tanggal_transfer' => $request->tanggal_transfer,
+                'updated_by'       => Auth::user()->nama,
             ]);
-        }
+
+            // 🔎 Step 3: Hapus detail lama
+            DetailTransferBarang::where('uuid_transfer_barangs', $transfer->uuid)->delete();
+
+            // 🔎 Step 4: Hapus stok lama
+            WirehouseStock::where('sumber', 'transfer')
+                ->where(function ($q) use ($transfer, $outlet) {
+                    $q->where('keterangan', 'like', '%Transfer ' . $transfer->no_bukti . ' ke toko ' . $outlet->nama_outlet . '%')
+                        ->orWhere('keterangan', 'like', '%Transfer ' . $transfer->no_bukti . ' dari gudang ' . $outlet->nama_outlet . '%');
+                })
+                ->delete();
+
+            // 🔎 Step 5: Insert detail & stok baru
+            foreach ($request->uuid_produk as $i => $uuid_produk) {
+                $qty = $request->qty[$i];
+
+                DetailTransferBarang::create([
+                    'uuid_transfer_barangs' => $transfer->uuid,
+                    'uuid_produk'           => $uuid_produk,
+                    'qty'                   => $qty,
+                ]);
+
+                // keluar gudang
+                WirehouseStock::create([
+                    'uuid_warehouse' => $warehouseGudang->uuid,
+                    'uuid_produk'    => $uuid_produk,
+                    'qty'            => -$qty,
+                    'jenis'          => 'keluar',
+                    'sumber'         => 'transfer',
+                    'keterangan'     => 'Transfer ' . $transfer->no_bukti . ' ke toko ' . $outlet->nama_outlet,
+                ]);
+
+                // masuk toko
+                WirehouseStock::create([
+                    'uuid_warehouse' => $warehouseToko->uuid,
+                    'uuid_produk'    => $uuid_produk,
+                    'qty'            => $qty,
+                    'jenis'          => 'masuk',
+                    'sumber'         => 'transfer',
+                    'keterangan'     => 'Transfer ' . $transfer->no_bukti . ' dari gudang ' . $outlet->nama_outlet,
+                ]);
+            }
+        });
 
         return response()->json(['status' => 'success', 'message' => 'Transfer berhasil diperbarui']);
     }
 
-    public function delete($params)
+    public function delete($uuid)
     {
-        // Cari transfer_barang yang mau dihapus
-        $transfer_barang = TransferBarang::where('uuid', $params)->firstOrFail();
+        DB::transaction(function () use ($uuid) {
+            // Cari transfer_barang yang mau dihapus
+            $transfer = TransferBarang::where('uuid', $uuid)->firstOrFail();
 
-        // Hapus detail transfer_barang
-        DetailTransferBarang::where('uuid_transfer_barangs', $transfer_barang->uuid)->delete();
+            // Hapus detail transfer_barang
+            DetailTransferBarang::where('uuid_transfer_barangs', $transfer->uuid)->delete();
 
-        // Hapus transfer_barang utama
-        $transfer_barang->delete();
+            // Hapus stok keluar/masuk yang terkait transfer ini
+            WirehouseStock::where('sumber', 'transfer')
+                ->where('keterangan', 'like', '%Transfer ' . $transfer->no_bukti . '%')
+                ->delete();
 
-        return response()->json(['status' => 'success']);
+            // Hapus status barang (kalau ada)
+            StatusBarang::where('uuid_log_barang', $transfer->uuid)->delete();
+
+            // Hapus transfer_barang utama
+            $transfer->delete();
+        });
+
+        return response()->json(['status' => 'success', 'message' => 'Transfer berhasil dihapus']);
     }
 }

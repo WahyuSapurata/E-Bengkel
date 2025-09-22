@@ -9,10 +9,12 @@ use App\Models\Coa;
 use App\Models\DetailPembelian;
 use App\Models\DetailPoPusat;
 use App\Models\Hutang;
+use App\Models\Jurnal;
 use App\Models\Pembelian;
 use App\Models\PoPusat;
 use App\Models\PriceHistory;
 use App\Models\Produk;
+use App\Models\StatusBarang;
 use App\Models\Suplayer;
 use App\Models\Wirehouse;
 use App\Models\WirehouseStock;
@@ -172,6 +174,14 @@ class PembelianController extends Controller
             $totalPembelian += $qty * $produk->hrg_modal;
         }
 
+        $suplyer = Suplayer::where('uuid', $request->uuid_suplayer)->first();
+
+        StatusBarang::create([
+            'uuid_log_barang' => $pembelian->uuid,
+            'ref' => $request->no_invoice,
+            'ketarangan' => 'Pembelian dari suplayer ' . $suplyer->nama,
+        ]);
+
         // Ambil gudang pusat (jangan bikin baru setiap kali)
         $warehouse = Wirehouse::where('tipe', 'gudang')->where('lokasi', 'pusat')->first();
 
@@ -183,8 +193,6 @@ class PembelianController extends Controller
                 'keterangan' => 'Gudang pusat',
             ]);
         }
-
-        $suplyer = Suplayer::where('uuid', $request->uuid_suplayer)->first();
 
         // Tambahkan stok per produk
         foreach ($request->uuid_produk as $index => $uuid_produk) {
@@ -239,6 +247,11 @@ class PembelianController extends Controller
     public function edit($uuid)
     {
         $pembelian = Pembelian::with(['details.produk'])->where('uuid', $uuid)->first();
+        $junal = Jurnal::where('ref', $pembelian->no_invoice)->get();
+
+        if ($junal) {
+            $pembelian->aset = $junal[1]->uuid_coa;
+        }
 
         return response()->json($pembelian);
     }
@@ -249,11 +262,14 @@ class PembelianController extends Controller
         $pembelian = Pembelian::where('uuid', $uuid)->firstOrFail();
 
         // Ambil produk berdasarkan UUID
-        $produk = Produk::whereIn('uuid', $request->uuid_produk)->get();
+        $produkList = Produk::whereIn('uuid', $request->uuid_produk)->get();
 
         // Pastikan semua produk ditemukan
-        if ($produk->count() !== count($request->uuid_produk)) {
-            return response()->json(['status' => 'error', 'message' => 'Ada produk yang tidak ditemukan.'], 404);
+        if ($produkList->count() !== count($request->uuid_produk)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Ada produk yang tidak ditemukan.'
+            ], 404);
         }
 
         // Update data pembelian
@@ -267,22 +283,35 @@ class PembelianController extends Controller
             'updated_by'        => Auth::user()->nama,
         ]);
 
+        $suplyer = Suplayer::where('uuid', $request->uuid_suplayer)->first();
+
+        $statusbarang = StatusBarang::where('uuid_log_barang', $pembelian->uuid)->first();
+        $statusbarang->update([
+            'uuid_log_barang' => $pembelian->uuid,
+            'ref' => $request->no_invoice,
+            'ketarangan' => 'Pembelian dari suplayer ' . $suplyer->nama,
+        ]);
+
         // Hapus detail lama
         DetailPembelian::where('uuid_pembelian', $pembelian->uuid)->delete();
 
+        $totalPembelian = 0;
+
         // Simpan detail baru
         foreach ($request->uuid_produk as $index => $uuid_produk) {
-            $produk = $produk->where('uuid', $uuid_produk)->first();
-            $qty = $request->qty[$index];
-
+            $produk = $produkList->firstWhere('uuid', $uuid_produk);
+            $qty = (int) $request->qty[$index];
             $hargaBaru = (int) preg_replace('/\D/', '', $request->harga[$index]);
 
             DetailPembelian::create([
                 'uuid_pembelian' => $pembelian->uuid,
                 'uuid_produk'    => $uuid_produk,
                 'qty'            => $qty,
-                'harga'         => $hargaBaru,
+                'harga'          => $hargaBaru,
             ]);
+
+            // Hitung total
+            $totalPembelian += $qty * $hargaBaru;
 
             // Simpan harga lama sebelum update
             $hargaLama = (int) $produk->hrg_modal;
@@ -299,6 +328,75 @@ class PembelianController extends Controller
             }
         }
 
+        // Ambil gudang pusat (jangan bikin baru setiap kali)
+        $warehouse = Wirehouse::where('tipe', 'gudang')
+            ->where('lokasi', 'pusat')
+            ->firstOrCreate([
+                'uuid_user'  => Auth::user()->uuid,
+                'tipe'       => 'gudang',
+                'lokasi'     => 'pusat',
+            ], [
+                'keterangan' => 'Gudang pusat',
+            ]);
+
+        // Reset stok lama lalu simpan stok baru (hindari double stock)
+        WirehouseStock::where('sumber', 'pembelian')
+            ->where('uuid_warehouse', $warehouse->uuid)
+            ->where('keterangan', 'Pembelian dari supplier: ' . $suplyer->nama)
+            ->delete();
+
+        foreach ($request->uuid_produk as $index => $uuid_produk) {
+            WirehouseStock::create([
+                'uuid_warehouse' => $warehouse->uuid,
+                'uuid_produk'    => $uuid_produk,
+                'qty'            => $request->qty[$index],
+                'jenis'          => 'masuk',
+                'sumber'         => 'pembelian',
+                'keterangan'     => 'Pembelian dari supplier: ' . $suplyer->nama,
+            ]);
+        }
+
+        // Jika pembayaran kredit → update / buat hutang
+        if ($request->pembayaran === 'Kredit') {
+            Hutang::updateOrCreate(
+                ['uuid_pembelian' => $pembelian->uuid],
+                ['jatuh_tempo'    => now()->addDays(7)->format('Y-m-d')]
+            );
+        } else {
+            // Jika sudah lunas → hapus hutang lama
+            Hutang::where('uuid_pembelian', $pembelian->uuid)->delete();
+        }
+
+        // ======== Jurnal Otomatis =========
+        $persediaan = Coa::where('nama', 'Persediaan Sparepart')->first();
+        $kas        = Coa::where('uuid', $request->aset)->first();
+        $hutang     = Coa::where('nama', 'Hutang Usaha')->first();
+
+        // Hapus jurnal lama dulu agar tidak dobel
+        Jurnal::where('ref', $request->no_invoice)->delete();
+
+        if ($request->pembayaran === 'Cash') {
+            JurnalHelper::create(
+                $request->tanggal_transaksi,
+                $request->no_invoice,
+                'Pembelian Cash ' . $kas->nama,
+                [
+                    ['uuid_coa' => $persediaan->uuid, 'debit' => $totalPembelian],
+                    ['uuid_coa' => $kas->uuid,        'kredit' => $totalPembelian],
+                ]
+            );
+        } elseif ($request->pembayaran === 'Kredit') {
+            JurnalHelper::create(
+                $request->tanggal_transaksi,
+                $request->no_invoice,
+                'Pembelian Kredit',
+                [
+                    ['uuid_coa' => $persediaan->uuid, 'debit' => $totalPembelian],
+                    ['uuid_coa' => $hutang->uuid,     'kredit' => $totalPembelian],
+                ]
+            );
+        }
+
         return response()->json(['status' => 'success']);
     }
 
@@ -307,8 +405,30 @@ class PembelianController extends Controller
         // Cari pembelian yang mau dihapus
         $pembelian = Pembelian::where('uuid', $params)->firstOrFail();
 
+        // Hapus stok yang terkait pembelian ini
+        WirehouseStock::where('sumber', 'pembelian')
+            ->where('uuid_produk', function ($q) use ($pembelian) {
+                $q->select('uuid_produk')
+                    ->from('detail_pembelians')
+                    ->where('uuid_pembelian', $pembelian->uuid);
+            })
+            ->delete();
+
         // Hapus detail pembelian
         DetailPembelian::where('uuid_pembelian', $pembelian->uuid)->delete();
+
+        StatusBarang::where('uuid_log_barang', $pembelian->uuid)->delete();
+
+        StatusBarang::where('uuid_log_barang', $pembelian->uuid)->delete();
+
+        // Hapus hutang (jika ada)
+        Hutang::where('uuid_pembelian', $pembelian->uuid)->delete();
+
+        // Hapus jurnal yang terkait (berdasarkan no_invoice)
+        Jurnal::where('ref', $pembelian->no_invoice)->delete();
+
+        // (Opsional) hapus price history terkait produk di pembelian ini
+        // PriceHistory::whereIn('uuid_produk', $pembelian->details->pluck('uuid_produk'))->delete();
 
         // Hapus pembelian utama
         $pembelian->delete();

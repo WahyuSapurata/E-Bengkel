@@ -16,6 +16,7 @@ use App\Models\Outlet;
 use App\Models\Penjualan;
 use App\Models\Produk;
 use App\Models\ProdukPrice;
+use App\Models\StatusBarang;
 use App\Models\Wirehouse;
 use App\Models\WirehouseStock;
 use Carbon\Carbon;
@@ -212,6 +213,12 @@ class PenjualanController extends Controller
                     'tanggal_transaksi' => now()->format('d-m-Y'),
                     'pembayaran'        => $request->pembayaran,
                     'created_by'        => Auth::user()->nama,
+                ]);
+
+                StatusBarang::create([
+                    'uuid_log_barang' => $penjualan->uuid,
+                    'ref' => 'Penjualan',
+                    'ketarangan' => 'Penjualan oleh ' . Auth::user()->nama,
                 ]);
 
                 // Pastikan warehouse toko ada
@@ -435,7 +442,7 @@ class PenjualanController extends Controller
                         'subtotal' => $detail->total_harga,
                     ];
                 }),
-                'grandTotal' => $grandTotal,
+                'grandTotal' => $grandTotal + ($jasa ? $jasa->harga : 0),
                 'totalItem'  => $totalItem,
                 'totalJasa'  => $jasa ? $jasa->harga : 0,
             ]

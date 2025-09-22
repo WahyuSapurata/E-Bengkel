@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Requests\Auth as RequestsAuth;
+use App\Models\StatusBarang;
 use Illuminate\Support\Facades\Auth as FacadesAuth;
 
 class Auth extends BaseController
@@ -32,6 +33,11 @@ class Auth extends BaseController
         } else if (FacadesAuth::user()->role === 'outlet') {
             return redirect()->route('outlet.dashboard-outlet');
         } else if (FacadesAuth::user()->role === 'kasir') {
+            StatusBarang::create([
+                'uuid_log_barang' => FacadesAuth::user()->uuid,
+                'ref' => 'login',
+                'ketarangan' => FacadesAuth::user()->nama . ' Login di kasir ' . now()->format('d-m-Y H:i:s'),
+            ]);
             return redirect()->route('kasir.dashboard-kasir');
         } else {
             return redirect()->route('login.login-akun')->with('failed', 'Role tidak dikenali');

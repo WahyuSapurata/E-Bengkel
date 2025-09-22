@@ -263,25 +263,34 @@
 
                         // generate produk dari PO
                         res.details.forEach((item, i) => {
+                            let harga = parseRupiah(item.harga);
+                            let subTotal = item.qty * harga;
                             let row = `
                                         <div class="row mb-2 produk-row">
-                                            <div class="col-4">
+                                            <div class="col-3">
                                                 <label class="form-label">Produk</label>
                                                 <select name="uuid_produk[]" class="form-select basic-usage">
                                                     <option value="${item.uuid_produk}" selected>${item.nama_barang}</option>
                                                 </select>
                                             </div>
-                                            <div class="col-4">
+                                            <div class="col-3">
                                                 <label class="form-label">QTY</label>
                                                 <input type="number" name="qty[]" class="form-control" value="${item.qty}">
                                             </div>
-                                            <div class="col-4">
+                                            <div class="col-3">
                                                 <label class="form-label">Harga</label>
                                                 <input type="text" name="harga[]" class="form-control formatRupiah" value="${formatRupiah(parseRupiah(item.harga))}">
+                                            </div>
+                                            <div class="col-3">
+                                                <label class="form-label">Sub Total Harga</label>
+                                                <input type="text" class="form-control sub-total formatRupiah" value="${formatRupiah(subTotal)}">
                                             </div>
                                         </div>
                                     `;
                             $('#produk-wrapper').append(row);
+
+                            // Hitung ulang total semua sub total
+                            hitungTotal();
                         });
                     }
                 });
@@ -545,6 +554,9 @@
                         $(`[name="${key}"]`).val(formatRupiah(value.toString()));
                     }
                 });
+
+                // 👉 Trigger change supaya pembayaran langsung cek kondisi
+                $('#pembayaran').trigger('change');
 
                 // Bersihkan produk-wrapper
                 $('#produk-wrapper').empty();

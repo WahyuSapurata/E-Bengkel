@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Coa;
 use App\Models\Jurnal;
+use App\Models\Penjualan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -281,6 +282,63 @@ class ReportController extends Controller
         return view('pages.labarugi.index', compact('module'));
     }
 
+    // public function get_laba_rugi(Request $request)
+    // {
+    //     $tanggal_awal = $request->get('tanggal_awal', Carbon::now()->startOfMonth()->format('d-m-Y'));
+    //     $tanggal_akhir = $request->get('tanggal_akhir', Carbon::now()->endOfMonth()->format('d-m-Y'));
+
+    //     $coas = Coa::whereIn('tipe', ['pendapatan', 'beban'])->get();
+
+    //     $pendapatan = [];
+    //     $beban = [];
+    //     $total_pendapatan = 0;
+    //     $total_beban = 0;
+
+    //     foreach ($coas as $coa) {
+    //         $saldo = Jurnal::where('uuid_coa', $coa->uuid)
+    //             ->whereRaw("STR_TO_DATE(jurnals.tanggal, '%d-%m-%Y') BETWEEN STR_TO_DATE(?, '%d-%m-%Y') AND STR_TO_DATE(?, '%d-%m-%Y')", [$tanggal_awal, $tanggal_akhir])
+    //             ->selectRaw("COALESCE(SUM(kredit - debit),0) as saldo")
+    //             ->value('saldo');
+
+    //         if ($saldo == 0) continue;
+
+    //         if ($coa->tipe === 'pendapatan') {
+    //             $pendapatan[] = [
+    //                 'kode' => $coa->kode,
+    //                 'nama' => $coa->nama,
+    //                 'total' => $saldo
+    //             ];
+    //             $total_pendapatan += $saldo;
+    //         }
+
+    //         if ($coa->tipe === 'beban') {
+    //             $saldo_beban = Jurnal::where('uuid_coa', $coa->uuid)
+    //                 ->whereRaw("STR_TO_DATE(jurnals.tanggal, '%d-%m-%Y') BETWEEN STR_TO_DATE(?, '%d-%m-%Y') AND STR_TO_DATE(?, '%d-%m-%Y')", [$tanggal_awal, $tanggal_akhir])
+    //                 ->selectRaw("COALESCE(SUM(debit),0) as saldo")
+    //                 ->value('saldo');
+
+    //             $beban[] = [
+    //                 'kode' => $coa->kode,
+    //                 'nama' => $coa->nama,
+    //                 'total' => $saldo_beban
+    //             ];
+    //             $total_beban += $saldo_beban;
+    //         }
+    //     }
+
+    //     $laba_bersih = $total_pendapatan - $total_beban;
+
+    //     return response()->json([
+    //         'tanggal_awal' => $tanggal_awal,
+    //         'tanggal_akhir' => $tanggal_akhir,
+    //         'pendapatan' => $pendapatan,
+    //         'beban' => $beban,
+    //         'total_pendapatan' => $total_pendapatan,
+    //         'total_beban' => $total_beban,
+    //         'laba_bersih' => $laba_bersih
+    //     ]);
+    // }
+
     public function get_laba_rugi(Request $request)
     {
         $tanggal_awal = $request->get('tanggal_awal', Carbon::now()->startOfMonth()->format('d-m-Y'));
@@ -323,6 +381,21 @@ class ReportController extends Controller
                 ];
                 $total_beban += $saldo_beban;
             }
+        }
+
+        // 🔥 Tambahkan Pendapatan Jasa Service dari penjualan
+        $pendapatan_jasa = Penjualan::join('jasas', 'penjualans.uuid_jasa', '=', 'jasas.uuid')
+            ->whereNotNull('penjualans.uuid_jasa')
+            ->whereRaw("STR_TO_DATE(penjualans.tanggal_transaksi, '%d-%m-%Y') BETWEEN STR_TO_DATE(?, '%d-%m-%Y') AND STR_TO_DATE(?, '%d-%m-%Y')", [$tanggal_awal, $tanggal_akhir])
+            ->sum('jasas.harga');
+
+        if ($pendapatan_jasa > 0) {
+            $pendapatan[] = [
+                'kode' => '-',
+                'nama' => 'Pendapatan Jasa Service',
+                'total' => $pendapatan_jasa
+            ];
+            $total_pendapatan += $pendapatan_jasa;
         }
 
         $laba_bersih = $total_pendapatan - $total_beban;

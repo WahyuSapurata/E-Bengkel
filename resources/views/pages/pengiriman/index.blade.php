@@ -103,7 +103,7 @@
                                 class="form-select basic-usage">
                                 <option value=""></option>
                                 @foreach ($po_outlet as $po)
-                                    <option value="{{ $po->uuid }}">{{ $po->no_po }}</option>
+                                    <option value="{{ $po->uuid }}" data-original="true">{{ $po->no_po }}</option>
                                 @endforeach
                             </select>
                             <div class="invalid-feedback"></div>
@@ -288,8 +288,19 @@
             $('#form').find('select').val('');
 
             // Kalau pakai select2, reset juga semua select2 di form
+            // Kalau pakai select2, reset juga semua select2 di form
             $('#form').find('select').each(function() {
-                $(this).val('').trigger('change');
+                let $el = $(this);
+
+                // Reset value
+                $el.val('');
+
+                // Kalau select2 sudah terpasang → reset juga select2
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    $el.trigger('change.select2');
+                } else {
+                    $el.trigger('change');
+                }
             });
 
             // Bersihkan field hidden UUID
@@ -401,7 +412,18 @@
             editUrl = editUrl.replace(':uuid', uuid);
 
             $.get(editUrl, function(res) {
-                // Isi form utama
+                if (res.status === 'error') {
+                    alert(res.message);
+                    return;
+                }
+
+                // pastikan option PO ada di select
+                if ($("#uuid_po_outlet option[value='" + res.uuid_po_outlet + "']").length === 0) {
+                    $("#uuid_po_outlet").append(
+                        `<option value="${res.uuid_po_outlet}">${res.no_po}</option>`
+                    );
+                }
+
                 $.each(res, function(key, value) {
                     if (key !== 'details') {
                         $(`[name="${key}"]`).val(value);
@@ -411,34 +433,52 @@
                     }
                 });
 
-                // Bersihkan produk-wrapper
-                $('#produk-wrapper').empty();
+                // set value dan trigger change
+                $("#uuid_po_outlet").val(res.uuid_po_outlet).trigger("change");
 
-                // Loop produk di detail
+                // isi produk-wrapper
+                $('#produk-wrapper').empty();
                 res.detail_produk.forEach(function(item) {
                     let row = `
-                        <div class="row mb-2 produk-row">
-                            <div class="col-6">
-                                <select name="uuid_produk[]" class="form-select basic-usage" data-placeholder="Pilih produk">
-                                    ${produkOptions(dataProduk, item.uuid_produk)}
-                                </select>
-                            </div>
-                            <div class="col-6">
-                                <input type="number" name="qty[]" class="form-control" value="${item.qty}">
-                            </div>
-                        </div>
-                    `;
+            <div class="row mb-2 produk-row">
+                <div class="col-6">
+                    <select name="uuid_produk[]" class="form-select basic-usage" data-placeholder="Pilih produk">
+                        ${produkOptions(dataProduk, item.uuid_produk)}
+                    </select>
+                </div>
+                <div class="col-6">
+                    <input type="number" name="qty[]" class="form-control" value="${item.qty}">
+                </div>
+            </div>
+        `;
                     $('#produk-wrapper').append(row);
+                });
 
-                    // Re-init select2 setelah append
-                    $('.basic-usage').select2({
-                        theme: "bootstrap-5",
-                        width: '100%',
-                        placeholder: $(this).data('placeholder'),
-                        dropdownParent: $('#modal').find('.modal-body')
-                    });
+                // re-init select2
+                $('.basic-usage').select2({
+                    theme: "bootstrap-5",
+                    width: '100%',
+                    placeholder: $(this).data('placeholder'),
+                    dropdownParent: $('#modal').find('.modal-body')
                 });
             });
+
+        });
+
+        // === reset modal ke kondisi awal setiap kali ditutup ===
+        $('#modal').on('hidden.bs.modal', function() {
+            // reset ke kondisi awal saat create
+            $("#uuid_po_outlet").val("").trigger("change");
+
+            // buang semua option tambahan (yang bukan hasil dari Blade)
+            $("#uuid_po_outlet option").each(function() {
+                if (!$(this).attr("data-original") && $(this).val() !== "") {
+                    $(this).remove();
+                }
+            });
+
+            // kosongkan produk wrapper juga kalau mau
+            $('#produk-wrapper').empty();
         });
 
         // Hapus

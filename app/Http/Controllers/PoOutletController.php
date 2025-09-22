@@ -8,10 +8,13 @@ use App\Models\DetailPoOutlet;
 use App\Models\Outlet;
 use App\Models\PoOutlet;
 use App\Models\Produk;
+use App\Models\StatusBarang;
+use App\Models\Suplayer;
 use App\Models\Wirehouse;
 use App\Models\WirehouseStock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PoOutletController extends Controller
 {
@@ -19,7 +22,17 @@ class PoOutletController extends Controller
     {
         $module = 'Po';
         $produk = Produk::select('uuid', 'nama_barang')->get();
-        return view('outlet.pooutlet.index', compact('module', 'produk'));
+        $suplayers = Suplayer::select('uuid', 'nama')->get();
+        return view('outlet.pooutlet.index', compact('module', 'produk', 'suplayers'));
+    }
+
+    public function getProdukBySuplayer($params)
+    {
+        $produks = Produk::where('uuid_suplayer', $params)
+            ->select('uuid', 'nama_barang')
+            ->get();
+
+        return response()->json($produks);
     }
 
     public function vw_pusat()
@@ -249,6 +262,12 @@ class PoOutletController extends Controller
             ]);
         }
 
+        StatusBarang::create([
+            'uuid_log_barang' => $po_outlet->uuid,
+            'ref' => $no_po,
+            'ketarangan' => $request->keterangan,
+        ]);
+
         // Ambil gudang pusat (jangan bikin baru setiap kali)
         $warehouse = Wirehouse::where('tipe', 'gudang')
             ->where('lokasi', 'outlet')
@@ -297,52 +316,126 @@ class PoOutletController extends Controller
 
     public function update(StorePoOutletRequest $request, $uuid)
     {
-        // Cari data po_outlet
-        $po_outlet = PoOutlet::where('uuid', $uuid)->firstOrFail();
+        DB::beginTransaction();
+        try {
+            // Cari data po_outlet
+            $po_outlet = PoOutlet::where('uuid', $uuid)->firstOrFail();
 
-        // Ambil produk berdasarkan UUID
-        $produk = Produk::whereIn('uuid', $request->uuid_produk)->get();
+            // Ambil produk berdasarkan UUID
+            $produk = Produk::whereIn('uuid', $request->uuid_produk)->get();
 
-        // Pastikan semua produk ditemukan
-        if ($produk->count() !== count($request->uuid_produk)) {
-            return response()->json(['status' => 'error', 'message' => 'Ada produk yang tidak ditemukan.'], 404);
-        }
+            if ($produk->count() !== count($request->uuid_produk)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Ada produk yang tidak ditemukan.'
+                ], 404);
+            }
 
-        // Update data po_outlet
-        $po_outlet->update([
-            'uuid_suplayer'      => $request->uuid_suplayer,
-            'tanggal_transaksi'  => $request->tanggal_transaksi,
-            'keterangan'         => $request->keterangan,
-            'updated_by'         => Auth::user()->nama,
-        ]);
-
-        // Hapus detail lama
-        DetailPoOutlet::where('uuid_po_outlet', $po_outlet->uuid)->delete();
-
-        // Simpan detail baru
-        foreach ($request->uuid_produk as $index => $uuid_produk) {
-            $item = $produk->firstWhere('uuid', $uuid_produk);
-            DetailPoOutlet::create([
-                'uuid_po_outlet' => $po_outlet->uuid,
-                'uuid_produk'    => $uuid_produk,
-                'qty'            => $request->qty[$index],
+            // Update data po_outlet
+            $po_outlet->update([
+                'uuid_user'      => Auth::user()->uuid,
+                'tanggal_transaksi' => $request->tanggal_transaksi,
+                'keterangan'        => $request->keterangan,
+                'updated_by'        => Auth::user()->nama,
             ]);
-        }
 
-        return response()->json(['status' => 'success']);
+            $statusbarang = StatusBarang::where('uuid_log_barang', $po_outlet->uuid)->first();
+            if ($statusbarang) {
+                $statusbarang->update([
+                    'uuid_log_barang' => $po_outlet->uuid,
+                    'ref' => $po_outlet->no_po,
+                    'ketarangan' => $request->keterangan,
+                ]);
+            }
+
+            // Ambil gudang outlet
+            $warehouse = Wirehouse::firstOrCreate(
+                [
+                    'uuid_user' => Auth::user()->uuid,
+                    'tipe'      => 'gudang',
+                    'lokasi'    => 'outlet',
+                ],
+                [
+                    'keterangan' => 'Gudang outlet ' . Outlet::where('uuid_user', Auth::user()->uuid)->value('nama_outlet'),
+                ]
+            );
+
+            // Rollback stok lama (hapus dari WirehouseStock)
+            WirehouseStock::where('uuid_warehouse', $warehouse->uuid)
+                ->where('sumber', 'pembelian')
+                ->where('keterangan', 'like', '%' . $po_outlet->no_invoice . '%')
+                ->delete();
+
+            // Hapus detail lama
+            DetailPoOutlet::where('uuid_po_outlet', $po_outlet->uuid)->delete();
+
+            // Simpan detail baru + stok baru
+            foreach ($request->uuid_produk as $index => $uuid_produk) {
+                $qty = $request->qty[$index];
+
+                DetailPoOutlet::create([
+                    'uuid_po_outlet' => $po_outlet->uuid,
+                    'uuid_produk'    => $uuid_produk,
+                    'qty'            => $qty,
+                ]);
+
+                WirehouseStock::create([
+                    'uuid_warehouse' => $warehouse->uuid,
+                    'uuid_produk'    => $uuid_produk,
+                    'qty'            => $qty,
+                    'jenis'          => 'masuk',
+                    'sumber'         => 'pembelian',
+                    'keterangan'     => 'Update PO Outlet #' . $po_outlet->no_invoice,
+                ]);
+            }
+
+            DB::commit();
+            return response()->json(['status' => 'success']);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function delete($params)
     {
-        // Cari po_outlet yang mau dihapus
-        $po_outlet = PoOutlet::where('uuid', $params)->firstOrFail();
+        DB::beginTransaction();
+        try {
+            $po_outlet = PoOutlet::where('uuid', $params)->firstOrFail();
 
-        // Hapus detail po_outlet
-        DetailPoOutlet::where('uuid_po_outlet', $po_outlet->uuid)->delete();
+            // Ambil gudang outlet
+            $warehouse = Wirehouse::where('uuid_user', Auth::user()->uuid)
+                ->where('tipe', 'gudang')
+                ->where('lokasi', 'outlet')
+                ->first();
 
-        // Hapus po_outlet utama
-        $po_outlet->delete();
+            if ($warehouse) {
+                // Hapus stok terkait PO ini
+                WirehouseStock::where('uuid_warehouse', $warehouse->uuid)
+                    ->where('sumber', 'pembelian')
+                    ->where('keterangan', 'like', '%' . $po_outlet->no_invoice . '%')
+                    ->delete();
+            }
 
-        return response()->json(['status' => 'success']);
+            // Hapus detail
+            DetailPoOutlet::where('uuid_po_outlet', $po_outlet->uuid)->delete();
+
+            StatusBarang::where('uuid_log_barang', $po_outlet->uuid)->delete();
+
+            // Hapus header
+            $po_outlet->delete();
+
+            DB::commit();
+            return response()->json(['status' => 'success']);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }

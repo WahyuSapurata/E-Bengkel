@@ -27,24 +27,66 @@ class Dashboard extends BaseController
         $produk = Produk::count();
         $costumer = Costumer::count();
 
+        // $coas = Coa::whereIn('tipe', ['pendapatan', 'beban'])->get();
+
+        // $saldoCoa = Jurnal::select(
+        //     'uuid_coa',
+        //     DB::raw('SUM(kredit - debit) as saldo_pendapatan'),
+        //     DB::raw('SUM(debit - kredit) as saldo_beban')
+        // )
+        //     ->whereIn('uuid_coa', $coas->pluck('uuid'))
+        //     ->groupBy('uuid_coa')
+        //     ->get()
+        //     ->keyBy('uuid_coa');
+
+        // $total_pendapatan = 0;
+        // $total_beban = 0;
+
+        // foreach ($coas as $coa) {
+        //     if ($coa->tipe === 'pendapatan') {
+        //         $total_pendapatan += $saldoCoa[$coa->uuid]->saldo_pendapatan ?? 0;
+        //     }
+
+        //     if ($coa->tipe === 'beban') {
+        //         $total_beban += $saldoCoa[$coa->uuid]->saldo_beban ?? 0;
+        //     }
+        // }
+
+        // $laba_bersih = $total_pendapatan - $total_beban;
+
         $coas = Coa::whereIn('tipe', ['pendapatan', 'beban'])->get();
+
+        // Hitung saldo jurnal
+        $saldoCoa = Jurnal::select(
+            'uuid_coa',
+            DB::raw('SUM(kredit - debit) as saldo_pendapatan'),
+            DB::raw('SUM(debit - kredit) as saldo_beban')
+        )
+            ->whereIn('uuid_coa', $coas->pluck('uuid'))
+            ->groupBy('uuid_coa')
+            ->get()
+            ->keyBy('uuid_coa');
 
         $total_pendapatan = 0;
         $total_beban = 0;
 
+        // Loop COA pendapatan & beban
         foreach ($coas as $coa) {
             if ($coa->tipe === 'pendapatan') {
-                $total_pendapatan += Jurnal::where('uuid_coa', $coa->uuid)
-                    ->selectRaw("COALESCE(SUM(kredit - debit),0) as saldo")
-                    ->value('saldo');
+                $total_pendapatan += $saldoCoa[$coa->uuid]->saldo_pendapatan ?? 0;
             }
 
             if ($coa->tipe === 'beban') {
-                $total_beban += Jurnal::where('uuid_coa', $coa->uuid)
-                    ->selectRaw("COALESCE(SUM(debit),0) as saldo")
-                    ->value('saldo');
+                $total_beban += $saldoCoa[$coa->uuid]->saldo_beban ?? 0;
             }
         }
+
+        // 🔥 Tambahkan pendapatan jasa service
+        $pendapatanJasa = Penjualan::join('jasas', 'penjualans.uuid_jasa', '=', 'jasas.uuid')
+            ->whereNotNull('penjualans.uuid_jasa')
+            ->sum('jasas.harga');
+
+        $total_pendapatan += $pendapatanJasa;
 
         $laba_bersih = $total_pendapatan - $total_beban;
 
@@ -122,6 +164,36 @@ class Dashboard extends BaseController
 
         return view('dashboard.outlet', compact('module', 'produk', 'laba_bersih'));
     }
+
+    public function getProdukUnggul(Request $request)
+    {
+        $uuidOutlet = $request->uuid_user ?? null;
+
+        $query = DB::table('detail_penjualans as dp')
+            ->join('penjualans as p', 'dp.uuid_penjualans', '=', 'p.uuid')
+            ->join('harga_backup_penjualans as hbp', 'dp.uuid', '=', 'hbp.uuid_detail_penjualan')
+            ->join('produks as pr', 'dp.uuid_produk', '=', 'pr.uuid')
+            ->select(
+                'dp.uuid_produk',
+                'pr.nama_barang',
+                DB::raw('SUM(dp.qty) as total_terjual'),
+                DB::raw('SUM(dp.total_harga - hbp.harga_modal * dp.qty) as total_profit')
+            )
+            ->groupBy('dp.uuid_produk', 'pr.nama_barang');
+
+        if ($uuidOutlet) {
+            $query->where('p.uuid_outlet', $uuidOutlet);
+        }
+
+        $topLaku = (clone $query)->orderByDesc('total_terjual')->limit(5)->get();
+        $topUntung = (clone $query)->orderByDesc('total_profit')->limit(5)->get();
+
+        return response()->json([
+            'top_laku'   => $topLaku,
+            'top_untung' => $topUntung
+        ]);
+    }
+
 
     // public function getPenjualanBulanan(Request $request)
     // {
@@ -219,6 +291,259 @@ class Dashboard extends BaseController
 
         return response()->json([
             'year' => $year,
+            'uuid_outlet' => $uuidOutlet,
+            'data' => $result
+        ]);
+    }
+
+    public function getPenjualanHarianJasa(Request $request)
+    {
+        $year  = $request->year ?? date('Y');
+        $month = $request->month ?? date('m');
+        $uuidOutlet = $request->uuid_user ?? null;
+
+        // --- Penjualan Produk ---
+        $produkQuery = Penjualan::select(
+            DB::raw('DATE_FORMAT(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y"), "%d-%m-%Y") as tanggal'),
+            DB::raw('SUM(detail_penjualans.total_harga) as total_penjualan'),
+            DB::raw('SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_modal'),
+            DB::raw('SUM(detail_penjualans.total_harga) - SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_profit'),
+            DB::raw('0 as total_jasa')
+        )
+            ->join('detail_penjualans', 'penjualans.uuid', '=', 'detail_penjualans.uuid_penjualans')
+            ->join('harga_backup_penjualans', 'detail_penjualans.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+            ->whereYear(DB::raw('STR_TO_DATE(tanggal_transaksi, "%d-%m-%Y")'), $year)
+            ->whereMonth(DB::raw('STR_TO_DATE(tanggal_transaksi, "%d-%m-%Y")'), $month);
+
+        if ($uuidOutlet) {
+            $produkQuery->where('penjualans.uuid_outlet', $uuidOutlet);
+        }
+
+        $produkQuery->groupBy('tanggal');
+
+        // --- Penjualan Jasa ---
+        $jasaQuery = Penjualan::select(
+            DB::raw('DATE_FORMAT(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y"), "%d-%m-%Y") as tanggal'),
+            DB::raw('0 as total_penjualan'),
+            DB::raw('0 as total_modal'),
+            DB::raw('0 as total_profit'),
+            DB::raw('SUM(jasas.harga) as total_jasa')
+        )
+            ->join('jasas', 'penjualans.uuid_jasa', '=', 'jasas.uuid')
+            ->whereNotNull('penjualans.uuid_jasa')
+            ->whereYear(DB::raw('STR_TO_DATE(tanggal_transaksi, "%d-%m-%Y")'), $year)
+            ->whereMonth(DB::raw('STR_TO_DATE(tanggal_transaksi, "%d-%m-%Y")'), $month);
+
+        if ($uuidOutlet) {
+            $jasaQuery->where('penjualans.uuid_outlet', $uuidOutlet);
+        }
+
+        $jasaQuery->groupBy('tanggal');
+
+        // --- Gabungkan Produk + Jasa ---
+        $unionQuery = $produkQuery->unionAll($jasaQuery);
+
+        $result = DB::table(DB::raw("({$unionQuery->toSql()}) as combined"))
+            ->mergeBindings($unionQuery->getQuery())
+            ->select(
+                'tanggal',
+                DB::raw('SUM(total_penjualan) as total_penjualan'),
+                DB::raw('SUM(total_modal) as total_modal'),
+                DB::raw('SUM(total_profit) as total_profit'),
+                DB::raw('SUM(total_jasa) as total_jasa'),
+                DB::raw('ROUND((SUM(total_profit) / NULLIF(SUM(total_penjualan),0)) * 100, 2) as persen_profit')
+            )
+            ->groupBy('tanggal')
+            ->orderBy(DB::raw('STR_TO_DATE(tanggal, "%d-%m-%Y")'))
+            ->get();
+
+        return response()->json([
+            'year' => $year,
+            'month' => $month,
+            'uuid_outlet' => $uuidOutlet,
+            'data' => $result
+        ]);
+    }
+
+    public function getPenjualanBulananJasa(Request $request)
+    {
+        $year  = $request->year ?? date('Y');
+        $uuidOutlet = $request->uuid_user ?? null;
+
+        // --- Penjualan Produk ---
+        $produkQuery = Penjualan::select(
+            DB::raw('DATE_FORMAT(STR_TO_DATE(tanggal_transaksi, "%d-%m-%Y"), "%M") as bulan'),
+            DB::raw('MONTH(STR_TO_DATE(tanggal_transaksi, "%d-%m-%Y")) as bulan_angka'),
+            DB::raw('SUM(detail_penjualans.total_harga) as total_penjualan'),
+            DB::raw('SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_modal'),
+            DB::raw('SUM(detail_penjualans.total_harga) - SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_profit'),
+            DB::raw('0 as total_jasa')
+        )
+            ->join('detail_penjualans', 'penjualans.uuid', '=', 'detail_penjualans.uuid_penjualans')
+            ->join('harga_backup_penjualans', 'detail_penjualans.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+            ->whereYear(DB::raw('STR_TO_DATE(tanggal_transaksi, "%d-%m-%Y")'), $year);
+
+        if ($uuidOutlet) {
+            $produkQuery->where('penjualans.uuid_outlet', $uuidOutlet);
+        }
+
+        $produkQuery->groupBy('bulan', 'bulan_angka');
+
+        // --- Penjualan Jasa ---
+        $jasaQuery = Penjualan::select(
+            DB::raw('DATE_FORMAT(STR_TO_DATE(tanggal_transaksi, "%d-%m-%Y"), "%M") as bulan'),
+            DB::raw('MONTH(STR_TO_DATE(tanggal_transaksi, "%d-%m-%Y")) as bulan_angka'),
+            DB::raw('0 as total_penjualan'),
+            DB::raw('0 as total_modal'),
+            DB::raw('0 as total_profit'),
+            DB::raw('SUM(jasas.harga) as total_jasa')
+        )
+            ->join('jasas', 'penjualans.uuid_jasa', '=', 'jasas.uuid')
+            ->whereNotNull('penjualans.uuid_jasa')
+            ->whereYear(DB::raw('STR_TO_DATE(tanggal_transaksi, "%d-%m-%Y")'), $year);
+
+        if ($uuidOutlet) {
+            $jasaQuery->where('penjualans.uuid_outlet', $uuidOutlet);
+        }
+
+        $jasaQuery->groupBy('bulan', 'bulan_angka');
+
+        // --- Gabungkan Produk + Jasa ---
+        $unionQuery = $produkQuery->unionAll($jasaQuery);
+
+        $result = DB::table(DB::raw("({$unionQuery->toSql()}) as combined"))
+            ->mergeBindings($unionQuery->getQuery())
+            ->select(
+                'bulan',
+                'bulan_angka',
+                DB::raw('SUM(total_penjualan) as total_penjualan'),
+                DB::raw('SUM(total_modal) as total_modal'),
+                DB::raw('SUM(total_profit) as total_profit'),
+                DB::raw('SUM(total_jasa) as total_jasa'),
+                DB::raw('ROUND((SUM(total_profit) / NULLIF(SUM(total_penjualan),0)) * 100, 2) as persen_profit')
+            )
+            ->groupBy('bulan', 'bulan_angka')
+            ->orderBy('bulan_angka')
+            ->get();
+
+        return response()->json([
+            'year' => $year,
+            'uuid_outlet' => $uuidOutlet,
+            'data' => $result
+        ]);
+    }
+
+    public function getPenjualanPerKategori(Request $request)
+    {
+        $year  = $request->year ?? date('Y');
+        $month = $request->month ?? null; // optional filter bulan
+        $uuidOutlet = $request->uuid_user ?? null;
+
+        $query = DB::table('penjualans')
+            ->join('detail_penjualans', 'penjualans.uuid', '=', 'detail_penjualans.uuid_penjualans')
+            ->join('produks', 'detail_penjualans.uuid_produk', '=', 'produks.uuid')
+            ->join('kategoris', 'produks.uuid_kategori', '=', 'kategoris.uuid')
+            ->leftJoin('harga_backup_penjualans', 'detail_penjualans.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+            ->select(
+                'kategoris.nama_kategori',
+                DB::raw('SUM(detail_penjualans.total_harga) as total_penjualan'),
+                DB::raw('SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_modal'),
+                DB::raw('SUM(detail_penjualans.total_harga) - SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_profit'),
+                DB::raw('ROUND(((SUM(detail_penjualans.total_harga) - SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty)) / SUM(detail_penjualans.total_harga)) * 100, 2) as persen_profit')
+            )
+            ->whereYear(DB::raw('STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")'), $year);
+
+        if ($month) {
+            $query->whereMonth(DB::raw('STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")'), $month);
+        }
+
+        if ($uuidOutlet) {
+            $query->where('penjualans.uuid_outlet', $uuidOutlet);
+        }
+
+        $query->groupBy('kategoris.nama_kategori')
+            ->orderBy('total_penjualan', 'desc');
+
+        $result = $query->get();
+
+        return response()->json([
+            'year' => $year,
+            'month' => $month,
+            'uuid_outlet' => $uuidOutlet,
+            'data' => $result
+        ]);
+    }
+
+    public function getPenjualanPerKategoriDenganJasa(Request $request)
+    {
+        $year  = $request->year ?? date('Y');
+        $month = $request->month ?? null; // optional filter bulan
+        $uuidOutlet = $request->uuid_user ?? null;
+
+        // --- Penjualan Produk ---
+        $produkQuery = DB::table('penjualans')
+            ->join('detail_penjualans', 'penjualans.uuid', '=', 'detail_penjualans.uuid_penjualans')
+            ->join('produks', 'detail_penjualans.uuid_produk', '=', 'produks.uuid')
+            ->join('kategoris', 'produks.uuid_kategori', '=', 'kategoris.uuid')
+            ->leftJoin('harga_backup_penjualans', 'detail_penjualans.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+            ->select(
+                'kategoris.nama_kategori as kategori',
+                DB::raw('SUM(detail_penjualans.total_harga) as total_penjualan'),
+                DB::raw('SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_modal'),
+                DB::raw('SUM(detail_penjualans.total_harga) - SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_profit')
+            )
+            ->whereYear(DB::raw('STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")'), $year);
+
+        if ($month) {
+            $produkQuery->whereMonth(DB::raw('STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")'), $month);
+        }
+
+        if ($uuidOutlet) {
+            $produkQuery->where('penjualans.uuid_outlet', $uuidOutlet);
+        }
+
+        $produkQuery->groupBy('kategoris.nama_kategori');
+
+        // --- Penjualan Jasa ---
+        $jasaQuery = DB::table('penjualans')
+            ->join('jasas', 'penjualans.uuid_jasa', '=', 'jasas.uuid')
+            ->select(
+                DB::raw('"Jasa Service" as kategori'),
+                DB::raw('SUM(jasas.harga) as total_penjualan'),
+                DB::raw('0 as total_modal'),
+                DB::raw('SUM(jasas.harga) as total_profit')
+            )
+            ->whereNotNull('penjualans.uuid_jasa')
+            ->whereYear(DB::raw('STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")'), $year);
+
+        if ($month) {
+            $jasaQuery->whereMonth(DB::raw('STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")'), $month);
+        }
+
+        if ($uuidOutlet) {
+            $jasaQuery->where('penjualans.uuid_outlet', $uuidOutlet);
+        }
+
+        $jasaQuery->groupBy(DB::raw('"Jasa Service"'));
+
+        // --- Gabungkan Produk + Jasa ---
+        $union = $produkQuery->unionAll($jasaQuery);
+
+        $result = DB::table(DB::raw("({$union->toSql()}) as combined"))
+            ->mergeBindings($union->getQuery())
+            ->select(
+                'kategori',
+                DB::raw('SUM(total_penjualan) as total_penjualan'),
+                DB::raw('SUM(total_modal) as total_modal'),
+                DB::raw('SUM(total_profit) as total_profit')
+            )
+            ->groupBy('kategori')
+            ->orderBy('total_penjualan', 'desc')
+            ->get();
+
+        return response()->json([
+            'year' => $year,
+            'month' => $month,
             'uuid_outlet' => $uuidOutlet,
             'data' => $result
         ]);
