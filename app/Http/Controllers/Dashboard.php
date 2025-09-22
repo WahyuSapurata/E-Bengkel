@@ -9,6 +9,7 @@ use App\Models\Outlet;
 use App\Models\Penjualan;
 use App\Models\PoOutlet;
 use App\Models\Produk;
+use App\Models\StatusBarang;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -131,7 +132,9 @@ class Dashboard extends BaseController
 
         $data = $query->get();
 
-        return view('dashboard.superadmin', compact('module', 'outlet', 'produk', 'costumer', 'laba_bersih', 'data'));
+        $log = StatusBarang::all();
+
+        return view('dashboard.superadmin', compact('module', 'outlet', 'produk', 'costumer', 'laba_bersih', 'data', 'log'));
     }
 
     public function dashboard_outlet()

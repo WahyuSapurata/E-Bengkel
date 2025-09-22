@@ -195,7 +195,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-12">
+                            <div class="col-12 col-md-6">
                                 <div class="card-header">
                                     <h5 class="card-title">Penjualan Per Kategori</h5>
                                 </div>
@@ -214,6 +214,37 @@
                                             </thead>
                                             <tbody id="harian-body-kategori">
                                                 <!-- Data akan diisi lewat JavaScript -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <div class="card-header">
+                                    <h5 class="card-title">Logs</h5>
+                                </div>
+                                <div class="card-body custom-card-action p-0">
+                                    <div class="table-responsive p-3" style="max-height: 250px; overflow-y: auto;">
+                                        <table class="table table-bordered table-striped">
+                                            <thead class="text-center">
+                                                <tr>
+                                                    <th>Ref</th>
+                                                    <th>Keterangan</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @forelse ($log as $lg)
+                                                    <tr>
+                                                        <td>{{ $lg->ref }}</td>
+                                                        <td>{{ $lg->ketarangan }}</td>
+                                                    </tr>
+                                                @empty
+                                                    <tr>
+                                                        <td colspan="2" class="text-center text-danger">Belum ada log
+                                                        </td>
+                                                    </tr>
+                                                @endforelse
                                             </tbody>
                                         </table>
                                     </div>
