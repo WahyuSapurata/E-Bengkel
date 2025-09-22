@@ -1013,6 +1013,116 @@
             });
 
             // ---- tombol F8 submit ----
+            // document.addEventListener("keydown", function(event) {
+            //     if (event.key === "F8") {
+            //         event.preventDefault();
+            //         event.stopPropagation();
+
+            //         let form = document.getElementById("form-kasir");
+            //         if (!form) return;
+
+            //         // buat formData dari form
+            //         let formData = new FormData(form);
+
+            //         // ambil semua baris produk dari tbody
+            //         const tbody = cartTable.querySelector("tbody");
+            //         tbody.querySelectorAll("tr").forEach(row => {
+            //             let uuid = row.getAttribute("data-uuid");
+            //             let qty = parseInt(row.querySelector(".qty")?.innerText) || 0;
+            //             let jumlah = row.querySelector(".jumlah")?.innerText || "0";
+            //             jumlah = jumlah.replace(/[^0-9]/g, "");
+
+            //             formData.append("uuid_produk[]", uuid);
+            //             formData.append("qty[]", qty);
+            //             formData.append("total_harga[]", jumlah);
+            //         });
+
+            //         // tampilkan loading pakai SweetAlert
+            //         Swal.fire({
+            //             title: "Menyimpan Transaksi...",
+            //             text: "Mohon tunggu sebentar",
+            //             allowOutsideClick: false,
+            //             didOpen: () => {
+            //                 Swal.showLoading();
+            //             }
+            //         });
+
+            //         fetch("/kasir/penjualan-store", {
+            //                 method: "POST",
+            //                 body: formData,
+            //                 headers: {
+            //                     "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')
+            //                         .getAttribute("content")
+            //                 }
+            //             })
+            //             .then(res => res.json())
+            //             .then(res => {
+            //                 Swal.close(); // tutup loading
+            //                 if (res.status === "success") {
+            //                     Swal.fire({
+            //                         title: "Transaksi Berhasil ✅",
+            //                         text: "Apakah Anda ingin mencetak struk?",
+            //                         icon: "success",
+            //                         showCancelButton: true,
+            //                         confirmButtonText: "Cetak Struk",
+            //                         cancelButtonText: "Tidak",
+            //                         reverseButtons: true
+            //                     }).then(result => {
+            //                         if (result.isConfirmed) {
+            //                             // siapkan data struk
+            //                             const strukData = {
+            //                                 outlet_nama: "{{ $data_outlet->nama_outlet }}",
+            //                                 outlet_alamat: "{{ $data_outlet->alamat }}",
+            //                                 outlet_telp: "{{ $data_outlet->telepon }}",
+            //                                 no_bukti: res.data.no_bukti,
+            //                                 tanggal: res.data.tanggal,
+            //                                 kasir: res.data.kasir,
+            //                                 pembayaran: res.data.pembayaran,
+            //                                 items: res.data.items.map(i => ({
+            //                                     nama: i.nama,
+            //                                     qty: Number(i
+            //                                         .qty), // pastikan number
+            //                                     harga: Number(i
+            //                                         .harga), // pastikan number
+            //                                     subtotal: Number(i
+            //                                         .subtotal
+            //                                     ) // pastikan number
+            //                                 })),
+            //                                 totalJasa: Number(totalJasa), // pastikan number
+            //                                 totalItem: Number(res.data.totalItem),
+            //                                 grandTotal: Number(res.data.grandTotal) +
+            //                                     Number(totalJasa) // penjumlahan aman
+            //                             };
+
+            //                             // kirim ke backend print
+            //                             cetakStruk(strukData);
+            //                         }
+            //                         // reset kasir & reload jasa
+            //                         resetKasir();
+            //                         loadJasa();
+            //                     });
+            //                 } else {
+            //                     Swal.fire({
+            //                         title: "Gagal!",
+            //                         text: res.message,
+            //                         icon: "error",
+            //                         confirmButtonText: "OK"
+            //                     });
+            //                 }
+            //             })
+            //             .catch(err => {
+            //                 Swal.close();
+            //                 console.error("❌ Error simpan transaksi:", err);
+            //                 Swal.fire({
+            //                     title: "Error!",
+            //                     text: "Terjadi kesalahan server",
+            //                     icon: "error",
+            //                     confirmButtonText: "OK"
+            //                 });
+            //             });
+            //     }
+            // });
+
             document.addEventListener("keydown", function(event) {
                 if (event.key === "F8") {
                     event.preventDefault();
@@ -1021,105 +1131,166 @@
                     let form = document.getElementById("form-kasir");
                     if (!form) return;
 
-                    // buat formData dari form
-                    let formData = new FormData(form);
+                    // ambil grand total dari grandTotalEl
+                    let grandTotal = parseInt(grandTotalEl.innerText.replace(/[^0-9]/g, "")) || 0;
+                    if (grandTotal <= 0) {
+                        Swal.fire({
+                            title: "Belum ada transaksi!",
+                            text: "Silakan tambahkan produk terlebih dahulu",
+                            icon: "warning",
+                            confirmButtonText: "OK"
+                        });
+                        return;
+                    }
 
-                    // ambil semua baris produk dari tbody
-                    const tbody = cartTable.querySelector("tbody");
-                    tbody.querySelectorAll("tr").forEach(row => {
-                        let uuid = row.getAttribute("data-uuid");
-                        let qty = parseInt(row.querySelector(".qty")?.innerText) || 0;
-                        let jumlah = row.querySelector(".jumlah")?.innerText || "0";
-                        jumlah = jumlah.replace(/[^0-9]/g, "");
-
-                        formData.append("uuid_produk[]", uuid);
-                        formData.append("qty[]", qty);
-                        formData.append("total_harga[]", jumlah);
-                    });
-
-                    // tampilkan loading pakai SweetAlert
+                    // modal input uang customer
                     Swal.fire({
-                        title: "Menyimpan Transaksi...",
-                        text: "Mohon tunggu sebentar",
-                        allowOutsideClick: false,
+                        title: 'Input Uang Customer',
+                        html: `Grand Total: <b>Rp ${grandTotal.toLocaleString()}</b><br>
+           <input type="text" id="swal-uang-customer" class="swal2-input" placeholder="Masukkan nominal">`,
+                        showCancelButton: true,
+                        confirmButtonText: 'OK',
+                        cancelButtonText: 'Batal',
                         didOpen: () => {
-                            Swal.showLoading();
-                        }
-                    });
+                            const input = document.getElementById('swal-uang-customer');
+                            // fokus ke input
+                            input.focus();
 
-                    fetch("/kasir/penjualan-store", {
-                            method: "POST",
-                            body: formData,
-                            headers: {
-                                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')
-                                    .getAttribute("content")
+                            // event listener format Rupiah saat mengetik
+                            input.addEventListener('input', (e) => {
+                                let value = e.target.value.replace(/[^0-9]/g,
+                                ""); // hapus semua selain angka
+                                if (value === "") {
+                                    e.target.value = "";
+                                    return;
+                                }
+                                // format ke Rp
+                                e.target.value = parseInt(value).toLocaleString(
+                                'id-ID');
+                            });
+                        },
+                        preConfirm: () => {
+                            const input = document.getElementById('swal-uang-customer');
+                            let uangCustomer = parseInt(input.value.replace(/[^0-9]/g, ""));
+                            if (isNaN(uangCustomer) || uangCustomer <= 0) {
+                                Swal.showValidationMessage("Masukkan nominal yang valid!");
                             }
-                        })
-                        .then(res => res.json())
-                        .then(res => {
-                            Swal.close(); // tutup loading
-                            if (res.status === "success") {
-                                Swal.fire({
-                                    title: "Transaksi Berhasil ✅",
-                                    text: "Apakah Anda ingin mencetak struk?",
-                                    icon: "success",
-                                    showCancelButton: true,
-                                    confirmButtonText: "Cetak Struk",
-                                    cancelButtonText: "Tidak",
-                                    reverseButtons: true
-                                }).then(result => {
-                                    if (result.isConfirmed) {
-                                        // siapkan data struk
-                                        const strukData = {
-                                            outlet_nama: "{{ $data_outlet->nama_outlet }}",
-                                            outlet_alamat: "{{ $data_outlet->alamat }}",
-                                            outlet_telp: "{{ $data_outlet->telepon }}",
-                                            no_bukti: res.data.no_bukti,
-                                            tanggal: res.data.tanggal,
-                                            kasir: res.data.kasir,
-                                            pembayaran: res.data.pembayaran,
-                                            items: res.data.items.map(i => ({
-                                                nama: i.nama,
-                                                qty: Number(i
-                                                    .qty), // pastikan number
-                                                harga: Number(i
-                                                    .harga), // pastikan number
-                                                subtotal: Number(i
-                                                    .subtotal
-                                                ) // pastikan number
-                                            })),
-                                            totalJasa: Number(totalJasa), // pastikan number
-                                            totalItem: Number(res.data.totalItem),
-                                            grandTotal: Number(res.data.grandTotal) +
-                                                Number(totalJasa) // penjumlahan aman
-                                        };
+                            return uangCustomer;
+                        }
+                    }).then((result) => {
+                        if (!result.isConfirmed) return;
 
-                                        // kirim ke backend print
-                                        cetakStruk(strukData);
-                                    }
-                                    // reset kasir & reload jasa
-                                    resetKasir();
-                                    loadJasa();
-                                });
-                            } else {
+                        let uangCustomer = result.value;
+                        let kembalian = uangCustomer - grandTotal;
+
+                        if (kembalian < 0) {
+                            Swal.fire({
+                                title: "Uang Kurang!",
+                                html: `Grand Total: <b>Rp ${grandTotal.toLocaleString()}</b><br>` +
+                                    `Uang Customer: <b>Rp ${uangCustomer.toLocaleString()}</b><br>` +
+                                    `Kurang: <b>Rp ${Math.abs(kembalian).toLocaleString()}</b>`,
+                                icon: "warning",
+                                confirmButtonText: "OK"
+                            });
+                            return; // hentikan submit
+                        }
+
+                        // buat FormData dari form
+                        let formData = new FormData(form);
+                        const tbody = cartTable.querySelector("tbody");
+                        tbody.querySelectorAll("tr").forEach(row => {
+                            let uuid = row.getAttribute("data-uuid");
+                            let qty = parseInt(row.querySelector(".qty")?.innerText) || 0;
+                            let jumlah = row.querySelector(".jumlah")?.innerText || "0";
+                            jumlah = jumlah.replace(/[^0-9]/g, "");
+                            formData.append("uuid_produk[]", uuid);
+                            formData.append("qty[]", qty);
+                            formData.append("total_harga[]", jumlah);
+                        });
+
+                        // tambahkan info pembayaran
+                        formData.append("uang_customer", uangCustomer);
+                        formData.append("kembalian", kembalian);
+
+                        // tampilkan loading
+                        Swal.fire({
+                            title: `Kembalian: Rp ${kembalian.toLocaleString()}`,
+                            text: "Menyimpan Transaksi...",
+                            allowOutsideClick: false,
+                            didOpen: () => Swal.showLoading()
+                        });
+
+                        // kirim ke backend
+                        fetch("/kasir/penjualan-store", {
+                                method: "POST",
+                                body: formData,
+                                headers: {
+                                    "X-CSRF-TOKEN": document.querySelector(
+                                        'meta[name="csrf-token"]').getAttribute("content")
+                                }
+                            })
+                            .then(res => res.json())
+                            .then(res => {
+                                Swal.close();
+                                if (res.status === "success") {
+                                    Swal.fire({
+                                        title: "Transaksi Berhasil ✅",
+                                        text: "Apakah Anda ingin mencetak struk?",
+                                        icon: "success",
+                                        showCancelButton: true,
+                                        confirmButtonText: "Cetak Struk",
+                                        cancelButtonText: "Tidak",
+                                        reverseButtons: true
+                                    }).then(result => {
+                                        if (result.isConfirmed) {
+                                            const strukData = {
+                                                outlet_nama: "{{ $data_outlet->nama_outlet }}",
+                                                outlet_alamat: "{{ $data_outlet->alamat }}",
+                                                outlet_telp: "{{ $data_outlet->telepon }}",
+                                                no_bukti: res.data.no_bukti,
+                                                tanggal: res.data.tanggal,
+                                                kasir: res.data.kasir,
+                                                pembayaran: res.data.pembayaran,
+                                                items: res.data.items.map(i => ({
+                                                    nama: i.nama,
+                                                    qty: Number(i.qty),
+                                                    harga: Number(i
+                                                        .harga),
+                                                    subtotal: Number(i
+                                                        .subtotal)
+                                                })),
+                                                totalJasa: Number(totalJasa),
+                                                totalItem: Number(res.data
+                                                    .totalItem),
+                                                grandTotal: Number(res.data
+                                                    .grandTotal) + Number(
+                                                    totalJasa)
+                                            };
+                                            cetakStruk(strukData);
+                                        }
+                                        resetKasir();
+                                        loadJasa();
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        title: "Gagal!",
+                                        text: res.message,
+                                        icon: "error",
+                                        confirmButtonText: "OK"
+                                    });
+                                }
+                            })
+                            .catch(err => {
+                                Swal.close();
+                                console.error("❌ Error simpan transaksi:", err);
                                 Swal.fire({
-                                    title: "Gagal!",
-                                    text: res.message,
+                                    title: "Error!",
+                                    text: "Terjadi kesalahan server",
                                     icon: "error",
                                     confirmButtonText: "OK"
                                 });
-                            }
-                        })
-                        .catch(err => {
-                            Swal.close();
-                            console.error("❌ Error simpan transaksi:", err);
-                            Swal.fire({
-                                title: "Error!",
-                                text: "Terjadi kesalahan server",
-                                icon: "error",
-                                confirmButtonText: "OK"
                             });
-                        });
+                    });
                 }
             });
 
