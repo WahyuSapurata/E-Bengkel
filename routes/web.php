@@ -209,6 +209,12 @@ Route::group([
 
     Route::get('/get-penjualan-harian', [App\Http\Controllers\Dashboard::class, 'getPenjualanHarian'])->name('get-penjualan-harian');
     Route::get('/get-penjualan-bulanan', [App\Http\Controllers\Dashboard::class, 'getPenjualanBulanan'])->name('get-penjualan-bulanan');
+    Route::get('/get-penjualan-terlaku', [App\Http\Controllers\Dashboard::class, 'getProdukUnggul'])->name('get-penjualan-terlaku');
+    Route::get('/get-penjualan-harian-jasa', [App\Http\Controllers\Dashboard::class, 'getPenjualanHarianJasa'])->name('get-penjualan-harian-jasa');
+    Route::get('/get-penjualan-bulanan-jasa', [App\Http\Controllers\Dashboard::class, 'getPenjualanBulananJasa'])->name('get-penjualan-bulanan-jasa');
+    Route::get('/get-penjualan-bulanan-jasa', [App\Http\Controllers\Dashboard::class, 'getPenjualanBulananJasa'])->name('get-penjualan-bulanan-jasa');
+    Route::get('/get-penjualan-kategori', [App\Http\Controllers\Dashboard::class, 'getPenjualanPerKategori'])->name('get-penjualan-kategori');
+    Route::get('/get-penjualan-kasir', [App\Http\Controllers\Dashboard::class, 'getDashboardPenjualanKasir'])->name('get-penjualan-kasir');
 
     Route::get('/produk', [App\Http\Controllers\ProdukController::class, 'vw_outlet'])->name('produk');
     Route::get('/produk-get', [App\Http\Controllers\ProdukController::class, 'get_outlet'])->name('produk-get');
