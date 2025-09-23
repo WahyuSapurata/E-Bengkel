@@ -28,6 +28,7 @@ Route::group([
     Route::get('/get-penjualan-bulanan-jasa', [App\Http\Controllers\Dashboard::class, 'getPenjualanBulananJasa'])->name('get-penjualan-bulanan-jasa');
     Route::get('/get-penjualan-bulanan-jasa', [App\Http\Controllers\Dashboard::class, 'getPenjualanBulananJasa'])->name('get-penjualan-bulanan-jasa');
     Route::get('/get-penjualan-kategori', [App\Http\Controllers\Dashboard::class, 'getPenjualanPerKategori'])->name('get-penjualan-kategori');
+    Route::get('/get-penjualan-kasir', [App\Http\Controllers\Dashboard::class, 'get_total_penjualan_dashboard'])->name('get-penjualan-kasir');
 
     Route::prefix('setup')->group(function () {
         Route::get('/data-pengguna', [App\Http\Controllers\DataPengguna::class, 'index'])->name('data-pengguna');

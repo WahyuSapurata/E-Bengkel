@@ -677,6 +677,49 @@
 
             loadPenjualanKategori(); // Panggil fungsi untuk load penjualan harian
 
+            function loadPenjualanKasir(uuidOutlet = "") {
+                $.get("/superadmin/get-penjualan-kasir", {
+                    uuid_user: uuidOutlet
+                }, function(res) {
+                    //             let tbody = $("#harian-body-kategori");
+                    //             tbody.empty(); // kosongkan isi tabel
+
+                    //             if (!res.data || res.data.length === 0) {
+                    //                 tbody.append(`
+                //         <tr>
+                //             <td colspan="5" class="text-center">Tidak ada data</td>
+                //         </tr>
+                //     `);
+                    //                 return;
+                    //             }
+
+                    //             res.data.forEach(item => {
+                    //                 let penjualan = item.total_penjualan ?? 0;
+                    //                 let modal = item.total_modal ?? 0;
+                    //                 let profit = item.total_profit ?? 0;
+                    //                 let persen = item.persen_profit ?? 0;
+
+                    //                 tbody.append(`
+                //         <tr>
+                //             <td class="text-center">${item.nama_kategori}</td>
+                //             <td class="text-end">Rp ${Number(penjualan).toLocaleString("id-ID")}</td>
+                //             <td class="text-end">Rp ${Number(modal).toLocaleString("id-ID")}</td>
+                //             <td class="text-end">Rp ${Number(profit).toLocaleString("id-ID")}</td>
+                //             <td class="text-center">${persen} %</td>
+                //         </tr>
+                //     `);
+                    //             });
+                    //         }).fail(function() {
+                    //             $("#harian-body-kategori").html(`
+                //     <tr>
+                //         <td colspan="5" class="text-center text-danger">Gagal memuat data</td>
+                //     </tr>
+                // `);
+                });
+            }
+
+            loadPenjualanKasir(); // Panggil fungsi untuk load penjualan harian
+
             // reload saat ganti outlet
             $("#filter-outlet").on("change", function() {
                 let uuidOutlet = $(this).val();
