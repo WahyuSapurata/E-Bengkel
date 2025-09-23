@@ -12,6 +12,7 @@ use App\Models\PoOutlet;
 use App\Models\Produk;
 use App\Models\StatusBarang;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -554,64 +555,73 @@ class Dashboard extends BaseController
         ]);
     }
 
-    public function get_total_penjualan_dashboard(Request $request)
+    public function getDashboardPenjualanKasir(Request $request)
     {
+        // Ambil filter tanggal (default hari ini)
         $uuidOutlet = $request->uuid_outlet ?? null;
-        $tanggal = $request->tanggal ?? date('d-m-Y');
 
-        // Ambil semua kasir di outlet (atau semua kasir jika Superadmin)
+        // Ambil semua kasir (bisa difilter outlet)
         $kasirsQuery = KasirOutlet::query();
         if ($uuidOutlet) {
             $kasirsQuery->where('uuid_outlet', $uuidOutlet);
         }
         $kasirs = $kasirsQuery->get();
 
-        $data = [];
+        $dataDashboard = [];
 
         foreach ($kasirs as $kasir) {
-            // Total penjualan produk per kasir
+            // Ambil nama kasir
+            $namaKasir = User::where('uuid', $kasir->uuid_user)->value('nama') ?? '';
+
+            // Total penjualan produk
             $produkTotals = DB::table('penjualans')
                 ->join('detail_penjualans', 'penjualans.uuid', '=', 'detail_penjualans.uuid_penjualans')
-                ->where('penjualans.created_by', function () use ($kasir) {
-                    $user = User::find($kasir->uuid_user);
-                    return $user ? $user->nama : '';
-                })
+                ->join('harga_backup_penjualans', 'detail_penjualans.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+                ->where('penjualans.created_by', $namaKasir)
                 ->where('penjualans.uuid_outlet', $kasir->uuid_outlet)
-                ->where('penjualans.tanggal_transaksi', $tanggal)
-                ->selectRaw('SUM(detail_penjualans.total_harga) as total_penjualan, SUM(detail_penjualans.qty) as total_item')
+                ->selectRaw('
+                    SUM(detail_penjualans.total_harga) as total_penjualan,
+                    SUM(detail_penjualans.qty) as total_item,
+                    SUM(detail_penjualans.total_harga) - SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_profit
+                ')
                 ->first();
 
-            // Total penjualan jasa per kasir
+            $totalItem = $produkTotals->total_item ?? 0;
+            $grandTotal = $produkTotals->total_penjualan ?? 0;
+
+            // Total penjualan jasa
             $totalJasa = DB::table('penjualans')
                 ->join('jasas', 'penjualans.uuid_jasa', '=', 'jasas.uuid')
-                ->where('penjualans.created_by', function () use ($kasir) {
-                    $user = User::find($kasir->uuid_user);
-                    return $user ? $user->nama : '';
-                })
+                ->where('penjualans.created_by', $namaKasir)
                 ->where('penjualans.uuid_outlet', $kasir->uuid_outlet)
-                ->where('penjualans.tanggal_transaksi', $tanggal)
                 ->whereNotNull('penjualans.uuid_jasa')
                 ->sum('jasas.harga');
 
-            $grandTotal = ($produkTotals->total_penjualan ?? 0) + $totalJasa;
-            $totalItem = $produkTotals->total_item ?? 0;
+            $totalPenjualan = $produkTotals->total_penjualan ?? 0;
+            $profit = $produkTotals->total_profit ?? 0;
+            $grandTotal += $totalJasa;
 
-            $data[] = [
-                'kasir'        => $kasir->uuid_user,
-                'nama_kasir'   => User::where('uuid', $kasir->uuid_user)->value('nama'),
-                'totalItem'    => $totalItem,
-                'totalJasa'    => $totalJasa,
-                'grandTotal'   => $grandTotal,
-                'tanggal'      => $tanggal,
-                'uuid_outlet'  => $kasir->uuid_outlet,
+            // Total transaksi (produk + jasa)
+            $totalTransaksi = DB::table('penjualans')
+                ->where('created_by', $namaKasir)
+                ->where('uuid_outlet', $kasir->uuid_outlet)
+                ->count();
+
+            $dataDashboard[] = [
+                'kasir'          => $namaKasir,
+                'uuid_kasir'     => $kasir->uuid,
+                'totalTransaksi' => $totalTransaksi,
+                'totalItem'      => $totalItem,
+                'totalPenjualan' => $totalPenjualan,
+                'profit'         => $profit,
+                'totalJasa'      => $totalJasa,
+                'grandTotal'     => $grandTotal,
             ];
         }
 
-        // dd($data);
-
         return response()->json([
             'status' => true,
-            'data' => $data
+            'data'   => $dataDashboard
         ]);
     }
 }

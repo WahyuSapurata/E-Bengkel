@@ -222,6 +222,32 @@
 
                             <div class="col-12 col-md-6">
                                 <div class="card-header">
+                                    <h5 class="card-title">Penjualan Per kasir</h5>
+                                </div>
+                                <div class="card-body custom-card-action p-0">
+                                    {{-- <div id="payment-records-chart"></div> --}}
+                                    <div class="table-responsive p-3">
+                                        <table id="tabel-penjualan-kasir" class="table table-bordered table-striped">
+                                            <thead class="text-center">
+                                                <tr>
+                                                    <th>Nama Kasir</th>
+                                                    <th>Total Transaksi</th>
+                                                    <th>Total Item</th>
+                                                    <th>Total Penjualan</th>
+                                                    <th>Total Jasa</th>
+                                                    <th>Total Penjualan + Jasa</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="harian-body-kasir">
+                                                <!-- Data akan diisi lewat JavaScript -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="card-header">
                                     <h5 class="card-title">Logs</h5>
                                 </div>
                                 <div class="card-body custom-card-action p-0">
@@ -681,40 +707,40 @@
                 $.get("/superadmin/get-penjualan-kasir", {
                     uuid_user: uuidOutlet
                 }, function(res) {
-                    //             let tbody = $("#harian-body-kategori");
-                    //             tbody.empty(); // kosongkan isi tabel
+                    let tbody = $("#harian-body-kasir");
+                    tbody.empty(); // kosongkan isi tabel
 
-                    //             if (!res.data || res.data.length === 0) {
-                    //                 tbody.append(`
-                //         <tr>
-                //             <td colspan="5" class="text-center">Tidak ada data</td>
-                //         </tr>
-                //     `);
-                    //                 return;
-                    //             }
+                    if (!res.data || res.data.length === 0) {
+                        tbody.append(`
+                        <tr>
+                            <td colspan="5" class="text-center">Tidak ada data</td>
+                        </tr>
+                    `);
+                        return;
+                    }
 
-                    //             res.data.forEach(item => {
-                    //                 let penjualan = item.total_penjualan ?? 0;
-                    //                 let modal = item.total_modal ?? 0;
-                    //                 let profit = item.total_profit ?? 0;
-                    //                 let persen = item.persen_profit ?? 0;
+                    res.data.forEach(item => {
+                        let totalPenjualan = item.totalPenjualan ?? 0;
+                        let totalJasa = item.totalJasa ?? 0;
+                        let grandTotal = item.grandTotal ?? 0;
 
-                    //                 tbody.append(`
-                //         <tr>
-                //             <td class="text-center">${item.nama_kategori}</td>
-                //             <td class="text-end">Rp ${Number(penjualan).toLocaleString("id-ID")}</td>
-                //             <td class="text-end">Rp ${Number(modal).toLocaleString("id-ID")}</td>
-                //             <td class="text-end">Rp ${Number(profit).toLocaleString("id-ID")}</td>
-                //             <td class="text-center">${persen} %</td>
-                //         </tr>
-                //     `);
-                    //             });
-                    //         }).fail(function() {
-                    //             $("#harian-body-kategori").html(`
-                //     <tr>
-                //         <td colspan="5" class="text-center text-danger">Gagal memuat data</td>
-                //     </tr>
-                // `);
+                        tbody.append(`
+                        <tr>
+                            <td class="text-center">${item.kasir}</td>
+                            <td class="text-center">${item.totalTransaksi}</td>
+                            <td class="text-center">${item.totalItem}</td>
+                            <td class="text-end">Rp ${Number(totalPenjualan).toLocaleString("id-ID")}</td>
+                            <td class="text-end">Rp ${Number(totalJasa).toLocaleString("id-ID")}</td>
+                            <td class="text-end">Rp ${Number(grandTotal).toLocaleString("id-ID")}</td>
+                        </tr>
+                    `);
+                    });
+                }).fail(function() {
+                    $("#harian-body-kasir").html(`
+                    <tr>
+                        <td colspan="5" class="text-center text-danger">Gagal memuat data</td>
+                    </tr>
+                `);
                 });
             }
 
@@ -729,6 +755,7 @@
                 loadPenjualanHarianJasa(uuidOutlet); // Panggil fungsi dengan outlet yang dipilih
                 loadPenjualanBulananJasa(uuidOutlet)
                 loadPenjualanKategori(uuidOutlet)
+                loadPenjualanKasir(uuidOutlet)
                 // loadChart(uuidOutlet);
             });
         });
