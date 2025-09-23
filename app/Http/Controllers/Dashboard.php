@@ -607,7 +607,7 @@ class Dashboard extends BaseController
             ];
         }
 
-        dd($data);
+        // dd($data);
 
         return response()->json([
             'status' => true,
