@@ -86,8 +86,10 @@ class Dashboard extends BaseController
         }
 
         // 🔥 Tambahkan pendapatan jasa service
-        $pendapatanJasa = Penjualan::join('jasas', 'penjualans.uuid_jasa', '=', 'jasas.uuid')
-            ->whereNotNull('penjualans.uuid_jasa')
+        $pendapatanJasa = Penjualan::whereNotNull('uuid_jasa')
+            ->join('jasas', function ($join) {
+                $join->whereRaw('JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))');
+            })
             ->sum('jasas.harga');
 
         $total_pendapatan += $pendapatanJasa;
@@ -335,10 +337,12 @@ class Dashboard extends BaseController
             DB::raw('0 as total_profit'),
             DB::raw('SUM(jasas.harga) as total_jasa')
         )
-            ->join('jasas', 'penjualans.uuid_jasa', '=', 'jasas.uuid')
+            ->join('jasas', function ($join) {
+                $join->whereRaw('JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))');
+            })
             ->whereNotNull('penjualans.uuid_jasa')
-            ->whereYear(DB::raw('STR_TO_DATE(tanggal_transaksi, "%d-%m-%Y")'), $year)
-            ->whereMonth(DB::raw('STR_TO_DATE(tanggal_transaksi, "%d-%m-%Y")'), $month);
+            ->whereYear(DB::raw('STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")'), $year)
+            ->whereMonth(DB::raw('STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")'), $month);
 
         if ($uuidOutlet) {
             $jasaQuery->where('penjualans.uuid_outlet', $uuidOutlet);
@@ -397,16 +401,18 @@ class Dashboard extends BaseController
 
         // --- Penjualan Jasa ---
         $jasaQuery = Penjualan::select(
-            DB::raw('DATE_FORMAT(STR_TO_DATE(tanggal_transaksi, "%d-%m-%Y"), "%M") as bulan'),
-            DB::raw('MONTH(STR_TO_DATE(tanggal_transaksi, "%d-%m-%Y")) as bulan_angka'),
+            DB::raw('DATE_FORMAT(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y"), "%M") as bulan'),
+            DB::raw('MONTH(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) as bulan_angka'),
             DB::raw('0 as total_penjualan'),
             DB::raw('0 as total_modal'),
             DB::raw('0 as total_profit'),
             DB::raw('SUM(jasas.harga) as total_jasa')
         )
-            ->join('jasas', 'penjualans.uuid_jasa', '=', 'jasas.uuid')
+            ->join('jasas', function ($join) {
+                $join->whereRaw('JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))');
+            })
             ->whereNotNull('penjualans.uuid_jasa')
-            ->whereYear(DB::raw('STR_TO_DATE(tanggal_transaksi, "%d-%m-%Y")'), $year);
+            ->whereYear(DB::raw('STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")'), $year);
 
         if ($uuidOutlet) {
             $jasaQuery->where('penjualans.uuid_outlet', $uuidOutlet);
@@ -512,7 +518,9 @@ class Dashboard extends BaseController
 
         // --- Penjualan Jasa ---
         $jasaQuery = DB::table('penjualans')
-            ->join('jasas', 'penjualans.uuid_jasa', '=', 'jasas.uuid')
+            ->join('jasas', function ($join) {
+                $join->whereRaw('JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))');
+            })
             ->select(
                 DB::raw('"Jasa Service" as kategori'),
                 DB::raw('SUM(jasas.harga) as total_penjualan'),
@@ -591,7 +599,9 @@ class Dashboard extends BaseController
 
             // Total penjualan jasa
             $totalJasa = DB::table('penjualans')
-                ->join('jasas', 'penjualans.uuid_jasa', '=', 'jasas.uuid')
+                ->join('jasas', function ($join) {
+                    $join->whereRaw('JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))');
+                })
                 ->where('penjualans.created_by', $namaKasir)
                 ->where('penjualans.uuid_outlet', $kasir->uuid_outlet)
                 ->whereNotNull('penjualans.uuid_jasa')

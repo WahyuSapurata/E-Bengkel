@@ -95,3 +95,19 @@ tr.selected {
 .bg-custom {
     background-color: #d81b1f;
 }
+
+.list-jasa-scroll {
+    max-height: 150px;
+    /* tinggi maksimal, sesuaikan kebutuhan */
+    overflow-y: auto;
+    /* tampilkan scroll jika melebihi max-height */
+    border: 1px solid #ddd;
+    /* opsional, supaya terlihat batas */
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.list-jasa-scroll .form-check {
+    margin-bottom: 5px;
+    /* spasi antar item */
+}

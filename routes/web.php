@@ -266,6 +266,9 @@ Route::group([
 
     Route::get('sumary-report', [App\Http\Controllers\ClosingKasirController::class, 'sumaryreport'])->name('sumary-report');
     Route::get('/history-summary/{params}', [App\Http\Controllers\ClosingKasirController::class, 'history_summary'])->name('history-summary');
+
+    Route::get('/vw-lap-transaksi', [App\Http\Controllers\LapTransakasi::class, 'index_outlet'])->name('vw-lap-transaksi');
+    Route::get('/get-lap-transaksi', [App\Http\Controllers\LapTransakasi::class, 'get'])->name('get-lap-transaksi');
 });
 
 Route::group([
@@ -289,6 +292,8 @@ Route::group([
     Route::get('/get-penjualan-detail/{params}', [App\Http\Controllers\PenjualanController::class, 'get_detail_penjualan'])->name('get-penjualan-detail');
 
     Route::get('/sumary-report/{params}', [App\Http\Controllers\ClosingKasirController::class, 'index'])->name('sumary-report');
+
+    Route::post('/cancel-pejualan', [App\Http\Controllers\PenjualanController::class, 'cancel_penjualan'])->name('cancel-pejualan');
 });
 
 Route::get('/logout', [App\Http\Controllers\Auth::class, 'logout'])->name('logout');

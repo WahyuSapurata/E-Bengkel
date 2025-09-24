@@ -23,6 +23,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Ramsey\Uuid\Uuid;
 
 class PenjualanController extends Controller
 {
@@ -165,17 +166,17 @@ class PenjualanController extends Controller
             $details   = [];
 
             DB::transaction(function () use ($request, &$penjualan, &$details) {
+                // tanggal hari ini (d-m-Y)
+                $today = now()->format('d-m-Y');
+
                 // Ambil outlet dari kasir
-                $kasir = KasirOutlet::where('uuid_user', Auth::user()->uuid)->firstOrFail();
-                $closingToday = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid_outlet)
-                    ->whereDate('tanggal_closing', now()->format('d-m-Y'))
+                $kasir = KasirOutlet::where('uuid_user', Auth::user()->uuid)->first();
+                $closingToday = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid_user)
+                    ->where('tanggal_closing', $today)
                     ->first();
 
                 if ($closingToday) {
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Kasir sudah closing hari ini, tidak bisa transaksi lagi.'
-                    ], 403);
+                    throw new \Exception('Kasir telah closing hari ini.');
                 }
 
                 // Validasi produk
@@ -293,7 +294,8 @@ class PenjualanController extends Controller
                 $totalJasa = 0;
                 if ($request->uuid_jasa) {
                     $jasaCoa = Coa::where('nama', 'Pendapatan Jasa Service')->firstOrFail();
-                    $totalJasa = Jasa::where('uuid', $request->uuid_jasa)->firstOrFail()->harga;
+                    $totalJasa = Jasa::whereIn('uuid', $request->uuid_jasa) // ambil semua jasa yg dipilih
+                        ->sum('harga');
                 }
 
                 // Tentukan akun debit sesuai metode pembayaran
@@ -362,6 +364,43 @@ class PenjualanController extends Controller
         }
     }
 
+    public function cancel_penjualan(Request $request)
+    {
+        $uuid_produk  = $request->input('uuid_produk', []);
+        $qty          = $request->input('qty', []);
+        $total_harga  = $request->input('total_harga', []);
+
+        $logs = [];
+
+        foreach ($uuid_produk as $i => $uuid) {
+            $produk = Produk::where('uuid', $uuid)->first();
+
+            if ($produk) {
+                $logs[] = [
+                    'uuid' => Uuid::uuid4()->toString(),
+                    'uuid_log_barang' => $uuid,
+                    'ref'             => 'Cancel Barang',
+                    'ketarangan'      => 'Produk tercancel oleh '
+                        . (Auth::user()->nama ?? 'Unknown')
+                        . ' | ' . $produk->nama_barang
+                        . ' | Qty: ' . ($qty[$i] ?? 0)
+                        . ' | Total: ' . ($total_harga[$i] ?? 0),
+                    'created_at'      => now(),
+                    'updated_at'      => now(),
+                ];
+            }
+        }
+
+        if (!empty($logs)) {
+            StatusBarang::insert($logs);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Penjualan dibatalkan dan log cancel tersimpan.',
+        ]);
+    }
+
     public function get_penjualan()
     {
         $kasir = KasirOutlet::where('uuid_user', Auth::user()->uuid)->first();
@@ -424,7 +463,7 @@ class PenjualanController extends Controller
         // Ambil jasa (kalau ada)
         $jasa = null;
         if ($penjualan->uuid_jasa) {
-            $jasa = DB::table('jasas')->where('uuid', $penjualan->uuid_jasa)->first();
+            $jasa = DB::table('jasas')->whereIn('uuid', $penjualan->uuid_jasa)->sum('harga');
         }
 
         return response()->json([
@@ -442,9 +481,9 @@ class PenjualanController extends Controller
                         'subtotal' => $detail->total_harga,
                     ];
                 }),
-                'grandTotal' => $grandTotal + ($jasa ? $jasa->harga : 0),
+                'grandTotal' => $grandTotal + ($jasa ? $jasa : 0),
                 'totalItem'  => $totalItem,
-                'totalJasa'  => $jasa ? $jasa->harga : 0,
+                'totalJasa'  => $jasa ? $jasa : 0,
             ]
         ]);
     }

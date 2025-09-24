@@ -19,6 +19,10 @@ class Penjualan extends Model
         'created_by',
     ];
 
+    protected $casts = [
+        'uuid_jasa' => 'array', // otomatis cast ke array pas ambil/simpan
+    ];
+
     protected static function boot()
     {
         parent::boot();

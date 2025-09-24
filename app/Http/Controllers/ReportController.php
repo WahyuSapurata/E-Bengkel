@@ -384,9 +384,14 @@ class ReportController extends Controller
         }
 
         // 🔥 Tambahkan Pendapatan Jasa Service dari penjualan
-        $pendapatan_jasa = Penjualan::join('jasas', 'penjualans.uuid_jasa', '=', 'jasas.uuid')
+        $pendapatan_jasa = Penjualan::join('jasas', function ($join) {
+            $join->whereRaw('JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))');
+        })
             ->whereNotNull('penjualans.uuid_jasa')
-            ->whereRaw("STR_TO_DATE(penjualans.tanggal_transaksi, '%d-%m-%Y') BETWEEN STR_TO_DATE(?, '%d-%m-%Y') AND STR_TO_DATE(?, '%d-%m-%Y')", [$tanggal_awal, $tanggal_akhir])
+            ->whereRaw(
+                "STR_TO_DATE(penjualans.tanggal_transaksi, '%d-%m-%Y') BETWEEN STR_TO_DATE(?, '%d-%m-%Y') AND STR_TO_DATE(?, '%d-%m-%Y')",
+                [$tanggal_awal, $tanggal_akhir]
+            )
             ->sum('jasas.harga');
 
         if ($pendapatan_jasa > 0) {

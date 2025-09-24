@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuid');
             $table->uuid('uuid_outlet');
-            $table->uuid('uuid_jasa')->nullable();
+            $table->json('uuid_jasa')->nullable();
             $table->string('no_bukti');
             $table->string('tanggal_transaksi');
             $table->string('pembayaran');

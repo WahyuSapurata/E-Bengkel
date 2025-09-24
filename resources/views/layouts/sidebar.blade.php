@@ -264,6 +264,13 @@
                             <span class="nxl-mtext">Sumary Report</span>
                         </a>
                     </li>
+
+                    <li class="nxl-item nxl-hasmenu {{ $path[1] === 'vw-lap-transaksi' ? 'active' : '' }}">
+                        <a href="{{ route('outlet.vw-lap-transaksi') }}" class="nxl-link">
+                            <span class="nxl-micon"><i class="feather-book"></i></span>
+                            <span class="nxl-mtext">Laporan Transaksi</span>
+                        </a>
+                    </li>
                 </ul>
             @endif
             {{-- <div class="card text-center">

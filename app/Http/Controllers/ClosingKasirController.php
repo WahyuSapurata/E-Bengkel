@@ -51,8 +51,16 @@ class ClosingKasirController extends Controller
             $totalDetail = $p->detailPenjualans->sum('total_harga');
             $totalJasa = 0;
             if ($p->uuid_jasa) {
-                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
-                $totalJasa = $jasa ? $jasa->harga : 0;
+                // Decode JSON menjadi array
+                $uuidJasaArray = $p->uuid_jasa;
+
+                if (!empty($uuidJasaArray)) {
+                    // Ambil semua jasa yang UUID-nya ada di array
+                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
+
+                    // Jumlahkan harga semua jasa
+                    $totalJasa = $jasa->sum('harga');
+                }
             }
             return $totalDetail + $totalJasa;
         });
@@ -62,8 +70,16 @@ class ClosingKasirController extends Controller
             $totalDetail = $p->detailPenjualans->sum('total_harga');
             $totalJasa = 0;
             if ($p->uuid_jasa) {
-                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
-                $totalJasa = $jasa ? $jasa->harga : 0;
+                // Decode JSON menjadi array
+                $uuidJasaArray = $p->uuid_jasa;
+
+                if (!empty($uuidJasaArray)) {
+                    // Ambil semua jasa yang UUID-nya ada di array
+                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
+
+                    // Jumlahkan harga semua jasa
+                    $totalJasa = $jasa->sum('harga');
+                }
             }
             return $totalDetail + $totalJasa;
         });
@@ -72,8 +88,16 @@ class ClosingKasirController extends Controller
             $totalDetail = $p->detailPenjualans->sum('total_harga');
             $totalJasa = 0;
             if ($p->uuid_jasa) {
-                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
-                $totalJasa = $jasa ? $jasa->harga : 0;
+                // Decode JSON menjadi array
+                $uuidJasaArray = $p->uuid_jasa;
+
+                if (!empty($uuidJasaArray)) {
+                    // Ambil semua jasa yang UUID-nya ada di array
+                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
+
+                    // Jumlahkan harga semua jasa
+                    $totalJasa = $jasa->sum('harga');
+                }
             }
             return $totalDetail + $totalJasa;
         });
@@ -148,8 +172,16 @@ class ClosingKasirController extends Controller
             $totalDetail = $p->detailPenjualans->sum('total_harga');
             $totalJasa = 0;
             if ($p->uuid_jasa) {
-                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
-                $totalJasa = $jasa ? $jasa->harga : 0;
+                // Decode JSON menjadi array
+                $uuidJasaArray = $p->uuid_jasa;
+
+                if (!empty($uuidJasaArray)) {
+                    // Ambil semua jasa yang UUID-nya ada di array
+                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
+
+                    // Jumlahkan harga semua jasa
+                    $totalJasa = $jasa->sum('harga');
+                }
             }
             return $totalDetail + $totalJasa;
         });
@@ -158,8 +190,16 @@ class ClosingKasirController extends Controller
             $totalDetail = $p->detailPenjualans->sum('total_harga');
             $totalJasa = 0;
             if ($p->uuid_jasa) {
-                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
-                $totalJasa = $jasa ? $jasa->harga : 0;
+                // Decode JSON menjadi array
+                $uuidJasaArray = $p->uuid_jasa;
+
+                if (!empty($uuidJasaArray)) {
+                    // Ambil semua jasa yang UUID-nya ada di array
+                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
+
+                    // Jumlahkan harga semua jasa
+                    $totalJasa = $jasa->sum('harga');
+                }
             }
             return $totalDetail + $totalJasa;
         });
@@ -168,8 +208,16 @@ class ClosingKasirController extends Controller
             $totalDetail = $p->detailPenjualans->sum('total_harga');
             $totalJasa = 0;
             if ($p->uuid_jasa) {
-                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
-                $totalJasa = $jasa ? $jasa->harga : 0;
+                // Decode JSON menjadi array
+                $uuidJasaArray = $p->uuid_jasa;
+
+                if (!empty($uuidJasaArray)) {
+                    // Ambil semua jasa yang UUID-nya ada di array
+                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
+
+                    // Jumlahkan harga semua jasa
+                    $totalJasa = $jasa->sum('harga');
+                }
             }
             return $totalDetail + $totalJasa;
         });
@@ -180,8 +228,16 @@ class ClosingKasirController extends Controller
             $totalDetail = $p->detailPenjualans->sum('total_harga');
             $totalJasa = 0;
             if ($p->uuid_jasa) {
-                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
-                $totalJasa = $jasa ? $jasa->harga : 0;
+                // Decode JSON menjadi array
+                $uuidJasaArray = $p->uuid_jasa;
+
+                if (!empty($uuidJasaArray)) {
+                    // Ambil semua jasa yang UUID-nya ada di array
+                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
+
+                    // Jumlahkan harga semua jasa
+                    $totalJasa = $jasa->sum('harga');
+                }
             }
             return [
                 'jenis'      => $p->pembayaran,
@@ -258,8 +314,16 @@ class ClosingKasirController extends Controller
             $totalDetail = $p->detailPenjualans->sum('total_harga');
             $totalJasa = 0;
             if ($p->uuid_jasa) {
-                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
-                $totalJasa = $jasa ? $jasa->harga : 0;
+                // Decode JSON menjadi array
+                $uuidJasaArray = $p->uuid_jasa;
+
+                if (!empty($uuidJasaArray)) {
+                    // Ambil semua jasa yang UUID-nya ada di array
+                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
+
+                    // Jumlahkan harga semua jasa
+                    $totalJasa = $jasa->sum('harga');
+                }
             }
             return $totalDetail + $totalJasa;
         });
@@ -269,8 +333,16 @@ class ClosingKasirController extends Controller
             $totalDetail = $p->detailPenjualans->sum('total_harga');
             $totalJasa = 0;
             if ($p->uuid_jasa) {
-                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
-                $totalJasa = $jasa ? $jasa->harga : 0;
+                // Decode JSON menjadi array
+                $uuidJasaArray = $p->uuid_jasa;
+
+                if (!empty($uuidJasaArray)) {
+                    // Ambil semua jasa yang UUID-nya ada di array
+                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
+
+                    // Jumlahkan harga semua jasa
+                    $totalJasa = $jasa->sum('harga');
+                }
             }
             return $totalDetail + $totalJasa;
         });
@@ -279,8 +351,16 @@ class ClosingKasirController extends Controller
             $totalDetail = $p->detailPenjualans->sum('total_harga');
             $totalJasa = 0;
             if ($p->uuid_jasa) {
-                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
-                $totalJasa = $jasa ? $jasa->harga : 0;
+                // Decode JSON menjadi array
+                $uuidJasaArray = $p->uuid_jasa;
+
+                if (!empty($uuidJasaArray)) {
+                    // Ambil semua jasa yang UUID-nya ada di array
+                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
+
+                    // Jumlahkan harga semua jasa
+                    $totalJasa = $jasa->sum('harga');
+                }
             }
             return $totalDetail + $totalJasa;
         });
@@ -292,8 +372,16 @@ class ClosingKasirController extends Controller
             $totalDetail = $p->detailPenjualans->sum('total_harga');
             $totalJasa = 0;
             if ($p->uuid_jasa) {
-                $jasa = DB::table('jasas')->where('uuid', $p->uuid_jasa)->first();
-                $totalJasa = $jasa ? $jasa->harga : 0;
+                // Decode JSON menjadi array
+                $uuidJasaArray = $p->uuid_jasa;
+
+                if (!empty($uuidJasaArray)) {
+                    // Ambil semua jasa yang UUID-nya ada di array
+                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
+
+                    // Jumlahkan harga semua jasa
+                    $totalJasa = $jasa->sum('harga');
+                }
             }
             return [
                 'jenis'      => $p->pembayaran,

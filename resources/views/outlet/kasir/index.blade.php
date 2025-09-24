@@ -33,6 +33,7 @@
                         </div>
 
                         <h6 class="fw-bold">PRODUK TERPILIH</h6>
+                        <input type="hidden" name="uuid_jasa[]" id="uuid-jasa-hidden">
 
                         <!-- Scroll area produk -->
                         <div class="produk-terpilih overflow-auto" style="max-height: 350px;">
@@ -137,10 +138,9 @@
                                 </label>
                             </div>
 
-                            <select class="form-select d-none" id="select-jasa" name="uuid_jasa[]"
-                                aria-label="Default select example">
-                                <option selected disabled>Pilih jasa</option>
-                            </select>
+                            <div id="list-jasa" class="d-none list-jasa-scroll">
+                                <!-- List jasa akan dimasukkan di sini -->
+                            </div>
                         </div>
 
                         <!-- Hidden input untuk menyimpan metode pembayaran (default: Tunai) -->
@@ -153,7 +153,7 @@
                             data-metode="Transfer Bank">🏦
                             Transfer Bank</button>
                         <select class="form-select d-none mt-2" id="select-pembayaran" name="nama_bank"
-                            aria-label="Default select example">
+                            aria-label="Default select example" placeholder="Pilih bank">
                             <option selected disabled>Pilih bank</option>
                             @foreach ($aset as $cp)
                                 <option value="{{ $cp->nama }}">{{ $cp->nama }}</option>
@@ -330,8 +330,14 @@
 
             let checkJasa = document.getElementById("check-jasa");
             let selectJasa = document.getElementById("select-jasa");
+            const listJasa = document.getElementById("list-jasa");
 
+            let selectedJasa = []; // array untuk menyimpan jasa yang dipilih
             let totalJasa = 0;
+
+            let form = document.getElementById("form-kasir");
+
+            let formDataCancel = new FormData(form);
 
             // ----------------
             // F10: toggle fullscreen
@@ -544,46 +550,96 @@
             // toggle tampil/hidden select jasa
             checkJasa.addEventListener("change", function() {
                 if (this.checked) {
-                    selectJasa.classList.remove("d-none");
-                    loadJasa(); // ambil data jasa dari server
+                    listJasa.classList.remove("d-none");
+                    loadJasa();
                 } else {
-                    selectJasa.classList.add("d-none");
-                    selectJasa.innerHTML = `<option selected disabled>Pilih jasa</option>`;
-                    totalJasa = 0;
-                    grandTotalEl.innerText = "Rp 0";
+                    listJasa.classList.add("d-none");
+                    listJasa.innerHTML = "";
+                    selectedJasa = [];
+                    updateTotal();
                 }
             });
 
-            // ketika jasa dipilih → masukkan ke keranjang
-            selectJasa.addEventListener("change", function() {
-                let selectedOption = this.options[this.selectedIndex];
-                let uuid = selectedOption.value;
-                let nama = selectedOption.text;
-                let harga = parseInt(selectedOption.dataset.harga);
-
-                totalJasa = harga; // update global
-
-                hitungTotal(); // ✅ panggil ulang supaya grandTotal terupdate
-            });
-
-            // fungsi ambil jasa dari backend
+            // load jasa dari backend
             function loadJasa() {
                 fetch("/kasir/get-jasa")
                     .then(res => res.json())
                     .then(data => {
-                        let selectJasa = document.getElementById("select-jasa");
-                        selectJasa.innerHTML = `<option selected disabled>Pilih jasa</option>`;
+                        listJasa.innerHTML = "";
+                        selectedJasa = []; // reset
+
                         data.forEach(jasa => {
-                            let option = document.createElement("option");
-                            option.value = jasa.uuid;
-                            option.text = jasa.nama
-                            option.dataset.harga = jasa.harga; // ✅ simpan harga di data attribute
-                            selectJasa.appendChild(option);
+                            const div = document.createElement("div");
+                            div.classList.add("d-flex", "align-items-center", "mb-2");
+
+                            div.innerHTML = `
+                                <span class="me-2" style="min-width:150px">${jasa.nama}</span>
+                                <button type="button"
+                                    class="btn btn-sm btn-success me-1 add-jasa"
+                                    data-uuid="${jasa.uuid}"
+                                    data-harga="${jasa.harga}">
+                                    +
+                                </button>
+                                <button type="button"
+                                    class="btn btn-sm btn-danger remove-jasa"
+                                    data-uuid="${jasa.uuid}"
+                                    data-harga="${jasa.harga}">
+                                    -
+                                </button>
+                            `;
+
+                            listJasa.appendChild(div);
+                        });
+
+                        // tombol tambah jasa
+                        document.querySelectorAll(".add-jasa").forEach(btn => {
+                            btn.addEventListener("click", function() {
+                                const uuid = this.dataset.uuid;
+                                const harga = parseInt(this.dataset.harga);
+
+                                selectedJasa.push({
+                                    uuid,
+                                    harga
+                                });
+                                updateTotal();
+                            });
+                        });
+
+                        // tombol kurang jasa
+                        document.querySelectorAll(".remove-jasa").forEach(btn => {
+                            btn.addEventListener("click", function() {
+                                const uuid = this.dataset.uuid;
+
+                                // hapus hanya 1 kemunculan pertama dari UUID yang sama
+                                const index = selectedJasa.findIndex(j => j.uuid === uuid);
+                                if (index !== -1) {
+                                    selectedJasa.splice(index, 1);
+                                }
+
+                                updateTotal();
+                            });
                         });
                     })
-                    .catch(err => {
-                        console.error("❌ Error load jasa:", err);
-                    });
+                    .catch(err => console.error("❌ Error load jasa:", err));
+            }
+
+            function updateTotal() {
+                const total = selectedJasa.reduce((sum, j) => sum + j.harga, 0);
+                totalJasa = total;
+                hitungTotal();
+
+                // hapus semua input hidden lama
+                document.querySelectorAll("input[name='uuid_jasa[]']").forEach(el => el.remove());
+
+                // buat ulang hidden input sesuai isi selectedJasa
+                const form = document.querySelector("form");
+                selectedJasa.forEach(j => {
+                    let input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = "uuid_jasa[]";
+                    input.value = j.uuid;
+                    form.appendChild(input);
+                });
             }
 
             const buttons = document.querySelectorAll(".pay-btn");
@@ -993,7 +1049,7 @@
                 });
 
                 // ✅ tambahkan jasa
-                if (totalJasa > 0) {
+                if (totalJasa) {
                     grandTotal += totalJasa;
                 }
 
@@ -1004,13 +1060,6 @@
                     itemTotalEl.innerText = item + " item";
                 }
             }
-
-            document.addEventListener("keydown", function(event) {
-                if (event.key === "F9") {
-                    event.preventDefault();
-                    resetKasir();
-                }
-            });
 
             // ---- tombol F8 submit ----
             // document.addEventListener("keydown", function(event) {
@@ -1128,7 +1177,6 @@
                     event.preventDefault();
                     event.stopPropagation();
 
-                    let form = document.getElementById("form-kasir");
                     if (!form) return;
 
                     // ambil grand total dari grandTotalEl
@@ -1206,6 +1254,10 @@
                             formData.append("uuid_produk[]", uuid);
                             formData.append("qty[]", qty);
                             formData.append("total_harga[]", jumlah);
+
+                            formDataCancel.append("uuid_produk[]", uuid);
+                            formDataCancel.append("qty[]", qty);
+                            formDataCancel.append("total_harga[]", jumlah);
                         });
 
                         // tambahkan info pembayaran
@@ -1277,6 +1329,7 @@
                                         icon: "error",
                                         confirmButtonText: "OK"
                                     });
+                                    resetKasir();
                                 }
                             })
                             .catch(err => {
@@ -1432,9 +1485,28 @@
                     produkTerpilihDiv.innerHTML = "";
                 }
 
+
                 // reset scan input
                 // scanInput.value = "";
-                scanInput.focus();
+                // scanInput.focus();
+
+                // ✅ reset jasa
+                selectedJasa = []; // kosongkan array jasa
+                totalJasa = 0; // reset total jasa
+                const listJasa = document.getElementById("list-jasa");
+                if (listJasa) {
+                    listJasa.innerHTML = ""; // kosongkan tampilan jasa
+                    listJasa.classList.add("d-none"); // sembunyikan kembali
+                }
+
+                // hapus semua hidden input uuid_jasa[]
+                document.querySelectorAll("input[name='uuid_jasa[]']").forEach(el => el.remove());
+
+                // kalau ada checkbox jasa, reset centangnya
+                const checkJasa = document.getElementById("check-jasa");
+                if (checkJasa) {
+                    checkJasa.checked = false;
+                }
             }
 
             // function kurangiStok(kode, qty = 1) {
@@ -1771,6 +1843,74 @@
                 }
             });
 
+            document.addEventListener("keydown", function(event) {
+                if (event.key === "F9") {
+                    event.preventDefault();
+
+                    const tbody = cartTable.querySelector("tbody");
+                    const rows = tbody.querySelectorAll("tr");
+
+                    if (rows.length === 0) {
+                        return; // stop eksekusi
+                    }
+
+                    let formDataCancel = new FormData();
+
+                    rows.forEach(row => {
+                        let uuid = row.getAttribute("data-uuid");
+                        let qty = parseInt(row.querySelector(".qty")?.innerText) || 0;
+                        let jumlah = row.querySelector(".jumlah")?.innerText || "0";
+                        jumlah = jumlah.replace(/[^0-9]/g, "");
+
+                        formDataCancel.append("uuid_produk[]", uuid);
+                        formDataCancel.append("qty[]", qty);
+                        formDataCancel.append("total_harga[]", jumlah);
+                    });
+
+                    fetch("/kasir/cancel-pejualan", {
+                            method: "POST",
+                            body: formDataCancel,
+                            headers: {
+                                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')
+                                    .getAttribute("content")
+                            }
+                        })
+                        .then(async res => {
+                            if (!res.ok) {
+                                throw new Error("HTTP status " + res.status);
+                            }
+                            return await res.json();
+                        })
+                        .then(res => {
+                            if (res.success) {
+                                Swal.fire({
+                                    title: "Berhasil",
+                                    text: res.message,
+                                    icon: "success",
+                                    confirmButtonText: "OK"
+                                });
+                                resetKasir();
+                            } else {
+                                Swal.fire({
+                                    title: "Gagal",
+                                    text: res.message || "Cancel penjualan gagal",
+                                    icon: "error",
+                                    confirmButtonText: "OK"
+                                });
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Fetch error:", err); // debug di console
+                            Swal.fire({
+                                title: "Error!",
+                                text: "Terjadi kesalahan server: " + err.message,
+                                icon: "error",
+                                confirmButtonText: "OK"
+                            });
+                        });
+
+                }
+            });
 
             document.getElementById("btn-closing").addEventListener("click", function(e) {
                 e.preventDefault();
