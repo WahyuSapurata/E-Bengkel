@@ -135,7 +135,7 @@ class Dashboard extends BaseController
 
         $data = $query->get();
 
-        $log = StatusBarang::all();
+        $log = StatusBarang::latest()->get();
 
         return view('dashboard.superadmin', compact('module', 'outlet', 'produk', 'costumer', 'laba_bersih', 'data', 'log'));
     }

@@ -77,6 +77,10 @@
                             </li>
                             @endcanView
 
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'paket-hemat' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.paket-hemat') }}">Paket Hemat</a>
+                            </li>
+
                             @canView('Customer')
                             <li class="nxl-item {{ isset($path[2]) && $path[2] === 'costumer' ? 'active' : '' }}">
                                 <a class="nxl-link" href="{{ route('superadmin.costumer') }}">Customer</a>
@@ -169,6 +173,12 @@
                                 <a class="nxl-link" href="{{ route('superadmin.vw-jurnal-umum') }}">Jurnal Umum</a>
                             </li>
                             @endcanView
+
+                            <li
+                                class="nxl-item {{ isset($path[2]) && $path[2] === 'vw-lap-transaksi' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.vw-lap-transaksi') }}">Laporan
+                                    Transaksi</a>
+                            </li>
 
                             @canView('Buku Besar')
                             <li

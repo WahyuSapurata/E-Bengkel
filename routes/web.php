@@ -113,6 +113,15 @@ Route::group([
         Route::get('/karyawan-edit/{params}', [App\Http\Controllers\KaryawanController::class, 'edit'])->name('karyawan-edit');
         Route::put('/karyawan-update/{params}', [App\Http\Controllers\KaryawanController::class, 'update'])->name('karyawan-update');
         Route::delete('/karyawan-delete/{params}', [App\Http\Controllers\KaryawanController::class, 'delete'])->name('karyawan-delete');
+
+        Route::get('/paket-hemat', [App\Http\Controllers\PaketHematController::class, 'index'])->name('paket-hemat');
+        Route::get('/paket-get-produk-by-suplayer/{params}', [App\Http\Controllers\PaketHematController::class, 'getProdukBySuplayer'])->name('paket-get-produk-by-suplayer');
+        Route::get('/paket-get-produk-by-paket/{params}', [App\Http\Controllers\PaketHematController::class, 'getProdukByPaket'])->name('paket-get-produk-by-paket');
+        Route::get('/paket-get', [App\Http\Controllers\PaketHematController::class, 'get'])->name('paket-get');
+        Route::post('/paket-store', [App\Http\Controllers\PaketHematController::class, 'store'])->name('paket-store');
+        Route::get('/paket-edit/{params}', [App\Http\Controllers\PaketHematController::class, 'edit'])->name('paket-edit');
+        Route::post('/paket-update/{params}', [App\Http\Controllers\PaketHematController::class, 'update'])->name('paket-update');
+        Route::delete('/paket-delete/{params}', [App\Http\Controllers\PaketHematController::class, 'delete'])->name('paket-delete');
     });
 
     Route::prefix('transaksi')->group(function () {
@@ -189,6 +198,9 @@ Route::group([
 
         Route::get('/vw-laba-rugi', [App\Http\Controllers\ReportController::class, 'vw_laba_rugi'])->name('vw-laba-rugi');
         Route::get('/get-laba-rugi', [App\Http\Controllers\ReportController::class, 'get_laba_rugi'])->name('get-laba-rugi');
+
+        Route::get('/vw-lap-transaksi', [App\Http\Controllers\LapTransakasi::class, 'index'])->name('vw-lap-transaksi');
+        Route::get('/get-lap-transaksi', [App\Http\Controllers\LapTransakasi::class, 'get'])->name('get-lap-transaksi');
     });
 
     Route::prefix('tools')->group(function () {
