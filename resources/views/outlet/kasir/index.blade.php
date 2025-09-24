@@ -137,7 +137,7 @@
                                 </label>
                             </div>
 
-                            <select class="form-select d-none" id="select-jasa" name="uuid_jasa"
+                            <select class="form-select d-none" id="select-jasa" name="uuid_jasa[]"
                                 aria-label="Default select example">
                                 <option selected disabled>Pilih jasa</option>
                             </select>
@@ -1159,14 +1159,14 @@
                             // event listener format Rupiah saat mengetik
                             input.addEventListener('input', (e) => {
                                 let value = e.target.value.replace(/[^0-9]/g,
-                                ""); // hapus semua selain angka
+                                    ""); // hapus semua selain angka
                                 if (value === "") {
                                     e.target.value = "";
                                     return;
                                 }
                                 // format ke Rp
                                 e.target.value = parseInt(value).toLocaleString(
-                                'id-ID');
+                                    'id-ID');
                             });
                         },
                         preConfirm: () => {
@@ -1263,8 +1263,7 @@
                                                 totalItem: Number(res.data
                                                     .totalItem),
                                                 grandTotal: Number(res.data
-                                                    .grandTotal) + Number(
-                                                    totalJasa)
+                                                    .grandTotal)
                                             };
                                             cetakStruk(strukData);
                                         }
@@ -1682,8 +1681,7 @@
                                                     totalItem: Number(res.data
                                                         .totalItem),
                                                     grandTotal: Number(res.data
-                                                            .grandTotal) +
-                                                        Number(totalJasa)
+                                                        .grandTotal)
                                                 };
 
                                                 cetakStruk(strukData);
