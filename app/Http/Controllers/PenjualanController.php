@@ -458,6 +458,7 @@ class PenjualanController extends Controller
         $this->printStruk($data);
 
         return response()->json([
+            'data' => $data,
             'status' => 'success',
             'message' => 'Struk berhasil dicetak'
         ]);
