@@ -43,64 +43,34 @@ class ClosingKasirController extends Controller
         $penjualans = Penjualan::where('uuid_outlet', $kasir->uuid_outlet)
             ->where('created_by', Auth::user()->nama)
             ->whereNotIn('tanggal_transaksi', $closingDates)
-            ->with('detailPenjualans') // ambil detail
+            ->with(['detailPenjualans', 'detailPenjualanPakets']) // ⬅️ tambahkan relasi paket
             ->get();
 
-        // Total penjualan dihitung dari detail + jasa
-        $totalPenjualan = $penjualans->sum(function ($p) {
-            $totalDetail = $p->detailPenjualans->sum('total_harga');
+        // Fungsi bantu hitung total per penjualan (produk + paket + jasa)
+        $hitungTotal = function ($p) {
+            $totalProduk = $p->detailPenjualans->sum('total_harga');
+            $totalPaket  = $p->detailPenjualanPakets->sum('total_harga');
+
             $totalJasa = 0;
             if ($p->uuid_jasa) {
-                // Decode JSON menjadi array
-                $uuidJasaArray = $p->uuid_jasa;
-
+                $uuidJasaArray = $p->uuid_jasa; // sudah cast ke array di model
                 if (!empty($uuidJasaArray)) {
-                    // Ambil semua jasa yang UUID-nya ada di array
                     $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
-
-                    // Jumlahkan harga semua jasa
                     $totalJasa = $jasa->sum('harga');
                 }
             }
-            return $totalDetail + $totalJasa;
-        });
 
-        // Total cash & transfer termasuk jasa
-        $totalCash = $penjualans->where('pembayaran', 'Tunai')->sum(function ($p) {
-            $totalDetail = $p->detailPenjualans->sum('total_harga');
-            $totalJasa = 0;
-            if ($p->uuid_jasa) {
-                // Decode JSON menjadi array
-                $uuidJasaArray = $p->uuid_jasa;
+            return $totalProduk + $totalPaket + $totalJasa;
+        };
 
-                if (!empty($uuidJasaArray)) {
-                    // Ambil semua jasa yang UUID-nya ada di array
-                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
+        // Total penjualan
+        $totalPenjualan = $penjualans->sum(fn($p) => $hitungTotal($p));
 
-                    // Jumlahkan harga semua jasa
-                    $totalJasa = $jasa->sum('harga');
-                }
-            }
-            return $totalDetail + $totalJasa;
-        });
+        // Total cash
+        $totalCash = $penjualans->where('pembayaran', 'Tunai')->sum(fn($p) => $hitungTotal($p));
 
-        $totalTransfer = $penjualans->where('pembayaran', 'Transfer Bank')->sum(function ($p) {
-            $totalDetail = $p->detailPenjualans->sum('total_harga');
-            $totalJasa = 0;
-            if ($p->uuid_jasa) {
-                // Decode JSON menjadi array
-                $uuidJasaArray = $p->uuid_jasa;
-
-                if (!empty($uuidJasaArray)) {
-                    // Ambil semua jasa yang UUID-nya ada di array
-                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
-
-                    // Jumlahkan harga semua jasa
-                    $totalJasa = $jasa->sum('harga');
-                }
-            }
-            return $totalDetail + $totalJasa;
-        });
+        // Total transfer
+        $totalTransfer = $penjualans->where('pembayaran', 'Transfer Bank')->sum(fn($p) => $hitungTotal($p));
 
         // Hitung selisih antara sistem vs fisik
         $selisih = $request->total_fisik - $totalCash;
@@ -127,7 +97,6 @@ class ClosingKasirController extends Controller
         $kas       = Coa::where('nama', 'Kas')->firstOrFail();
         $no_bukti  = 'CLS-' . strtoupper(Str::random(6));
 
-        // Setor seluruh cash dari kas outlet ke kas pusat
         if ($totalCash > 0) {
             JurnalHelper::create(
                 $tanggal,
@@ -157,106 +126,70 @@ class ClosingKasirController extends Controller
         $tanggal = Carbon::now()->format('d-m-Y');
 
         $closingDates = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid_user)
-            ->where('uuid', $params)
             ->pluck('tanggal_closing')
             ->toArray();
 
         $penjualans = Penjualan::where('uuid_outlet', $kasir->uuid_outlet)
             ->where('created_by', Auth::user()->nama)
-            ->whereIn('tanggal_transaksi', $closingDates)
-            ->with('detailPenjualans')
+            ->whereNotIn('tanggal_transaksi', $closingDates) // ⬅️ ambil yang belum di-closing
+            ->with(['detailPenjualans', 'detailPenjualanPakets'])
             ->get();
 
-        // Hitung total penjualan termasuk jasa
-        $totalPenjualan = $penjualans->sum(function ($p) {
-            $totalDetail = $p->detailPenjualans->sum('total_harga');
+        // 🔹 helper untuk hitung total tiap penjualan
+        $hitungTotal = function ($p) {
+            $totalProduk = $p->detailPenjualans->sum('total_harga');
+            $totalPaket  = $p->detailPenjualanPakets->sum('total_harga');
+
             $totalJasa = 0;
             if ($p->uuid_jasa) {
-                // Decode JSON menjadi array
-                $uuidJasaArray = $p->uuid_jasa;
-
+                $uuidJasaArray = $p->uuid_jasa; // sudah cast array di model
                 if (!empty($uuidJasaArray)) {
-                    // Ambil semua jasa yang UUID-nya ada di array
                     $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
-
-                    // Jumlahkan harga semua jasa
                     $totalJasa = $jasa->sum('harga');
                 }
             }
-            return $totalDetail + $totalJasa;
-        });
 
-        $totalCash = $penjualans->where('pembayaran', 'Tunai')->sum(function ($p) {
-            $totalDetail = $p->detailPenjualans->sum('total_harga');
-            $totalJasa = 0;
-            if ($p->uuid_jasa) {
-                // Decode JSON menjadi array
-                $uuidJasaArray = $p->uuid_jasa;
+            return $totalProduk + $totalPaket + $totalJasa;
+        };
 
-                if (!empty($uuidJasaArray)) {
-                    // Ambil semua jasa yang UUID-nya ada di array
-                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
+        // 🔹 Total penjualan
+        $totalPenjualan = $penjualans->sum(fn($p) => $hitungTotal($p));
 
-                    // Jumlahkan harga semua jasa
-                    $totalJasa = $jasa->sum('harga');
-                }
-            }
-            return $totalDetail + $totalJasa;
-        });
+        // 🔹 Total tunai
+        $totalCash = $penjualans
+            ->where('pembayaran', 'Tunai')
+            ->sum(fn($p) => $hitungTotal($p));
 
-        $totalTransfer = $penjualans->where('pembayaran', 'Transfer Bank')->sum(function ($p) {
-            $totalDetail = $p->detailPenjualans->sum('total_harga');
-            $totalJasa = 0;
-            if ($p->uuid_jasa) {
-                // Decode JSON menjadi array
-                $uuidJasaArray = $p->uuid_jasa;
-
-                if (!empty($uuidJasaArray)) {
-                    // Ambil semua jasa yang UUID-nya ada di array
-                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
-
-                    // Jumlahkan harga semua jasa
-                    $totalJasa = $jasa->sum('harga');
-                }
-            }
-            return $totalDetail + $totalJasa;
-        });
+        // 🔹 Total transfer
+        $totalTransfer = $penjualans
+            ->where('pembayaran', 'Transfer Bank')
+            ->sum(fn($p) => $hitungTotal($p));
 
         $totalNonTunai = $totalTransfer;
 
-        $detailNonTunai = $penjualans->where('pembayaran', '!=', 'Tunai')->map(function ($p) {
-            $totalDetail = $p->detailPenjualans->sum('total_harga');
-            $totalJasa = 0;
-            if ($p->uuid_jasa) {
-                // Decode JSON menjadi array
-                $uuidJasaArray = $p->uuid_jasa;
-
-                if (!empty($uuidJasaArray)) {
-                    // Ambil semua jasa yang UUID-nya ada di array
-                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
-
-                    // Jumlahkan harga semua jasa
-                    $totalJasa = $jasa->sum('harga');
-                }
-            }
-            return [
-                'jenis'      => $p->pembayaran,
-                'no_invoice' => $p->no_bukti,
-                'nominal'    => $totalDetail + $totalJasa,
-            ];
-        })->values();
+        // 🔹 Detail non-tunai
+        $detailNonTunai = $penjualans
+            ->where('pembayaran', '!=', 'Tunai')
+            ->map(function ($p) use ($hitungTotal) {
+                return [
+                    'jenis'      => $p->pembayaran,
+                    'no_invoice' => $p->no_bukti,
+                    'nominal'    => $hitungTotal($p),
+                ];
+            })
+            ->values();
 
         $summaryReport = [
-            'tanggal'            => $tanggal,
-            'kasir'              => Auth::user()->nama,
-            'saldo_awal'         => 0,
+            'tanggal'             => $tanggal,
+            'kasir'               => Auth::user()->nama,
+            'saldo_awal'          => 0,
             'penjualan_non_tunai' => $totalNonTunai,
-            'penjualan_tunai'    => $totalCash,
-            'total_penjualan'    => $totalPenjualan,
-            'detail_non_tunai'   => $detailNonTunai,
-            'total_non_tunai'    => $totalNonTunai,
-            'setoran_tunai'      => $totalCash,
-            'batal'              => 0
+            'penjualan_tunai'     => $totalCash,
+            'total_penjualan'     => $totalPenjualan,
+            'detail_non_tunai'    => $detailNonTunai,
+            'total_non_tunai'     => $totalNonTunai,
+            'setoran_tunai'       => $totalCash,
+            'batal'               => 0
         ];
 
         $pdf = Pdf::loadView('kasir.sumaryreport.index', [
@@ -291,116 +224,74 @@ class ClosingKasirController extends Controller
 
     public function history_summary($params)
     {
-        $outlet = Outlet::where('uuid_user', Auth::user()->uuid)->first();
+        $user = Auth::user();
 
-        $kasir = KasirOutlet::where('uuid_outlet', Auth::user()->uuid)->first();
-        $namaKasir = User::where('uuid', $kasir->uuid_user)->first();
+        // Ambil outlet & kasir sesuai user login
+        $outlet = Outlet::where('uuid_user', $user->uuid)->firstOrFail();
+        $kasir  = KasirOutlet::where('uuid_outlet', $user->uuid)->firstOrFail();
+        $namaKasir = User::where('uuid', $kasir->uuid_user)->firstOrFail();
 
         $tanggal = Carbon::now()->format('d-m-Y');
 
-        $closingDates = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid_user)
+        // Ambil closing sesuai $params
+        $closing = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid_user)
             ->where('uuid', $params)
-            ->pluck('tanggal_closing')
-            ->toArray();
+            ->firstOrFail();
 
-        $penjualans = Penjualan::where('uuid_outlet', Auth::user()->uuid)
+        $closingDates = [$closing->tanggal_closing];
+
+        // Ambil penjualan sesuai closing (produk + paket)
+        $penjualans = Penjualan::where('uuid_outlet', $outlet->uuid) // ✅ pakai outlet yang diambil di atas
             ->where('created_by', $namaKasir->nama)
             ->whereIn('tanggal_transaksi', $closingDates)
-            ->with('detailPenjualans')
+            ->with(['detailPenjualans', 'detailPenjualanPakets'])
             ->get();
 
-        // Total penjualan termasuk jasa
-        $totalPenjualan = $penjualans->sum(function ($p) {
-            $totalDetail = $p->detailPenjualans->sum('total_harga');
+        // Helper hitung total penjualan (produk + paket + jasa)
+        $hitungTotal = function ($p) {
+            $totalProduk = $p->detailPenjualans->sum('total_harga');
+            $totalPaket  = $p->detailPenjualanPakets->sum('total_harga');
+
             $totalJasa = 0;
             if ($p->uuid_jasa) {
-                // Decode JSON menjadi array
-                $uuidJasaArray = $p->uuid_jasa;
-
+                $uuidJasaArray = json_decode($p->uuid_jasa, true);
                 if (!empty($uuidJasaArray)) {
-                    // Ambil semua jasa yang UUID-nya ada di array
                     $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
-
-                    // Jumlahkan harga semua jasa
                     $totalJasa = $jasa->sum('harga');
                 }
             }
-            return $totalDetail + $totalJasa;
-        });
 
-        // Total cash & transfer termasuk jasa
-        $totalCash = $penjualans->where('pembayaran', 'Tunai')->sum(function ($p) {
-            $totalDetail = $p->detailPenjualans->sum('total_harga');
-            $totalJasa = 0;
-            if ($p->uuid_jasa) {
-                // Decode JSON menjadi array
-                $uuidJasaArray = $p->uuid_jasa;
+            return $totalProduk + $totalPaket + $totalJasa;
+        };
 
-                if (!empty($uuidJasaArray)) {
-                    // Ambil semua jasa yang UUID-nya ada di array
-                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
+        // Total penjualan
+        $totalPenjualan = $penjualans->sum($hitungTotal);
 
-                    // Jumlahkan harga semua jasa
-                    $totalJasa = $jasa->sum('harga');
-                }
-            }
-            return $totalDetail + $totalJasa;
-        });
+        // Total per metode pembayaran
+        $totalCash     = $penjualans->where('pembayaran', 'Tunai')->sum($hitungTotal);
+        $totalTransfer = $penjualans->where('pembayaran', 'Transfer Bank')->sum($hitungTotal);
 
-        $totalTransfer = $penjualans->where('pembayaran', 'Transfer Bank')->sum(function ($p) {
-            $totalDetail = $p->detailPenjualans->sum('total_harga');
-            $totalJasa = 0;
-            if ($p->uuid_jasa) {
-                // Decode JSON menjadi array
-                $uuidJasaArray = $p->uuid_jasa;
-
-                if (!empty($uuidJasaArray)) {
-                    // Ambil semua jasa yang UUID-nya ada di array
-                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
-
-                    // Jumlahkan harga semua jasa
-                    $totalJasa = $jasa->sum('harga');
-                }
-            }
-            return $totalDetail + $totalJasa;
-        });
-
-        $totalNonTunai = $totalTransfer;
-
-        // summary detail non-tunai termasuk jasa
-        $detailNonTunai = $penjualans->where('pembayaran', '!=', 'Tunai')->map(function ($p) {
-            $totalDetail = $p->detailPenjualans->sum('total_harga');
-            $totalJasa = 0;
-            if ($p->uuid_jasa) {
-                // Decode JSON menjadi array
-                $uuidJasaArray = $p->uuid_jasa;
-
-                if (!empty($uuidJasaArray)) {
-                    // Ambil semua jasa yang UUID-nya ada di array
-                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
-
-                    // Jumlahkan harga semua jasa
-                    $totalJasa = $jasa->sum('harga');
-                }
-            }
+        // Detail non-tunai
+        $detailNonTunai = $penjualans->where('pembayaran', '!=', 'Tunai')->map(function ($p) use ($hitungTotal) {
             return [
                 'jenis'      => $p->pembayaran,
                 'no_invoice' => $p->no_bukti,
-                'nominal'    => $totalDetail + $totalJasa,
+                'nominal'    => $hitungTotal($p),
             ];
         })->values();
 
-        $saldoAwal = 0; // kalau ada tabel saldo awal, ambil dari situ
+        $saldoAwal = 0; // kalau ada tabel saldo awal, bisa ambil dari situ
 
+        // Summary report
         $summaryReport = [
             'tanggal'             => $tanggal,
-            'kasir'               => Auth::user()->nama,
+            'kasir'               => $namaKasir->nama,
             'saldo_awal'          => $saldoAwal,
-            'penjualan_non_tunai' => $totalNonTunai,
+            'penjualan_non_tunai' => $totalTransfer,
             'penjualan_tunai'     => $totalCash,
             'total_penjualan'     => $totalPenjualan + $saldoAwal,
             'detail_non_tunai'    => $detailNonTunai,
-            'total_non_tunai'     => $totalNonTunai,
+            'total_non_tunai'     => $totalTransfer,
             'setoran_tunai'       => $totalCash,
             'batal'               => 0,
         ];
