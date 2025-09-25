@@ -294,6 +294,9 @@ Route::group([
     Route::get('/sumary-report/{params}', [App\Http\Controllers\ClosingKasirController::class, 'index'])->name('sumary-report');
 
     Route::post('/cancel-pejualan', [App\Http\Controllers\PenjualanController::class, 'cancel_penjualan'])->name('cancel-pejualan');
+
+    Route::get('/get-paket', [App\Http\Controllers\PenjualanController::class, 'getPaket'])->name('get-paket');
+    Route::get('/detail-paket/{params}', [App\Http\Controllers\PenjualanController::class, 'detailPaket'])->name('detail-paket');
 });
 
 Route::get('/logout', [App\Http\Controllers\Auth::class, 'logout'])->name('logout');

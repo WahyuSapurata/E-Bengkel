@@ -115,8 +115,10 @@
                             Simpan</button>
                         <button type="button" id="btn-f9" class="btn btn-outline-danger btn-sm shortcut-btn">F9
                             Batal</button>
-                        <button type="button" id="btn-f10" class="btn btn-outline-danger btn-sm shortcut-btn">F10
+                        <button type="button" id="btn-f10" class="btn btn-outline-info btn-sm shortcut-btn">F10
                             Fullscreen</button>
+                        <button type="button" id="btn-f11" class="btn btn-outline-success btn-sm shortcut-btn">F11
+                            Paket</button>
                     </div>
                 </div>
 
@@ -280,7 +282,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="CetakUlangModalLabel">List Produk</h1>
+                    <h1 class="modal-title fs-5" id="CetakUlangModalLabel">List Transaksi</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -290,6 +292,36 @@
                                 <thead class="table-danger sticky-top">
                                     <tr>
                                         <th>No Bukti</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="paketModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="paketModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="paketModalLabel">List Paket</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="flex-grow-1 overflow-auto">
+                        <div class="table-wrapper mb-2">
+                            <table class="table table-bordered table-striped table-sm mb-0" id="paketTableModal">
+                                <thead class="table-danger sticky-top">
+                                    <tr>
+                                        <th>Nama Paket</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -322,6 +354,8 @@
             const searchSearch = document.getElementById("searchInputModal");
 
             const modalCetakUlang = document.getElementById("CetakUlangModal");
+
+            const modalPaket = document.getElementById("paketModal");
 
             // variabel penting
             const cartTable = document.getElementById("cartTable");
@@ -405,6 +439,19 @@
                     }
                 }
             });
+
+            // document.addEventListener("keydown", (e) => {
+            //     if (e.key === "F11") {
+            //         e.preventDefault();
+            //         // const modal = bootstrap.Modal.getOrCreateInstance(modalPaket);
+            //         // if (modalPaket.classList.contains("show")) {
+            //         //     modal.hide();
+            //         // } else {
+            //         loadPaket();
+            //         // modal.show();
+            //         // }
+            //     }
+            // });
 
             // ----------------
             // Fokus otomatis
@@ -570,22 +617,28 @@
 
                         data.forEach(jasa => {
                             const div = document.createElement("div");
-                            div.classList.add("d-flex", "align-items-center", "mb-2");
+                            div.classList.add("d-flex", "align-items-center", "justify-content-between",
+                                "mb-2");
 
                             div.innerHTML = `
-                                <span class="me-2" style="min-width:150px">${jasa.nama}</span>
-                                <button type="button"
-                                    class="btn btn-sm btn-success me-1 add-jasa"
+                                <span class="me-2" style="min-width:100px; width: 150px;">${jasa.nama}</span>
+                                <div class="">
+                                    <button type="button"
+                                    class="btn btn-sm btn-success me-2 add-jasa"
                                     data-uuid="${jasa.uuid}"
                                     data-harga="${jasa.harga}">
                                     +
-                                </button>
-                                <button type="button"
-                                    class="btn btn-sm btn-danger remove-jasa"
-                                    data-uuid="${jasa.uuid}"
-                                    data-harga="${jasa.harga}">
-                                    -
-                                </button>
+                                    </button>
+                                    <button type="button"
+                                        class="btn btn-sm btn-danger me-2 remove-jasa"
+                                        data-uuid="${jasa.uuid}"
+                                        data-harga="${jasa.harga}">
+                                        -
+                                    </button>
+                                    <div class="btn btn-sm btn-info jumlah-jasa" data-uuid="${jasa.uuid}">
+                                        = 0
+                                    </div>
+                                </div>
                             `;
 
                             listJasa.appendChild(div);
@@ -601,6 +654,8 @@
                                     uuid,
                                     harga
                                 });
+
+                                updateJumlah(uuid); // update tampilan jumlah
                                 updateTotal();
                             });
                         });
@@ -616,11 +671,20 @@
                                     selectedJasa.splice(index, 1);
                                 }
 
+                                updateJumlah(uuid); // update tampilan jumlah
                                 updateTotal();
                             });
                         });
                     })
                     .catch(err => console.error("❌ Error load jasa:", err));
+            }
+
+            function updateJumlah(uuid) {
+                const jumlahEl = listJasa.querySelector(`.jumlah-jasa[data-uuid="${uuid}"]`);
+                const jumlah = selectedJasa.filter(j => j.uuid === uuid).length;
+                if (jumlahEl) {
+                    jumlahEl.textContent = `= ${jumlah}`;
+                }
             }
 
             function updateTotal() {
@@ -1195,7 +1259,7 @@
                     Swal.fire({
                         title: 'Input Uang Customer',
                         html: `Grand Total: <b>Rp ${grandTotal.toLocaleString()}</b><br>
-           <input type="text" id="swal-uang-customer" class="swal2-input" placeholder="Masukkan nominal">`,
+                                <input type="text" id="swal-uang-customer" class="swal2-input" placeholder="Masukkan nominal">`,
                         showCancelButton: true,
                         confirmButtonText: 'OK',
                         cancelButtonText: 'Batal',
@@ -1315,7 +1379,7 @@
                                                 totalItem: Number(res.data
                                                     .totalItem),
                                                 grandTotal: Number(res.data
-                                                    .grandTotal)
+                                                    .grandTotal) + totalJasa
                                             };
                                             cetakStruk(strukData);
                                         }
@@ -1343,6 +1407,361 @@
                                 });
                             });
                     });
+                }
+            });
+
+            async function loadPaket() {
+                try {
+                    const res = await fetch('/kasir/get-paket');
+                    const data = await res.json();
+
+                    const tbody = document.querySelector("#paketTableModal tbody");
+                    tbody.innerHTML = "";
+
+                    if (data.status === false) {
+                        tbody.innerHTML = `<tr><td colspan="2" class="text-center">${data.message}</td></tr>`;
+                        return;
+                    }
+
+                    if (!data.paket || data.paket.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="2" class="text-center">Belum ada Paket</td></tr>`;
+                    } else {
+                        data.paket.forEach(p => {
+                            const tr = document.createElement("tr");
+                            tr.innerHTML =
+                                `<td class="text-primary fw-bold cursor-pointer">${p.nama_paket}</td>`;
+
+                            tr.querySelector("td").addEventListener("click", async () => {
+                                try {
+                                    const detailRes = await fetch(
+                                        `/kasir/detail-paket/${p.uuid}`);
+                                    const res = await detailRes.json();
+
+                                    if (res.status === "success") {
+                                        const grandTotal = Number(res.data.grandTotal);
+                                        const grandTotalJasa = grandTotal + totalJasa;
+
+                                        const itemsHtml = res.data.items.map(i => `
+                                        <tr>
+                                            <td>${i.nama}</td>
+                                            <td>1</td>
+                                        </tr>
+                                    `).join("");
+
+                                        const detailHtml = `
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Nama</th>
+                                                        <th>Qty</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${itemsHtml}
+                                                    <tr>
+                                                        <td class="text-end fw-bold">Grand Total</td>
+                                                        <td>Rp ${grandTotal.toLocaleString()}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    `;
+
+                                        // === Step 1: Detail paket ===
+                                        Swal.fire({
+                                            title: `Detail - ${res.data.nama_paket}`,
+                                            html: detailHtml,
+                                            width: 600,
+                                            showCancelButton: true,
+                                            confirmButtonText: "Lanjut",
+                                            cancelButtonText: "Batal"
+                                        }).then(result => {
+                                            if (!result.isConfirmed) return;
+
+                                            // === Step 2: Input uang customer ===
+                                            Swal.fire({
+                                                title: 'Input Uang Customer',
+                                                html: `
+                                                    Grand Total: <b>Rp ${grandTotalJasa.toLocaleString()}</b><br>
+                                                    <input type="text" id="swal-uang-customer-paket" class="swal2-input" placeholder="Masukkan nominal">
+                                                `,
+                                                showCancelButton: true,
+                                                confirmButtonText: 'Simpan',
+                                                cancelButtonText: 'Batal',
+                                                didOpen: () => {
+                                                    const input =
+                                                        document
+                                                        .getElementById(
+                                                            'swal-uang-customer-paket'
+                                                        );
+                                                    if (input) {
+                                                        input.focus();
+                                                        input
+                                                            .addEventListener(
+                                                                'input',
+                                                                (e) => {
+                                                                    let value =
+                                                                        e
+                                                                        .target
+                                                                        .value
+                                                                        .replace(
+                                                                            /[^0-9]/g,
+                                                                            ""
+                                                                        );
+                                                                    e.target
+                                                                        .value =
+                                                                        value ?
+                                                                        new Intl
+                                                                        .NumberFormat(
+                                                                            'id-ID'
+                                                                        )
+                                                                        .format(
+                                                                            value
+                                                                        ) :
+                                                                        "";
+                                                                });
+                                                    }
+                                                },
+                                                preConfirm: () => {
+                                                    const input =
+                                                        document
+                                                        .getElementById(
+                                                            'swal-uang-customer-paket'
+                                                        );
+                                                    if (!input)
+                                                        return false;
+
+                                                    let rawValue = input
+                                                        .value.replace(
+                                                            /[^0-9]/g,
+                                                            "");
+                                                    let uangCustomer =
+                                                        parseInt(
+                                                            rawValue);
+
+                                                    if (isNaN(
+                                                            uangCustomer
+                                                        ) ||
+                                                        uangCustomer <=
+                                                        0) {
+                                                        Swal.showValidationMessage(
+                                                            "Masukkan nominal yang valid!"
+                                                        );
+                                                        return false;
+                                                    }
+                                                    return uangCustomer;
+                                                }
+                                            }).then(result2 => {
+                                                if (!result2.isConfirmed)
+                                                    return;
+
+                                                let uangCustomer = result2
+                                                    .value;
+                                                let kembalian =
+                                                    uangCustomer -
+                                                    grandTotalJasa;
+
+                                                if (kembalian < 0) {
+                                                    Swal.fire({
+                                                        title: "Uang Kurang!",
+                                                        html: `
+                                            Grand Total: <b>Rp ${grandTotalJasa.toLocaleString()}</b><br>
+                                            Uang Customer: <b>Rp ${uangCustomer.toLocaleString()}</b><br>
+                                            Kurang: <b>Rp ${Math.abs(kembalian).toLocaleString()}</b>
+                                        `,
+                                                        icon: "warning",
+                                                        confirmButtonText: "OK"
+                                                    });
+                                                    return;
+                                                }
+
+                                                // === Simpan transaksi ===
+                                                let formData =
+                                                    new FormData(form);
+                                                formData.append(
+                                                    "uuid_paket", p.uuid
+                                                );
+                                                formData.append(
+                                                    "total_harga",
+                                                    grandTotal
+                                                );
+                                                formData.append(
+                                                    "uang_customer",
+                                                    uangCustomer);
+                                                formData.append("kembalian",
+                                                    kembalian);
+
+                                                Swal.fire({
+                                                    title: `Kembalian: Rp ${kembalian.toLocaleString()}`,
+                                                    text: "Menyimpan Transaksi...",
+                                                    allowOutsideClick: false,
+                                                    didOpen: () =>
+                                                        Swal
+                                                        .showLoading()
+                                                });
+
+                                                fetch("/kasir/penjualan-store", {
+                                                        method: "POST",
+                                                        body: formData,
+                                                        headers: {
+                                                            "X-CSRF-TOKEN": document
+                                                                .querySelector(
+                                                                    'meta[name="csrf-token"]'
+                                                                )
+                                                                .getAttribute(
+                                                                    "content"
+                                                                )
+                                                        }
+                                                    })
+                                                    .then(res => res.json())
+                                                    .then(res => {
+                                                        Swal.close();
+                                                        if (res
+                                                            .status ===
+                                                            "success") {
+                                                            Swal.fire({
+                                                                title: "Transaksi Berhasil ✅",
+                                                                text: "Apakah Anda ingin mencetak struk?",
+                                                                icon: "success",
+                                                                showCancelButton: true,
+                                                                confirmButtonText: "Cetak Struk",
+                                                                cancelButtonText: "Tidak",
+                                                                reverseButtons: true
+                                                            }).then(
+                                                                result => {
+                                                                    if (result
+                                                                        .isConfirmed
+                                                                    ) {
+                                                                        const
+                                                                            strukData = {
+                                                                                outlet_nama: "{{ $data_outlet->nama_outlet }}",
+                                                                                outlet_alamat: "{{ $data_outlet->alamat }}",
+                                                                                outlet_telp: "{{ $data_outlet->telepon }}",
+                                                                                no_bukti: res
+                                                                                    .data
+                                                                                    .no_bukti,
+                                                                                tanggal: res
+                                                                                    .data
+                                                                                    .tanggal,
+                                                                                kasir: res
+                                                                                    .data
+                                                                                    .kasir,
+                                                                                pembayaran: res
+                                                                                    .data
+                                                                                    .pembayaran,
+                                                                                items: res
+                                                                                    .data
+                                                                                    .items
+                                                                                    .map(
+                                                                                        i =>
+                                                                                        ({
+                                                                                            nama: i
+                                                                                                .nama,
+                                                                                            qty: Number(
+                                                                                                i
+                                                                                                .qty
+                                                                                            ),
+                                                                                            harga: Number(
+                                                                                                i
+                                                                                                .harga
+                                                                                            ),
+                                                                                            subtotal: Number(
+                                                                                                i
+                                                                                                .subtotal
+                                                                                            )
+                                                                                        })
+                                                                                    ),
+                                                                                totalJasa: Number(
+                                                                                    totalJasa
+                                                                                ),
+                                                                                totalItem: Number(
+                                                                                    res
+                                                                                    .data
+                                                                                    .totalItem
+                                                                                ),
+                                                                                grandTotal: Number(
+                                                                                    res
+                                                                                    .data
+                                                                                    .grandTotal
+                                                                                )
+                                                                            };
+                                                                        cetakStruk
+                                                                            (
+                                                                                strukData
+                                                                            );
+                                                                    }
+                                                                    const
+                                                                        modal =
+                                                                        bootstrap
+                                                                        .Modal
+                                                                        .getOrCreateInstance(
+                                                                            modalPaket
+                                                                        );
+                                                                    modal
+                                                                        .hide();
+                                                                    resetKasir
+                                                                        ();
+                                                                    loadJasa
+                                                                        ();
+                                                                });
+                                                        } else {
+                                                            Swal.fire({
+                                                                title: "Gagal!",
+                                                                text: res
+                                                                    .message,
+                                                                icon: "error",
+                                                                confirmButtonText: "OK"
+                                                            });
+                                                            resetKasir
+                                                                ();
+                                                        }
+                                                    })
+                                                    .catch(err => {
+                                                        Swal.close();
+                                                        console.error(
+                                                            "❌ Error simpan transaksi:",
+                                                            err);
+                                                        Swal.fire({
+                                                            title: "Error!",
+                                                            text: "Terjadi kesalahan server",
+                                                            icon: "error",
+                                                            confirmButtonText: "OK"
+                                                        });
+                                                    });
+                                            });
+                                        });
+                                    }
+                                } catch (err) {
+                                    console.error("❌ Gagal ambil detail paket:", err);
+                                }
+                            });
+
+                            tbody.appendChild(tr);
+                        });
+                    }
+                } catch (err) {
+                    console.error("Gagal ambil paket hemat:", err);
+                }
+            }
+
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "F11") {
+                    e.preventDefault();
+
+                    // pakai opsi focus:false biar SweetAlert bisa ambil fokus
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalPaket, {
+                        backdrop: 'static',
+                        keyboard: false,
+                        focus: false
+                    });
+
+                    if (modalPaket.classList.contains("show")) {
+                        modal.hide();
+                    } else {
+                        loadPaket();
+                        modal.show();
+                    }
                 }
             });
 
@@ -1659,8 +2078,8 @@
                     if (!data.penjualans || data.penjualans.length === 0) {
                         // Tidak ada penjualan
                         tbody.innerHTML = `
-                <tr><td colspan="1" class="text-center">Belum Riwayat Struk</td></tr>
-            `;
+                            <tr><td colspan="1" class="text-center">Belum ada Riwayat Struk</td></tr>
+                        `;
                     } else {
                         // Loop data penjualan
                         data.penjualans.forEach(p => {

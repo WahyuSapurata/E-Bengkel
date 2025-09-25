@@ -9,10 +9,12 @@ use App\Models\ClosingKasir;
 use App\Models\Coa;
 use App\Models\Costumer;
 use App\Models\DetailPenjualan;
+use App\Models\DetailPenjualanPaket;
 use App\Models\HargaBackupPenjualan;
 use App\Models\Jasa;
 use App\Models\KasirOutlet;
 use App\Models\Outlet;
+use App\Models\PaketHemat;
 use App\Models\Penjualan;
 use App\Models\Produk;
 use App\Models\ProdukPrice;
@@ -180,9 +182,13 @@ class PenjualanController extends Controller
                 }
 
                 // Validasi produk
-                $produk = Produk::whereIn('uuid', $request->uuid_produk)->get();
-                if ($produk->count() !== count($request->uuid_produk)) {
-                    throw new \Exception('Ada produk yang tidak ditemukan.');
+                if ($request->filled('uuid_produk') && is_array($request->uuid_produk)) {
+                    $produk = Produk::whereIn('uuid', $request->uuid_produk)->get();
+                    if ($produk->count() !== count($request->uuid_produk)) {
+                        throw new \Exception('Ada produk yang tidak ditemukan.');
+                    }
+                } else {
+                    $produk = collect(); // biar tetap bisa dipakai foreach kosong
                 }
 
                 // Generate nomor penjualan
@@ -240,50 +246,101 @@ class PenjualanController extends Controller
                 $grandTotal = 0;
                 $totalHpp   = 0;
 
-                // Simpan detail & kurangi stok
-                foreach ($request->uuid_produk as $i => $uuid_produk) {
-                    $qty = $request->qty[$i];
-                    $total_harga = $request->total_harga[$i];
+                if (!empty($request->uuid_produk) && is_array($request->uuid_produk)) {
+                    // Simpan detail & kurangi stok
+                    foreach ($request->uuid_produk as $i => $uuid_produk) {
+                        $qty = $request->qty[$i];
+                        $total_harga = $request->total_harga[$i];
 
-                    $detail = DetailPenjualan::create([
-                        'uuid_penjualans'  => $penjualan->uuid,
-                        'uuid_produk'      => $uuid_produk,
-                        'qty'              => $qty,
-                        'total_harga'      => $total_harga,
+                        $detail = DetailPenjualan::create([
+                            'uuid_penjualans'  => $penjualan->uuid,
+                            'uuid_produk'      => $uuid_produk,
+                            'qty'              => $qty,
+                            'total_harga'      => $total_harga,
+                        ]);
+
+                        // Catat keluar stok dari toko
+                        WirehouseStock::create([
+                            'uuid_warehouse' => $warehouseToko->uuid,
+                            'uuid_produk'    => $uuid_produk,
+                            'qty'            => $qty,
+                            'jenis'          => 'keluar',
+                            'sumber'         => 'penjualan',
+                            'keterangan'     => 'Penjualan kasir',
+                        ]);
+
+                        // simpan detail untuk frontend
+                        $produkInfo = $produk->where('uuid', $uuid_produk)->first();
+                        $hargaJual = round(
+                            $produkInfo->hrg_modal + ($produkInfo->hrg_modal * $produkInfo->profit / 100),
+                            -3
+                        );
+
+                        HargaBackupPenjualan::create([
+                            'uuid_detail_penjualan' => $detail->uuid,
+                            'harga_modal' => $produkInfo->hrg_modal,
+                            'harga_jual' => $hargaJual,
+                        ]);
+
+                        $details[] = [
+                            'nama'     => $produkInfo->nama_barang ?? 'Produk',
+                            'qty'      => $qty,
+                            'harga'    => $hargaJual,
+                            'subtotal' => $total_harga,
+                        ];
+
+                        $grandTotal += $total_harga;
+                        $totalHpp   += $produkInfo->hrg_modal * $qty;
+                    }
+                }
+
+                if ($request->uuid_paket) {
+                    $qtyPaket = 1; // default 1
+                    $totalHargaPaket = $request->total_harga ?? 0;
+
+                    $paketInfo = PaketHemat::where('uuid', $request->uuid_paket)->firstOrFail();
+
+                    // Simpan detail paket
+                    $detailPaket = DetailPenjualanPaket::create([
+                        'uuid_penjualans' => $penjualan->uuid,
+                        'uuid_paket'      => $request->uuid_paket,
+                        'qty'             => $qtyPaket,
+                        'total_harga'     => $totalHargaPaket,
                     ]);
 
-                    // Catat keluar stok dari toko
-                    WirehouseStock::create([
-                        'uuid_warehouse' => $warehouseToko->uuid,
-                        'uuid_produk'    => $uuid_produk,
-                        'qty'            => $qty,
-                        'jenis'          => 'keluar',
-                        'sumber'         => 'penjualan',
-                        'keterangan'     => 'Penjualan kasir',
-                    ]);
-
-                    // simpan detail untuk frontend
-                    $produkInfo = $produk->where('uuid', $uuid_produk)->first();
-                    $hargaJual = round(
-                        $produkInfo->hrg_modal + ($produkInfo->hrg_modal * $produkInfo->profit / 100),
-                        -3
-                    );
-
+                    // Backup harga paket
                     HargaBackupPenjualan::create([
-                        'uuid_detail_penjualan' => $detail->uuid,
-                        'harga_modal' => $produkInfo->hrg_modal,
-                        'harga_jual' => $hargaJual,
+                        'uuid_detail_penjualan' => $detailPaket->uuid,
+                        'harga_modal'           => $paketInfo->total_modal,
+                        'harga_jual'            => $totalHargaPaket,
                     ]);
 
+                    // Tambahkan ke summary penjualan
                     $details[] = [
-                        'nama'     => $produkInfo->nama_barang ?? 'Produk',
-                        'qty'      => $qty,
-                        'harga'    => $hargaJual,
-                        'subtotal' => $total_harga,
+                        'nama'     => $paketInfo->nama_paket ?? 'Paket Hemat',
+                        'qty'      => $qtyPaket,
+                        'harga'    => $totalHargaPaket,
+                        'subtotal' => $totalHargaPaket,
                     ];
 
-                    $grandTotal += $total_harga;
-                    $totalHpp   += $produkInfo->hrg_modal * $qty;
+                    $grandTotal += $totalHargaPaket;
+                    $totalHpp   += $paketInfo->total_modal * $qtyPaket;
+
+                    // Kurangi stok produk isi paket
+                    if (is_array($paketInfo->uuid_produk)) {
+                        foreach ($paketInfo->uuid_produk as $uuid_produk) {
+                            $qtyKeluar = (int) $qtyPaket; // semua produk qty sama dengan jumlah paket yang dibeli
+
+                            WirehouseStock::create([
+                                'uuid_warehouse' => $warehouseToko->uuid,
+                                'uuid_produk'    => $uuid_produk,
+                                'qty'            => $qtyKeluar,
+                                'jenis'          => 'keluar',
+                                'sumber'         => 'penjualan',
+                                'keterangan'     => 'Penjualan paket hemat',
+                            ]);
+                        }
+                    }
                 }
 
                 // === Catat ke jurnal penjualan ===
@@ -443,22 +500,52 @@ class PenjualanController extends Controller
         // Ambil data penjualan utama
         $penjualan = Penjualan::where('uuid', $uuid)->firstOrFail();
 
-        // Ambil detail penjualan + produk (JOIN manual)
-        $details = DB::table('detail_penjualans')
+        // === Detail Produk Biasa ===
+        $detailsProduk = DB::table('detail_penjualans')
             ->leftJoin('produks', 'detail_penjualans.uuid_produk', '=', 'produks.uuid')
             ->where('detail_penjualans.uuid_penjualans', $penjualan->uuid)
             ->select(
                 'detail_penjualans.qty',
                 'detail_penjualans.total_harga',
-                'produks.nama_barang',
-                'produks.hrg_modal',
-                'produks.profit'
+                'produks.nama_barang as nama',
             )
-            ->get();
+            ->get()
+            ->map(function ($d) {
+                return [
+                    'nama'     => $d->nama ?? '-',
+                    'qty'      => $d->qty,
+                    'harga'    => $d->total_harga / max(1, $d->qty),
+                    'subtotal' => $d->total_harga,
+                    'tipe'     => 'produk',
+                ];
+            });
+
+        // === Detail Paket Hemat ===
+        $detailsPaket = DB::table('detail_penjualan_pakets')
+            ->leftJoin('paket_hemats', 'detail_penjualan_pakets.uuid_paket', '=', 'paket_hemats.uuid')
+            ->where('detail_penjualan_pakets.uuid_penjualans', $penjualan->uuid)
+            ->select(
+                'detail_penjualan_pakets.qty',
+                'detail_penjualan_pakets.total_harga',
+                'paket_hemats.nama_paket as nama'
+            )
+            ->get()
+            ->map(function ($d) {
+                return [
+                    'nama'     => $d->nama ?? '-',
+                    'qty'      => $d->qty,
+                    'harga'    => $d->total_harga / max(1, $d->qty),
+                    'subtotal' => $d->total_harga,
+                    'tipe'     => 'paket',
+                ];
+            });
+
+        // Gabungkan keduanya
+        $allDetails = $detailsProduk->merge($detailsPaket);
 
         // Hitung total
-        $totalItem  = $details->sum('qty');
-        $grandTotal = $details->sum('total_harga');
+        $totalItem  = $allDetails->sum('qty');
+        $grandTotal = $allDetails->sum('subtotal');
 
         // Ambil jasa (kalau ada)
         $jasa = null;
@@ -473,21 +560,13 @@ class PenjualanController extends Controller
                 'tanggal'    => $penjualan->tanggal_transaksi,
                 'kasir'      => $penjualan->created_by,
                 'pembayaran' => $penjualan->pembayaran,
-                'items'      => $details->map(function ($detail) {
-                    return [
-                        'nama'     => $detail->nama_barang ?? '-',
-                        'qty'      => $detail->qty,
-                        'harga'    => $detail->total_harga / $detail->qty,
-                        'subtotal' => $detail->total_harga,
-                    ];
-                }),
+                'items'      => $allDetails,
                 'grandTotal' => $grandTotal + ($jasa ? $jasa : 0),
                 'totalItem'  => $totalItem,
                 'totalJasa'  => $jasa ? $jasa : 0,
             ]
         ]);
     }
-
 
     public function cetakStrukThermal(Request $request)
     {
@@ -611,5 +690,57 @@ class PenjualanController extends Controller
         $left = floor(($width - $len) / 2);
         $right = $width - $len - $left;
         return str_repeat(" ", $left) . $text . str_repeat(" ", $right);
+    }
+
+    public function getPaket()
+    {
+        $paket = PaketHemat::all();
+        return response()->json([
+            'status' => true,
+            'paket' => $paket
+        ]);
+    }
+
+    public function detailPaket($params)
+    {
+        $paket = PaketHemat::where('uuid', $params)
+            ->select(
+                'uuid',
+                'uuid_produk',
+                'nama_paket',
+                DB::raw('
+                ROUND(
+                    (
+                        CAST(total_modal AS DECIMAL(15,2))
+                        + (CAST(total_modal AS DECIMAL(15,2)) * CAST(profit AS DECIMAL(15,2)) / 100)
+                    ) / 1000
+                ) * 1000 as harga_jual
+            ')
+            )
+            ->first();
+
+        // Jika paket tidak ditemukan
+        if (!$paket) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Paket tidak ditemukan'
+            ], 404);
+        }
+
+        // Ambil produk berdasarkan array uuid_produk
+        $produk = Produk::whereIn('uuid', $paket->uuid_produk ?? [])->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => [
+                'nama_paket' => $paket->nama_paket,
+                'items'      => $produk->map(function ($detail) {
+                    return [
+                        'nama' => $detail->nama_barang ?? '-',
+                    ];
+                }),
+                'grandTotal' => $paket->harga_jual,
+            ]
+        ]);
     }
 }
