@@ -1,4 +1,20 @@
 @extends('layouts.layout')
+<style>
+    .table-responsive {
+        max-height: calc(5 * 40px);
+        /* 5 baris x tinggi baris ~40px */
+        overflow-y: auto;
+    }
+
+    /* Optional: tetap sticky untuk header */
+    .table-responsive thead {
+        position: sticky;
+        top: 0;
+        background: #f8f9fa;
+        /* warna header */
+        z-index: 1;
+    }
+</style>
 @section('content')
     <div class="nxl-content">
         <!-- [ page-header ] start -->
