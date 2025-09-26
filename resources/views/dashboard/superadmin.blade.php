@@ -59,6 +59,31 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="col-12">
+                                <div class="card-header">
+                                    <h5 class="card-title">Target Profit Penjualan Perbulan</h5>
+                                </div>
+                                <div class="card-body custom-card-action p-0">
+                                    {{-- <div id="payment-records-chart"></div> --}}
+                                    <div class="table-responsive p-3">
+                                        <table id="tabel-penjualan" class="table table-bordered table-striped">
+                                            <thead class="text-center">
+                                                <tr>
+                                                    <th>Tahun</th>
+                                                    <th>Bulan</th>
+                                                    <th>Target</th>
+                                                    <th>Profit</th>
+                                                    <th>Selisih</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="target-body">
+                                                <!-- Data akan diisi lewat JavaScript -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="col-12 col-md-6">
                                 <div class="card-header">
                                     <h5 class="card-title">Penjualan Harian</h5>
@@ -575,7 +600,7 @@
                         $('#untung-body').append(`
                 <tr>
                     <td>${item.nama_barang}</td>
-                    <td class="text-end">${item.total_profit.toLocaleString()}</td>
+                    <td class="text-end">Rp ${item.total_profit.toLocaleString()}</td>
                 </tr>
             `);
                     });
@@ -746,6 +771,41 @@
 
             loadPenjualanKasir(); // Panggil fungsi untuk load penjualan harian
 
+            function loadPenjualanTarget(uuidOutlet = "") {
+                $.get("/superadmin/get-target-penjualan-bulanan", {
+                    uuid_user: uuidOutlet
+                }, function(res) {
+                    let tbody = $("#target-body");
+                    tbody.empty(); // kosongkan isi tabel
+
+                    if (!res.data || res.data.length === 0) {
+                        tbody.append(`<tr>
+                <td colspan="5" class="text-center">Tidak ada data</td>
+            </tr>`);
+                        return;
+                    }
+
+                    res.data.forEach(item => {
+                        tbody.append(`
+                <tr>
+                    <td>${res.year}</td>
+                    <td>${item.bulan}</td>
+                    <td>Rp ${Number(item.target).toLocaleString()}</td>
+                    <td>Rp ${Number(item.profit).toLocaleString()}</td>
+                    <td>Rp ${Number(item.selisih).toLocaleString()}</td>
+                </tr>
+            `);
+                    });
+                }).fail(function() {
+                    $("#target-body").html(`<tr>
+            <td colspan="5" class="text-center text-danger">Gagal memuat data</td>
+        </tr>`);
+                });
+            }
+
+
+            loadPenjualanTarget(); // Panggil fungsi untuk load penjualan harian
+
             // reload saat ganti outlet
             $("#filter-outlet").on("change", function() {
                 let uuidOutlet = $(this).val();
@@ -756,6 +816,7 @@
                 loadPenjualanBulananJasa(uuidOutlet)
                 loadPenjualanKategori(uuidOutlet)
                 loadPenjualanKasir(uuidOutlet)
+                loadPenjualanTarget(uuidOutlet)
                 // loadChart(uuidOutlet);
             });
         });

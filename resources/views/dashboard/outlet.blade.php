@@ -456,7 +456,7 @@
                         $('#untung-body').append(`
                 <tr>
                     <td>${item.nama_barang}</td>
-                    <td class="text-end">${item.total_profit.toLocaleString()}</td>
+                    <td class="text-end">Rp ${item.total_profit.toLocaleString()}</td>
                 </tr>
             `);
                     });

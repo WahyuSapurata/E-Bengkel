@@ -33,6 +33,7 @@ class LapTransakasi extends Controller
 
         $totalData = Penjualan::count();
 
+        // Subquery jasa
         $jasaSub = DB::table('penjualans')
             ->select('penjualans.id', DB::raw('SUM(jasas.harga) as total_jasa'))
             ->join('jasas', function ($join) {
@@ -43,23 +44,40 @@ class LapTransakasi extends Controller
         $query = Penjualan::query()
             ->select(
                 'penjualans.*',
-                DB::raw('COALESCE(SUM(detail_penjualans.total_harga),0) as total_penjualan'),
-                DB::raw('COALESCE(SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty),0) as total_modal'),
+                DB::raw('
+                COALESCE(SUM(detail_penjualans.total_harga),0)
+                + COALESCE(SUM(detail_penjualan_pakets.total_harga),0)
+                as total_penjualan
+            '),
+                DB::raw('
+                COALESCE(SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty),0)
+                + COALESCE(SUM(harga_backup_penjualans.harga_modal * detail_penjualan_pakets.qty),0)
+                as total_modal
+            '),
                 DB::raw('COALESCE(jasa.total_jasa,0) as total_jasa')
             )
+            // join detail produk
             ->leftJoin('detail_penjualans', 'penjualans.uuid', '=', 'detail_penjualans.uuid_penjualans')
-            ->leftJoin('harga_backup_penjualans', 'detail_penjualans.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+            // join detail paket
+            ->leftJoin('detail_penjualan_pakets', 'penjualans.uuid', '=', 'detail_penjualan_pakets.uuid_penjualans')
+            // join harga backup (satu tabel untuk semua detail)
+            ->leftJoin('harga_backup_penjualans', function ($join) {
+                $join->on('harga_backup_penjualans.uuid_detail_penjualan', '=', 'detail_penjualans.uuid')
+                    ->orOn('harga_backup_penjualans.uuid_detail_penjualan', '=', 'detail_penjualan_pakets.uuid');
+            })
+            // join jasa
             ->leftJoinSub($jasaSub, 'jasa', function ($join) {
                 $join->on('penjualans.id', '=', 'jasa.id');
             })
             ->groupBy('penjualans.id')
             ->latest('penjualans.created_at');
 
+        // filter outlet
         if ($request->filled('uuid_user')) {
             $query->where('penjualans.uuid_outlet', $request->uuid_user);
         }
 
-        // Searching
+        // searching
         if (!empty($request->search['value'])) {
             $search = $request->search['value'];
             $query->where(function ($q) use ($search, $columns) {
@@ -69,7 +87,7 @@ class LapTransakasi extends Controller
             });
         }
 
-        // Hitung total filtered **dengan query yang sama tapi tanpa groupBy** agar count benar
+        // total filtered (tanpa groupBy)
         $totalFiltered = Penjualan::when($request->filled('uuid_user'), function ($q) use ($request) {
             $q->where('uuid_outlet', $request->uuid_user);
         })
@@ -83,7 +101,7 @@ class LapTransakasi extends Controller
             })
             ->count();
 
-        // Pagination
+        // pagination
         $data = $query->skip($request->start)->take($request->length)->get();
 
         return response()->json([

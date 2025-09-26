@@ -211,7 +211,7 @@ class ClosingKasirController extends Controller
     public function sumaryreport()
     {
         $module = 'Sumary Report';
-        $data = ClosingKasir::all();
+        $data = ClosingKasir::latest()->get();
         $data->map(function ($item) {
             $kasir = KasirOutlet::where('uuid_user', $item->uuid_kasir_outlet)->firstOrFail();
 
@@ -224,26 +224,24 @@ class ClosingKasirController extends Controller
 
     public function history_summary($params)
     {
-        $user = Auth::user();
+        $closing = ClosingKasir::where('uuid', $params)->firstOrFail();
 
-        // Ambil outlet & kasir sesuai user login
-        $outlet = Outlet::where('uuid_user', $user->uuid)->firstOrFail();
-        $kasir  = KasirOutlet::where('uuid_outlet', $user->uuid)->firstOrFail();
-        $namaKasir = User::where('uuid', $kasir->uuid_user)->firstOrFail();
+        // cari outlet kasir
+        $kasir = KasirOutlet::where('uuid_user', $closing->uuid_kasir_outlet)->firstOrFail();
 
-        $tanggal = Carbon::now()->format('d-m-Y');
+        // cari user kasir (opsional untuk tampilkan nama)
+        $namaKasir = User::where('uuid', $closing->uuid_kasir_outlet)->first();
 
-        // Ambil closing sesuai $params
-        $closing = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid_user)
-            ->where('uuid', $params)
-            ->firstOrFail();
+        // tentukan tanggal transaksi
+        $tanggalTransaksi = \Carbon\Carbon::parse($closing->tanggal_closing)
+            ->subDay()
+            ->format('d-m-Y');
 
-        $closingDates = [$closing->tanggal_closing];
-
-        // Ambil penjualan sesuai closing (produk + paket)
-        $penjualans = Penjualan::where('uuid_outlet', $outlet->uuid) // ✅ pakai outlet yang diambil di atas
+        // ambil penjualan (cek antara tanggal transaksi dan tanggal closing)
+        $penjualans = Penjualan::where('uuid_outlet', $kasir->uuid_outlet)
             ->where('created_by', $namaKasir->nama)
-            ->whereIn('tanggal_transaksi', $closingDates)
+            ->where('tanggal_transaksi', $tanggalTransaksi) // kalau closing H+1
+            ->orWhere('tanggal_transaksi', $closing->tanggal_closing) // kalau closing di hari yang sama
             ->with(['detailPenjualans', 'detailPenjualanPakets'])
             ->get();
 
@@ -254,7 +252,7 @@ class ClosingKasirController extends Controller
 
             $totalJasa = 0;
             if ($p->uuid_jasa) {
-                $uuidJasaArray = json_decode($p->uuid_jasa, true);
+                $uuidJasaArray = $p->uuid_jasa;
                 if (!empty($uuidJasaArray)) {
                     $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
                     $totalJasa = $jasa->sum('harga');
@@ -284,7 +282,7 @@ class ClosingKasirController extends Controller
 
         // Summary report
         $summaryReport = [
-            'tanggal'             => $tanggal,
+            'tanggal'             => $closing->tanggal_closing,
             'kasir'               => $namaKasir->nama,
             'saldo_awal'          => $saldoAwal,
             'penjualan_non_tunai' => $totalTransfer,
@@ -298,8 +296,8 @@ class ClosingKasirController extends Controller
 
         $pdf = Pdf::loadView('kasir.sumaryreport.index', [
             'report' => $summaryReport,
-            'outlet' => $outlet->nama_outlet,
-            'alamat' => $outlet->alamat
+            'outlet' => Outlet::where('uuid_user', Auth::user()->uuid)->first()->nama_outlet,
+            'alamat' => Outlet::where('uuid_user', Auth::user()->uuid)->first()->alamat
         ]);
 
         return $pdf->stream('summary-report.pdf');

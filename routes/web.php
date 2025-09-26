@@ -20,7 +20,7 @@ Route::group([
     'as' => 'superadmin.'
 ], function () {
     Route::get('/dashboard-superadmin', [App\Http\Controllers\Dashboard::class, 'dashboard_superadmin'])->name('dashboard-superadmin');
-    // Route::get('/get-penjualan-bulanan', [App\Http\Controllers\Dashboard::class, 'getPenjualanBulanan'])->name('get-penjualan-bulanan');
+    Route::get('/get-target-penjualan-bulanan', [App\Http\Controllers\Dashboard::class, 'getTargetPenjualanBulanan'])->name('get-target-penjualan-bulanan');
     Route::get('/get-penjualan-harian', [App\Http\Controllers\Dashboard::class, 'getPenjualanHarian'])->name('get-penjualan-harian');
     Route::get('/get-penjualan-bulanan', [App\Http\Controllers\Dashboard::class, 'getPenjualanBulanan'])->name('get-penjualan-bulanan');
     Route::get('/get-penjualan-terlaku', [App\Http\Controllers\Dashboard::class, 'getProdukUnggul'])->name('get-penjualan-terlaku');
@@ -42,6 +42,13 @@ Route::group([
         Route::get('/hak-akses-get', [App\Http\Controllers\HakAkses::class, 'get'])->name('hak-akses-get');
         Route::get('/hak-akses-edit/{params}', [App\Http\Controllers\HakAkses::class, 'edit'])->name('hak-akses-edit');
         Route::post('/hak-akses-update/{params}', [App\Http\Controllers\HakAkses::class, 'update'])->name('hak-akses-update');
+
+        Route::get('/target-penjualan', [App\Http\Controllers\TargetPenjualanController::class, 'index'])->name('target-penjualan');
+        Route::get('/target-penjualan-get', [App\Http\Controllers\TargetPenjualanController::class, 'get'])->name('target-penjualan-get');
+        Route::post('/target-penjualan-store', [App\Http\Controllers\TargetPenjualanController::class, 'store'])->name('target-penjualan-store');
+        Route::get('/target-penjualan-edit/{params}', [App\Http\Controllers\TargetPenjualanController::class, 'edit'])->name('target-penjualan-edit');
+        Route::put('/target-penjualan-update/{params}', [App\Http\Controllers\TargetPenjualanController::class, 'update'])->name('target-penjualan-update');
+        Route::delete('/target-penjualan-delete/{params}', [App\Http\Controllers\TargetPenjualanController::class, 'delete'])->name('target-penjualan-delete');
     });
 
     Route::prefix('master-data')->group(function () {

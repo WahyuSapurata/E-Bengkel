@@ -55,15 +55,15 @@
     <table>
         <tr>
             <td class="left">SALDO AWAL KASIR</td>
-            <td class="right">{{ number_format($report['saldo_awal'], 0, ',', '.') }}</td>
+            <td class="right">Rp {{ number_format($report['saldo_awal'], 0, ',', '.') }}</td>
         </tr>
         <tr>
             <td class="left">1. PENJUALAN NON TUNAI</td>
-            <td class="right">{{ number_format($report['penjualan_non_tunai'], 0, ',', '.') }}</td>
+            <td class="right">Rp {{ number_format($report['penjualan_non_tunai'], 0, ',', '.') }}</td>
         </tr>
         <tr>
             <td class="left">2. PENJUALAN TUNAI</td>
-            <td class="right">{{ number_format($report['penjualan_tunai'], 0, ',', '.') }}</td>
+            <td class="right">Rp {{ number_format($report['penjualan_tunai'], 0, ',', '.') }}</td>
         </tr>
     </table>
 
@@ -72,7 +72,8 @@
     <table>
         <tr>
             <td class="left">TOTAL PENJUALAN + SALDO AWAL</td>
-            <td class="right">{{ number_format($report['total_penjualan'] + $report['saldo_awal'], 0, ',', '.') }}</td>
+            <td class="right">Rp {{ number_format($report['total_penjualan'] + $report['saldo_awal'], 0, ',', '.') }}
+            </td>
         </tr>
     </table>
 
@@ -89,7 +90,7 @@
             <tr>
                 <td class="left">{{ $item['jenis'] }}</td>
                 <td class="left">{{ $item['no_invoice'] }}</td>
-                <td class="right">{{ number_format($item['nominal'], 0, ',', '.') }}</td>
+                <td class="right">Rp {{ number_format($item['nominal'], 0, ',', '.') }}</td>
             </tr>
         @endforeach
     </table>
@@ -99,15 +100,15 @@
     <table>
         <tr>
             <td class="left">TOTAL NON TUNAI</td>
-            <td class="right">{{ number_format($report['total_non_tunai'], 0, ',', '.') }}</td>
+            <td class="right">Rp {{ number_format($report['total_non_tunai'], 0, ',', '.') }}</td>
         </tr>
         <tr>
             <td class="left">SETORAN TUNAI</td>
-            <td class="right">{{ number_format($report['setoran_tunai'], 0, ',', '.') }}</td>
+            <td class="right">Rp {{ number_format($report['setoran_tunai'], 0, ',', '.') }}</td>
         </tr>
         <tr>
             <td class="left">BATAL</td>
-            <td class="right">{{ number_format($report['batal'], 0, ',', '.') }}</td>
+            <td class="right">Rp {{ number_format($report['batal'], 0, ',', '.') }}</td>
         </tr>
     </table>
 </body>

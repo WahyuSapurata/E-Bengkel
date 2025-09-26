@@ -42,6 +42,11 @@
                                 <a class="nxl-link" href="{{ route('superadmin.data-pengguna') }}">Data Pengguna</a>
                             </li>
                             @endcanView
+                            <li
+                                class="nxl-item {{ isset($path[2]) && $path[2] === 'target-penjualan' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.target-penjualan') }}">Target
+                                    Penjualan</a>
+                            </li>
                         </ul>
                     </li>
 
