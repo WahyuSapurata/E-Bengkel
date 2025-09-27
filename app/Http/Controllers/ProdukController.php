@@ -17,6 +17,7 @@ use App\Models\SubKategori;
 use App\Models\Suplayer;
 use App\Models\Wirehouse;
 use App\Models\WirehouseStock;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -789,6 +790,10 @@ class ProdukController extends Controller
             'produks.nama_barang as nama_barang',
         ];
 
+        // 🔹 Filter tanggal default bulan berjalan
+        $tanggal_awal  = $request->get('tanggal_awal', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $tanggal_akhir = $request->get('tanggal_akhir', Carbon::now()->endOfMonth()->format('Y-m-d'));
+
         // Hitung total data tanpa filter
         $totalData = WirehouseStock::where('uuid_produk', $produk->uuid)->count();
 
@@ -796,12 +801,11 @@ class ProdukController extends Controller
         $query = WirehouseStock::select($columns)
             ->join('produks', 'produks.uuid', '=', 'wirehouse_stocks.uuid_produk')
             ->join('wirehouses', 'wirehouses.uuid', '=', 'wirehouse_stocks.uuid_warehouse')
-            ->where('wirehouse_stocks.uuid_produk', $produk->uuid);
-
-        // 🔹 Filter berdasarkan tipe wirehouse (Gudang / Toko)
-        if (!empty($request->tipe)) {
-            $query->where('wirehouses.tipe', $request->tipe);
-        }
+            ->where('wirehouse_stocks.uuid_produk', $produk->uuid)
+            ->whereBetween('wirehouse_stocks.created_at', [
+                Carbon::parse($tanggal_awal)->startOfDay(),
+                Carbon::parse($tanggal_akhir)->endOfDay()
+            ]);
 
         // 🔹 Filter berdasarkan outlet tertentu
         if (!empty($request->uuid)) {

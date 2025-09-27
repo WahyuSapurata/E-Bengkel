@@ -28,7 +28,7 @@
         }
 
         /* Animasi pulse lembut */
-        .animate-pulse {
+        /* .animate-pulse {
             animation: pulse 3s ease-in-out infinite;
         }
 
@@ -42,7 +42,7 @@
             50% {
                 opacity: 0.75;
             }
-        }
+        } */
 
         /* Overlay gelap semi transparan (optional, bisa dihapus jika sudah ada gradient di background-image) */
         .hero-bg::before {
@@ -75,7 +75,7 @@
         }
 
         .countdown-label {
-            font-weight: 500;
+            Boot MotoCore System <img src="{{ asset('logo-wa.png') }}" class="w-[20px]" alt="">-weight: 500;
             font-size: 0.875rem;
             margin-top: 0.25rem;
             text-transform: uppercase;
@@ -131,20 +131,17 @@
 
 <body class="bg-gray-900">
 
-    <section class="hero-bg animate-pulse">
+    <section class="hero-bg">
         <div class="hero-content">
             <h1 class="text-3xl sm:text-5xl font-extrabold mb-6 drop-shadow-lg">
-                MotoCore SYSTEM Akan Segera Hadir!
+                MotoCore SYSTEM Telah Hadir!
             </h1>
             <p class="text-sm sm:text-xl mb-8 drop-shadow-md mx-auto">
                 "Solusi Manajemen Bengkel Modern" <br>
                 Aplikasi ini dirancang khusus untuk mempermudah pengelolaan bengkel Anda. Dengan fitur lengkap dan mudah
                 digunakan, Anda dapat mengatur seluruh aktivitas operasional bengkel dalam satu sistem terintegrasi,
                 mulai dari manajemen produk dan stok, pencatatan transaksi kasir, hingga pengelolaan keuangan dan
-                laporan accounting yang akurat. <br>
-                Peluncuran
-                resmi
-                pada <strong id="peluncuran"></strong>.
+                laporan accounting yang akurat.
             </p>
 
             <div class="bg-white bg-opacity-50 p-2 pt-4 rounded-lg shadow-lg mb-8 flex justify-center">
@@ -153,20 +150,10 @@
 
             <div class="flex justify-center gap-6 flex-wrap">
                 <div class="countdown-card">
-                    <div id="days">0</div>
-                    <div class="countdown-label">Hari</div>
-                </div>
-                <div class="countdown-card">
-                    <div id="hours">0</div>
-                    <div class="countdown-label">Jam</div>
-                </div>
-                <div class="countdown-card">
-                    <div id="minutes">0</div>
-                    <div class="countdown-label">Menit</div>
-                </div>
-                <div class="countdown-card">
-                    <div id="seconds">0</div>
-                    <div class="countdown-label">Detik</div>
+                    <div id="days" class="text-[30px]">Jika ada yang ingin anda tanyakan hubungi kami melalui !
+                    </div>
+                    <div class="countdown-label flex items-center justify-center"><span>Boot MotoCore System</span> <img
+                            src="{{ asset('logo-wa.png') }}" class="w-[50px]" alt=""></div>
                 </div>
             </div>
         </div>
@@ -174,48 +161,48 @@
 
     <script>
         // Countdown Timer (Target: January 1, 2025)
-        function updateCountdown() {
-            const targetDate = new Date('2025-09-18T00:00:00'); // biarkan sebagai Date object
-            const now = new Date().getTime();
-            const distance = targetDate.getTime() - now;
+        // function updateCountdown() {
+        //     const targetDate = new Date('2025-09-18T00:00:00'); // biarkan sebagai Date object
+        //     const now = new Date().getTime();
+        //     const distance = targetDate.getTime() - now;
 
-            if (distance > 0) {
-                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        //     if (distance > 0) {
+        //         const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        //         const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        //         const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        //         const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-                document.getElementById('days').textContent = days;
-                document.getElementById('hours').textContent = hours;
-                document.getElementById('minutes').textContent = minutes;
-                document.getElementById('seconds').textContent = seconds;
+        //         document.getElementById('days').textContent = days;
+        //         document.getElementById('hours').textContent = hours;
+        //         document.getElementById('minutes').textContent = minutes;
+        //         document.getElementById('seconds').textContent = seconds;
 
-                // Format bulan & tahun peluncuran (contoh: "Oktober 2025")
-                const options = {
-                    month: 'long',
-                    year: 'numeric'
-                };
-                document.getElementById('peluncuran').textContent = targetDate.toLocaleDateString('id-ID', options);
-            } else {
-                document.querySelector('.hero-content').innerHTML =
-                    '<h2 class="text-4xl font-bold drop-shadow-lg">Peluncuran Sekarang!</h2>';
-            }
-        }
-        updateCountdown();
-        setInterval(updateCountdown, 1000);
+        //         // Format bulan & tahun peluncuran (contoh: "Oktober 2025")
+        //         const options = {
+        //             month: 'long',
+        //             year: 'numeric'
+        //         };
+        //         document.getElementById('peluncuran').textContent = targetDate.toLocaleDateString('id-ID', options);
+        //     } else {
+        //         document.querySelector('.hero-content').innerHTML =
+        //             '<h2 class="text-4xl font-bold drop-shadow-lg">Peluncuran Sekarang!</h2>';
+        //     }
+        // }
+        // updateCountdown();
+        // setInterval(updateCountdown, 1000);
 
-        // Form submission handler
-        document.getElementById('subscribe-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const emailInput = document.getElementById('email');
-            const email = emailInput.value.trim();
-            if (email && email.includes('@') && email.includes('.')) {
-                alert('Terima kasih! Kami akan menghubungi Anda saat peluncuran.');
-                emailInput.value = '';
-            } else {
-                alert('Silakan masukkan email yang valid.');
-            }
-        });
+        // // Form submission handler
+        // document.getElementById('subscribe-form').addEventListener('submit', function(e) {
+        //     e.preventDefault();
+        //     const emailInput = document.getElementById('email');
+        //     const email = emailInput.value.trim();
+        //     if (email && email.includes('@') && email.includes('.')) {
+        //         alert('Terima kasih! Kami akan menghubungi Anda saat peluncuran.');
+        //         emailInput.value = '';
+        //     } else {
+        //         alert('Silakan masukkan email yang valid.');
+        //     }
+        // });
     </script>
 </body>
 

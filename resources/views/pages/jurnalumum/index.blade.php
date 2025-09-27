@@ -109,9 +109,6 @@
                     url: "{{ route('superadmin.get-jurnal-umum') }}",
                     data: function(d) {
                         let tanggal = $('#reportrange').val().split(' - ');
-                        console.log(tanggal);
-
-
                         if (tanggal.length === 2) {
                             d.tanggal_awal = moment(tanggal[0], 'MM/DD/YYYY').format('DD-MM-YYYY');
                             d.tanggal_akhir = moment(tanggal[1], 'MM/DD/YYYY').format('DD-MM-YYYY');
