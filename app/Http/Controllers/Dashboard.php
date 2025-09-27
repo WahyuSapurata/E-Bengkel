@@ -998,15 +998,21 @@ class Dashboard extends BaseController
 
         // Hitung target profit + persentase per kasir
         foreach ($rekapTanggal as $tanggal => &$group) {
-            // $tanggalCarbon = \Carbon\Carbon::createFromFormat('d-m-Y', $tanggal);
+            // Ambil target profit harian (pastikan format tanggal di DB cocok, misal 21-09-2025)
             $targetProfit = (int) DB::table('target_penjualans')
                 ->where('tanggal', $tanggal)
                 ->value('target') ?? 0;
 
+            // Hitung total profit semua kasir hari ini
+            $totalProfitTanggal = collect($group['kasir'])->sum('profit');
+
             foreach ($group['kasir'] as &$kasir) {
                 $kasir['target_profit'] = $targetProfit;
-                $kasir['persentase']    = $targetProfit > 0 ? round(($kasir['profit'] / $targetProfit) * 100, 2) : 0;
-                $kasir['selisih']       = $kasir['profit'] - $targetProfit;
+                $kasir['persentase']    = $targetProfit > 0
+                    ? round(($kasir['profit'] / $targetProfit) * 100, 2)
+                    : 0;
+                // Selisih dihitung dari total profit semua kasir hari itu
+                $kasir['selisih']       = $totalProfitTanggal - $targetProfit;
             }
 
             // Ubah kasir associative jadi array
@@ -1137,15 +1143,20 @@ class Dashboard extends BaseController
                 ->whereRaw("STR_TO_DATE(tanggal, '%d-%m-%Y') BETWEEN ? AND ?", [$awalBulan, $akhirBulan])
                 ->sum('target');
 
+            // Hitung total profit semua kasir dalam bulan ini
+            $totalProfitBulan = collect($group['kasir'])->sum('profit');
+
             foreach ($group['kasir'] as &$kasir) {
                 $kasir['target_profit'] = $targetProfit;
                 $kasir['persentase']    = $targetProfit > 0 ? round(($kasir['profit'] / $targetProfit) * 100, 2) : 0;
-                $kasir['selisih']       = $kasir['profit'] - $targetProfit;
+                // Selisih dihitung dari total bulan, bukan per kasir
+                $kasir['selisih']       = $totalProfitBulan - $targetProfit;
             }
 
             // Ubah kasir associative jadi array
             $group['kasir'] = array_values($group['kasir']);
         }
+
 
         return response()->json([
             'status' => true,
