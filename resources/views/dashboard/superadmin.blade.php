@@ -77,7 +77,7 @@
                             </div>
                             <div class="col-12">
                                 <div class="card-header">
-                                    <h5 class="card-title">Target Profit Penjualan Perbulan</h5>
+                                    <h5 class="card-title">Target Profit Penjualan Harian</h5>
                                 </div>
                                 <div class="card-body custom-card-action p-0">
                                     {{-- <div id="payment-records-chart"></div> --}}
@@ -85,10 +85,17 @@
                                         <table id="tabel-penjualan" class="table table-bordered table-striped">
                                             <thead class="text-center">
                                                 <tr>
-                                                    <th>Tahun</th>
-                                                    <th>Bulan</th>
-                                                    <th>Target</th>
+                                                    <th>Tanggal</th>
+                                                    <th>Kassa</th>
+                                                    <th>Modal</th>
+                                                    <th>Penjualan</th>
+                                                    <th>Jasa</th>
                                                     <th>Profit</th>
+                                                    <th>Tunai</th>
+                                                    <th>Non Tunai</th>
+                                                    <th>Total</th>
+                                                    <th>Target Profit</th>
+                                                    <th>Persentase Target</th>
                                                     <th>Selisih</th>
                                                 </tr>
                                             </thead>
@@ -100,9 +107,9 @@
                                 </div>
                             </div>
 
-                            <div class="col-12 col-md-6">
+                            <div class="col-12">
                                 <div class="card-header">
-                                    <h5 class="card-title">Penjualan Harian</h5>
+                                    <h5 class="card-title">Target Profit Penjualan Bulanan</h5>
                                 </div>
                                 <div class="card-body custom-card-action p-0">
                                     {{-- <div id="payment-records-chart"></div> --}}
@@ -111,82 +118,20 @@
                                             <thead class="text-center">
                                                 <tr>
                                                     <th>Tanggal</th>
-                                                    <th>Total Penjualan</th>
-                                                    <th>Total Modal</th>
+                                                    <th>Kassa</th>
+                                                    <th>Modal</th>
+                                                    <th>Penjualan</th>
+                                                    <th>Jasa</th>
                                                     <th>Profit</th>
-                                                    <th>% Profit</th>
+                                                    <th>Tunai</th>
+                                                    <th>Non Tunai</th>
+                                                    <th>Total</th>
+                                                    <th>Target Profit</th>
+                                                    <th>Persentase Target</th>
+                                                    <th>Selisih</th>
                                                 </tr>
                                             </thead>
-                                            <tbody id="harian-body">
-                                                <!-- Data akan diisi lewat JavaScript -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-12 col-md-6">
-                                <div class="card-header">
-                                    <h5 class="card-title">Penjualan Bulanan</h5>
-                                </div>
-                                <div class="card-body custom-card-action p-0">
-                                    {{-- <div id="payment-records-chart"></div> --}}
-                                    <div class="table-responsive p-3">
-                                        <table id="tabel-penjualan-bulanan" class="table table-bordered table-striped">
-                                            <thead class="text-center">
-                                                <tr>
-                                                    <th>Bulan</th>
-                                                    <th>Total Penjualan</th>
-                                                    <th>Total Modal</th>
-                                                    <th>Profit</th>
-                                                    <th>% Profit</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="bulanan-body">
-                                                <!-- Data akan diisi lewat JavaScript -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-12 col-md-6">
-                                <div class="card-header">
-                                    <h5 class="card-title">Total Jasa Harian</h5>
-                                </div>
-                                <div class="card-body custom-card-action p-0">
-                                    {{-- <div id="payment-records-chart"></div> --}}
-                                    <div class="table-responsive p-3">
-                                        <table id="tabel-penjualan-jasa" class="table table-bordered table-striped">
-                                            <thead class="text-center">
-                                                <tr>
-                                                    <th>Tanggal</th>
-                                                    <th>Total Jasa</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="harian-body-jasa">
-                                                <!-- Data akan diisi lewat JavaScript -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-12 col-md-6">
-                                <div class="card-header">
-                                    <h5 class="card-title">Total Jasa Bulanan</h5>
-                                </div>
-                                <div class="card-body custom-card-action p-0">
-                                    {{-- <div id="payment-records-chart"></div> --}}
-                                    <div class="table-responsive p-3">
-                                        <table id="tabel-penjualan-bulanan-jasa" class="table table-bordered table-striped">
-                                            <thead class="text-center">
-                                                <tr>
-                                                    <th>Bulan</th>
-                                                    <th>Total Jasa</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="bulanan-body-jasa">
+                                            <tbody id="target-bulanan-body">
                                                 <!-- Data akan diisi lewat JavaScript -->
                                             </tbody>
                                         </table>
@@ -262,32 +207,6 @@
                             </div>
 
                             <div class="col-12 col-md-6">
-                                <div class="card-header">
-                                    <h5 class="card-title">Penjualan Per kasir</h5>
-                                </div>
-                                <div class="card-body custom-card-action p-0">
-                                    {{-- <div id="payment-records-chart"></div> --}}
-                                    <div class="table-responsive p-3">
-                                        <table id="tabel-penjualan-kasir" class="table table-bordered table-striped">
-                                            <thead class="text-center">
-                                                <tr>
-                                                    <th>Nama Kasir</th>
-                                                    <th>Total Transaksi</th>
-                                                    <th>Total Item</th>
-                                                    <th>Total Penjualan</th>
-                                                    <th>Total Jasa</th>
-                                                    <th>Total Penjualan + Jasa</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="harian-body-kasir">
-                                                <!-- Data akan diisi lewat JavaScript -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-12">
                                 <div class="card-header">
                                     <h5 class="card-title">Logs</h5>
                                 </div>
@@ -506,92 +425,92 @@
             // // pertama kali load (semua outlet)
             // loadChart();
 
-            function loadPenjualanHarian(uuidOutlet = "") {
-                $.get("/superadmin/get-penjualan-harian", {
-                    uuid_user: uuidOutlet
-                }, function(res) {
-                    let tbody = $("#harian-body");
-                    tbody.empty(); // kosongkan isi tabel
+            //     function loadPenjualanHarian(uuidOutlet = "") {
+            //         $.get("/superadmin/get-penjualan-harian", {
+            //             uuid_user: uuidOutlet
+            //         }, function(res) {
+            //             let tbody = $("#harian-body");
+            //             tbody.empty(); // kosongkan isi tabel
 
-                    if (!res.data || res.data.length === 0) {
-                        tbody.append(`
-                <tr>
-                    <td colspan="5" class="text-center">Tidak ada data</td>
-                </tr>
-            `);
-                        return;
-                    }
+            //             if (!res.data || res.data.length === 0) {
+            //                 tbody.append(`
+        //         <tr>
+        //             <td colspan="5" class="text-center">Tidak ada data</td>
+        //         </tr>
+        //     `);
+            //                 return;
+            //             }
 
-                    res.data.forEach(item => {
-                        let penjualan = item.total_penjualan ?? 0;
-                        let modal = item.total_modal ?? 0;
-                        let profit = item.total_profit ?? 0;
-                        let persen = item.persen_profit ?? 0;
+            //             res.data.forEach(item => {
+            //                 let penjualan = item.total_penjualan ?? 0;
+            //                 let modal = item.total_modal ?? 0;
+            //                 let profit = item.total_profit ?? 0;
+            //                 let persen = item.persen_profit ?? 0;
 
-                        tbody.append(`
-                <tr>
-                    <td class="text-center">${item.tanggal}</td>
-                    <td class="text-end">Rp ${Number(penjualan).toLocaleString("id-ID")}</td>
-                    <td class="text-end">Rp ${Number(modal).toLocaleString("id-ID")}</td>
-                    <td class="text-end">Rp ${Number(profit).toLocaleString("id-ID")}</td>
-                    <td class="text-center">${persen} %</td>
-                </tr>
-            `);
-                    });
-                }).fail(function() {
-                    $("#harian-body").html(`
-            <tr>
-                <td colspan="5" class="text-center text-danger">Gagal memuat data</td>
-            </tr>
-        `);
-                });
-            }
+            //                 tbody.append(`
+        //         <tr>
+        //             <td class="text-center">${item.tanggal}</td>
+        //             <td class="text-end">Rp ${Number(penjualan).toLocaleString("id-ID")}</td>
+        //             <td class="text-end">Rp ${Number(modal).toLocaleString("id-ID")}</td>
+        //             <td class="text-end">Rp ${Number(profit).toLocaleString("id-ID")}</td>
+        //             <td class="text-center">${persen} %</td>
+        //         </tr>
+        //     `);
+            //             });
+            //         }).fail(function() {
+            //             $("#harian-body").html(`
+        //     <tr>
+        //         <td colspan="5" class="text-center text-danger">Gagal memuat data</td>
+        //     </tr>
+        // `);
+            //         });
+            //     }
 
-            loadPenjualanHarian(); // Panggil fungsi untuk load penjualan harian
+            //     loadPenjualanHarian(); // Panggil fungsi untuk load penjualan harian
 
 
-            function loadPenjualanBulanan(uuidOutlet = "") {
-                $.get("/superadmin/get-penjualan-bulanan", {
-                    uuid_user: uuidOutlet,
-                }, function(res) {
-                    let tbody = $("#bulanan-body");
-                    tbody.empty(); // kosongkan isi tabel
+            //     function loadPenjualanBulanan(uuidOutlet = "") {
+            //         $.get("/superadmin/get-penjualan-bulanan", {
+            //             uuid_user: uuidOutlet,
+            //         }, function(res) {
+            //             let tbody = $("#bulanan-body");
+            //             tbody.empty(); // kosongkan isi tabel
 
-                    if (!res.data || res.data.length === 0) {
-                        tbody.append(`
-                <tr>
-                    <td colspan="5" class="text-center">Tidak ada data</td>
-                </tr>
-            `);
-                        return;
-                    }
+            //             if (!res.data || res.data.length === 0) {
+            //                 tbody.append(`
+        //         <tr>
+        //             <td colspan="5" class="text-center">Tidak ada data</td>
+        //         </tr>
+        //     `);
+            //                 return;
+            //             }
 
-                    res.data.forEach(item => {
-                        let penjualan = item.total_penjualan ?? 0;
-                        let modal = item.total_modal ?? 0;
-                        let profit = item.total_profit ?? 0;
-                        let persen = item.persen_profit ?? 0;
+            //             res.data.forEach(item => {
+            //                 let penjualan = item.total_penjualan ?? 0;
+            //                 let modal = item.total_modal ?? 0;
+            //                 let profit = item.total_profit ?? 0;
+            //                 let persen = item.persen_profit ?? 0;
 
-                        tbody.append(`
-                <tr>
-                    <td class="text-center">${item.bulan}</td>
-                    <td class="text-end">Rp ${Number(penjualan).toLocaleString("id-ID")}</td>
-                    <td class="text-end">Rp ${Number(modal).toLocaleString("id-ID")}</td>
-                    <td class="text-end">Rp ${Number(profit).toLocaleString("id-ID")}</td>
-                    <td class="text-center">${persen} %</td>
-                </tr>
-            `);
-                    });
-                }).fail(function() {
-                    $("#bulanan-body").html(`
-            <tr>
-                <td colspan="5" class="text-center text-danger">Gagal memuat data</td>
-            </tr>
-        `);
-                });
-            }
+            //                 tbody.append(`
+        //         <tr>
+        //             <td class="text-center">${item.bulan}</td>
+        //             <td class="text-end">Rp ${Number(penjualan).toLocaleString("id-ID")}</td>
+        //             <td class="text-end">Rp ${Number(modal).toLocaleString("id-ID")}</td>
+        //             <td class="text-end">Rp ${Number(profit).toLocaleString("id-ID")}</td>
+        //             <td class="text-center">${persen} %</td>
+        //         </tr>
+        //     `);
+            //             });
+            //         }).fail(function() {
+            //             $("#bulanan-body").html(`
+        //     <tr>
+        //         <td colspan="5" class="text-center text-danger">Gagal memuat data</td>
+        //     </tr>
+        // `);
+            //         });
+            //     }
 
-            loadPenjualanBulanan();
+            //     loadPenjualanBulanan();
 
             function loadPenjualanTerlaku(uuidOutlet = "") {
                 $.get("/superadmin/get-penjualan-terlaku", {
@@ -626,80 +545,80 @@
 
             loadPenjualanTerlaku();
 
-            function loadPenjualanHarianJasa(uuidOutlet = "") {
-                $.get("/superadmin/get-penjualan-harian-jasa", {
-                    uuid_user: uuidOutlet
-                }, function(res) {
-                    let tbody = $("#harian-body-jasa");
-                    tbody.empty(); // kosongkan isi tabel
+            //     function loadPenjualanHarianJasa(uuidOutlet = "") {
+            //         $.get("/superadmin/get-penjualan-harian-jasa", {
+            //             uuid_user: uuidOutlet
+            //         }, function(res) {
+            //             let tbody = $("#harian-body-jasa");
+            //             tbody.empty(); // kosongkan isi tabel
 
-                    if (!res.data || res.data.length === 0) {
-                        tbody.append(`
-                <tr>
-                    <td colspan="2" class="text-center">Tidak ada data</td>
-                </tr>
-            `);
-                        return;
-                    }
+            //             if (!res.data || res.data.length === 0) {
+            //                 tbody.append(`
+        //         <tr>
+        //             <td colspan="2" class="text-center">Tidak ada data</td>
+        //         </tr>
+        //     `);
+            //                 return;
+            //             }
 
-                    res.data.forEach(item => {
-                        let jasa = item.total_jasa ?? 0;
+            //             res.data.forEach(item => {
+            //                 let jasa = item.total_jasa ?? 0;
 
-                        tbody.append(`
-                <tr>
-                    <td class="text-center">${item.tanggal}</td>
-                    <td class="text-end">Rp ${Number(jasa).toLocaleString("id-ID")}</td>
-                </tr>
-            `);
-                    });
-                }).fail(function() {
-                    $("#harian-body-jasa").html(`
-            <tr>
-                <td colspan="2" class="text-center text-danger">Gagal memuat data</td>
-            </tr>
-        `);
-                });
-            }
+            //                 tbody.append(`
+        //         <tr>
+        //             <td class="text-center">${item.tanggal}</td>
+        //             <td class="text-end">Rp ${Number(jasa).toLocaleString("id-ID")}</td>
+        //         </tr>
+        //     `);
+            //             });
+            //         }).fail(function() {
+            //             $("#harian-body-jasa").html(`
+        //     <tr>
+        //         <td colspan="2" class="text-center text-danger">Gagal memuat data</td>
+        //     </tr>
+        // `);
+            //         });
+            //     }
 
-            loadPenjualanHarianJasa(); // Panggil fungsi untuk load penjualan harian
+            //     loadPenjualanHarianJasa(); // Panggil fungsi untuk load penjualan harian
 
 
-            function loadPenjualanBulananJasa(uuidOutlet = "") {
-                $.get("/superadmin/get-penjualan-bulanan-jasa", {
-                    uuid_user: uuidOutlet,
-                }, function(res) {
-                    let tbody = $("#bulanan-body-jasa");
-                    tbody.empty(); // kosongkan isi tabel
+            //     function loadPenjualanBulananJasa(uuidOutlet = "") {
+            //         $.get("/superadmin/get-penjualan-bulanan-jasa", {
+            //             uuid_user: uuidOutlet,
+            //         }, function(res) {
+            //             let tbody = $("#bulanan-body-jasa");
+            //             tbody.empty(); // kosongkan isi tabel
 
-                    if (!res.data || res.data.length === 0) {
-                        tbody.append(`
-                <tr>
-                    <td colspan="2" class="text-center">Tidak ada data</td>
-                </tr>
-            `);
-                        return;
-                    }
+            //             if (!res.data || res.data.length === 0) {
+            //                 tbody.append(`
+        //         <tr>
+        //             <td colspan="2" class="text-center">Tidak ada data</td>
+        //         </tr>
+        //     `);
+            //                 return;
+            //             }
 
-                    res.data.forEach(item => {
-                        let jasa = item.total_jasa ?? 0;
+            //             res.data.forEach(item => {
+            //                 let jasa = item.total_jasa ?? 0;
 
-                        tbody.append(`
-                <tr>
-                    <td class="text-center">${item.bulan}</td>
-                    <td class="text-end">Rp ${Number(jasa).toLocaleString("id-ID")}</td>
-                </tr>
-            `);
-                    });
-                }).fail(function() {
-                    $("#bulanan-body-jasa").html(`
-            <tr>
-                <td colspan="2" class="text-center text-danger">Gagal memuat data</td>
-            </tr>
-        `);
-                });
-            }
+            //                 tbody.append(`
+        //         <tr>
+        //             <td class="text-center">${item.bulan}</td>
+        //             <td class="text-end">Rp ${Number(jasa).toLocaleString("id-ID")}</td>
+        //         </tr>
+        //     `);
+            //             });
+            //         }).fail(function() {
+            //             $("#bulanan-body-jasa").html(`
+        //     <tr>
+        //         <td colspan="2" class="text-center text-danger">Gagal memuat data</td>
+        //     </tr>
+        // `);
+            //         });
+            //     }
 
-            loadPenjualanBulananJasa();
+            //     loadPenjualanBulananJasa();
 
             function loadPenjualanKategori(uuidOutlet = "") {
                 $.get("/superadmin/get-penjualan-kategori", {
@@ -744,95 +663,227 @@
 
             loadPenjualanKategori(); // Panggil fungsi untuk load penjualan harian
 
-            function loadPenjualanKasir(uuidOutlet = "") {
-                $.get("/superadmin/get-penjualan-kasir", {
-                    uuid_user: uuidOutlet
-                }, function(res) {
-                    let tbody = $("#harian-body-kasir");
-                    tbody.empty(); // kosongkan isi tabel
+            // function loadPenjualanKasir(uuidOutlet = "") {
+            //     $.get("/superadmin/get-penjualan-kasir", {
+            //         uuid_user: uuidOutlet
+            //     }, function(res) {
+            //         let tbody = $("#harian-body-kasir");
+            //         tbody.empty(); // kosongkan isi tabel
 
-                    if (!res.data || res.data.length === 0) {
-                        tbody.append(`
-                        <tr>
-                            <td colspan="5" class="text-center">Tidak ada data</td>
-                        </tr>
-                    `);
-                        return;
-                    }
+            //         if (!res.data || res.data.length === 0) {
+            //             tbody.append(`
+        //             <tr>
+        //                 <td colspan="5" class="text-center">Tidak ada data</td>
+        //             </tr>
+        //         `);
+            //             return;
+            //         }
 
-                    res.data.forEach(item => {
-                        let totalPenjualan = item.totalPenjualan ?? 0;
-                        let totalJasa = item.totalJasa ?? 0;
-                        let grandTotal = item.grandTotal ?? 0;
+            //         res.data.forEach(item => {
+            //             let totalPenjualan = item.totalPenjualan ?? 0;
+            //             let totalJasa = item.totalJasa ?? 0;
+            //             let grandTotal = item.grandTotal ?? 0;
 
-                        tbody.append(`
-                        <tr>
-                            <td class="text-center">${item.kasir}</td>
-                            <td class="text-center">${item.totalTransaksi}</td>
-                            <td class="text-center">${item.totalItem}</td>
-                            <td class="text-end">Rp ${Number(totalPenjualan).toLocaleString("id-ID")}</td>
-                            <td class="text-end">Rp ${Number(totalJasa).toLocaleString("id-ID")}</td>
-                            <td class="text-end">Rp ${Number(grandTotal).toLocaleString("id-ID")}</td>
-                        </tr>
-                    `);
-                    });
-                }).fail(function() {
-                    $("#harian-body-kasir").html(`
-                    <tr>
-                        <td colspan="5" class="text-center text-danger">Gagal memuat data</td>
-                    </tr>
-                `);
-                });
-            }
+            //             tbody.append(`
+        //             <tr>
+        //                 <td class="text-center">${item.kasir}</td>
+        //                 <td class="text-center">${item.totalTransaksi}</td>
+        //                 <td class="text-center">${item.totalItem}</td>
+        //                 <td class="text-end">Rp ${Number(totalPenjualan).toLocaleString("id-ID")}</td>
+        //                 <td class="text-end">Rp ${Number(totalJasa).toLocaleString("id-ID")}</td>
+        //                 <td class="text-end">Rp ${Number(grandTotal).toLocaleString("id-ID")}</td>
+        //             </tr>
+        //         `);
+            //         });
+            //     }).fail(function() {
+            //         $("#harian-body-kasir").html(`
+        //         <tr>
+        //             <td colspan="5" class="text-center text-danger">Gagal memuat data</td>
+        //         </tr>
+        //     `);
+            //     });
+            // }
 
-            loadPenjualanKasir(); // Panggil fungsi untuk load penjualan harian
+            // loadPenjualanKasir(); // Panggil fungsi untuk load penjualan harian
+
+            //     function loadPenjualanTarget(uuidOutlet = "") {
+            //         $.get("/superadmin/get-penjualan-kasir-harian", {
+            //             uuid_user: uuidOutlet
+            //         }, function(res) {
+            //             let tbody = $("#target-body");
+            //             tbody.empty();
+
+            //             if (!res.data || res.data.length === 0) {
+            //                 tbody.append(`<tr>
+        //         <td colspan="12" class="text-center">Tidak ada data</td>
+        //     </tr>`);
+            //                 return;
+            //             }
+
+            //             res.data.forEach(group => {
+            //                 let kasirList = group.kasir;
+            //                 kasirList.forEach((item, index) => {
+            //                     let row = "<tr>";
+
+            //                     // Kolom tanggal hanya muncul sekali dengan rowspan
+            //                     if (index === 0) {
+            //                         row +=
+            //                             `<td rowspan="${kasirList.length}">${group.tanggal}</td>`;
+            //                     }
+
+            //                     row += `
+        //             <td>${item.nama}</td>
+        //             <td>${(item.modal ?? 0).toLocaleString()}</td>
+        //             <td>${(item.penjualan ?? 0).toLocaleString()}</td>
+        //             <td>${(item.jasa ?? 0).toLocaleString()}</td>
+        //             <td>${(item.profit ?? 0).toLocaleString()}</td>
+        //             <td>${(item.tunai ?? 0).toLocaleString()}</td>
+        //             <td>${(item.non_tunai ?? 0).toLocaleString()}</td>
+        //             <td>${(item.total ?? 0).toLocaleString()}</td>
+        //             <td>${(item.target_profit ?? 0).toLocaleString()}</td>
+        //             <td>${(item.persentase ?? 0)}%</td>
+        //             <td>${(item.selisih ?? 0).toLocaleString()}</td>
+        //         </tr>`;
+            //                     tbody.append(row);
+            //                 });
+            //             });
+            //         }).fail(function() {
+            //             $("#target-body").html(`<tr>
+        //     <td colspan="12" class="text-center text-danger">Gagal memuat data</td>
+        // </tr>`);
+            //         });
+            //     }
 
             function loadPenjualanTarget(uuidOutlet = "") {
-                $.get("/superadmin/get-target-penjualan-bulanan", {
+                $.get("/superadmin/get-penjualan-kasir-harian", {
                     uuid_user: uuidOutlet
                 }, function(res) {
                     let tbody = $("#target-body");
-                    tbody.empty(); // kosongkan isi tabel
+                    tbody.empty();
 
                     if (!res.data || res.data.length === 0) {
                         tbody.append(`<tr>
-                <td colspan="5" class="text-center">Tidak ada data</td>
+                <td colspan="12" class="text-center">Tidak ada data</td>
             </tr>`);
                         return;
                     }
 
-                    res.data.forEach(item => {
-                        tbody.append(`
-                <tr>
-                    <td>${res.year}</td>
-                    <td>${item.bulan}</td>
-                    <td>Rp ${Number(item.target).toLocaleString()}</td>
-                    <td>Rp ${Number(item.profit).toLocaleString()}</td>
-                    <td>Rp ${Number(item.selisih).toLocaleString()}</td>
-                </tr>
-            `);
+                    res.data.forEach(group => {
+                        let kasirList = group.kasir;
+                        kasirList.forEach((item, index) => {
+                            let row = "<tr>";
+
+                            // Tanggal rowspan
+                            if (index === 0) {
+                                row +=
+                                    `<td rowspan="${kasirList.length}">${group.tanggal}</td>`;
+                            }
+
+                            // Data kasir
+                            row += `
+                    <td>${item.nama}</td>
+                    <td>${(item.modal ?? 0).toLocaleString()}</td>
+                    <td>${(item.penjualan ?? 0).toLocaleString()}</td>
+                    <td>${(item.jasa ?? 0).toLocaleString()}</td>
+                    <td>${(item.profit ?? 0).toLocaleString()}</td>
+                    <td>${(item.tunai ?? 0).toLocaleString()}</td>
+                    <td>${(item.non_tunai ?? 0).toLocaleString()}</td>
+                    <td>${(item.total ?? 0).toLocaleString()}</td>
+                `;
+
+                            // Target profit, persentase, selisih rowspan
+                            if (index === 0) {
+                                row += `
+                        <td rowspan="${kasirList.length}">${(item.target_profit ?? 0).toLocaleString()}</td>
+                        <td rowspan="${kasirList.length}">${(item.persentase ?? 0)}%</td>
+                        <td rowspan="${kasirList.length}">${(item.selisih ?? 0).toLocaleString()}</td>
+                    `;
+                            }
+
+                            row += "</tr>";
+                            tbody.append(row);
+                        });
                     });
                 }).fail(function() {
                     $("#target-body").html(`<tr>
-            <td colspan="5" class="text-center text-danger">Gagal memuat data</td>
+            <td colspan="12" class="text-center text-danger">Gagal memuat data</td>
         </tr>`);
                 });
             }
 
-
             loadPenjualanTarget(); // Panggil fungsi untuk load penjualan harian
+
+            function loadPenjualanTargetBulanan(uuidOutlet = "") {
+                $.get("/superadmin/get-penjualan-kasir-bulanan", {
+                    uuid_user: uuidOutlet
+                }, function(res) {
+                    let tbody = $("#target-bulanan-body");
+                    tbody.empty();
+
+                    if (!res.data || res.data.length === 0) {
+                        tbody.append(`<tr>
+                <td colspan="12" class="text-center">Tidak ada data</td>
+            </tr>`);
+                        return;
+                    }
+
+                    res.data.forEach(group => {
+                        let kasirList = group.kasir;
+                        kasirList.forEach((item, index) => {
+                            let row = "<tr>";
+
+                            // Tanggal rowspan
+                            if (index === 0) {
+                                row +=
+                                    `<td rowspan="${kasirList.length}">${group.bulan}</td>`;
+                            }
+
+                            // Data kasir
+                            row += `
+                    <td>${item.nama}</td>
+                    <td>${(item.modal ?? 0).toLocaleString()}</td>
+                    <td>${(item.penjualan ?? 0).toLocaleString()}</td>
+                    <td>${(item.jasa ?? 0).toLocaleString()}</td>
+                    <td>${(item.profit ?? 0).toLocaleString()}</td>
+                    <td>${(item.tunai ?? 0).toLocaleString()}</td>
+                    <td>${(item.non_tunai ?? 0).toLocaleString()}</td>
+                    <td>${(item.total ?? 0).toLocaleString()}</td>
+                `;
+
+                            // Target profit, persentase, selisih rowspan
+                            if (index === 0) {
+                                row += `
+                        <td rowspan="${kasirList.length}">${(item.target_profit ?? 0).toLocaleString()}</td>
+                        <td rowspan="${kasirList.length}">${(item.persentase ?? 0)}%</td>
+                        <td rowspan="${kasirList.length}">${(item.selisih ?? 0).toLocaleString()}</td>
+                    `;
+                            }
+
+                            row += "</tr>";
+                            tbody.append(row);
+                        });
+                    });
+                }).fail(function() {
+                    $("#target-bulanan-body").html(`<tr>
+            <td colspan="12" class="text-center text-danger">Gagal memuat data</td>
+        </tr>`);
+                });
+            }
+
+            loadPenjualanTargetBulanan(); // Panggil fungsi untuk load penjualan harian
 
             // reload saat ganti outlet
             $("#filter-outlet").on("change", function() {
                 let uuidOutlet = $(this).val();
-                loadPenjualanHarian(uuidOutlet); // Panggil fungsi dengan outlet yang dipilih
-                loadPenjualanBulanan(uuidOutlet)
+                // loadPenjualanHarian(uuidOutlet); // Panggil fungsi dengan outlet yang dipilih
+                // loadPenjualanBulanan(uuidOutlet)
                 loadPenjualanTerlaku(uuidOutlet);
-                loadPenjualanHarianJasa(uuidOutlet); // Panggil fungsi dengan outlet yang dipilih
-                loadPenjualanBulananJasa(uuidOutlet)
-                loadPenjualanKategori(uuidOutlet)
-                loadPenjualanKasir(uuidOutlet)
+                // loadPenjualanHarianJasa(uuidOutlet); // Panggil fungsi dengan outlet yang dipilih
+                // loadPenjualanBulananJasa(uuidOutlet)
+                // loadPenjualanKategori(uuidOutlet)
+                // loadPenjualanKasir(uuidOutlet)
                 loadPenjualanTarget(uuidOutlet)
+                loadPenjualanTargetBulanan(uuidOutlet)
                 // loadChart(uuidOutlet);
             });
         });

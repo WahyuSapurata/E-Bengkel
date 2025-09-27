@@ -22,8 +22,7 @@ class StoreTargetPenjualanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tahun' => 'required',
-            'bulan' => 'required',
+            'tanggal' => 'required',
             'target' => 'required',
         ];
     }
@@ -31,8 +30,7 @@ class StoreTargetPenjualanRequest extends FormRequest
     public function messages()
     {
         return [
-            'tahun.required' => 'Kolom tahun harus di isi.',
-            'bulan.required' => 'Kolom bulan harus di isi.',
+            'tanggal.required' => 'Kolom tanggal harus di isi.',
             'target.required' => 'Kolom target harus di isi.',
         ];
     }

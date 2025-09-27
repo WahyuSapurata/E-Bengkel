@@ -18,8 +18,7 @@ class TargetPenjualanController extends Controller
     {
         $columns = [
             'uuid',
-            'tahun',
-            'bulan',
+            'tanggal',
             'target',
             'keterangan',
         ];
@@ -28,8 +27,7 @@ class TargetPenjualanController extends Controller
 
         $query = TargetPenjualan::select(
             'uuid',
-            'tahun',
-            'bulan',
+            'tanggal',
             'target',
             'keterangan',
         );
@@ -72,8 +70,7 @@ class TargetPenjualanController extends Controller
     public function store(StoreTargetPenjualanRequest $request)
     {
         TargetPenjualan::create([
-            'tahun' => $request->tahun,
-            'bulan' => $request->bulan,
+            'tanggal' => $request->tanggal,
             'target' =>  preg_replace('/\D/', '', $request->target),
             'keterangan' => $request->keterangan,
         ]);
@@ -90,8 +87,7 @@ class TargetPenjualanController extends Controller
     {
         $kategori = TargetPenjualan::where('uuid', $params)->first();
         $kategori->update([
-            'tahun' => $update->tahun,
-            'bulan' => $update->bulan,
+            'tanggal' => $update->tanggal,
             'target' =>  preg_replace('/\D/', '', $update->target),
             'keterangan' => $update->keterangan,
         ]);

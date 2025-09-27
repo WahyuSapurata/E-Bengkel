@@ -30,6 +30,9 @@ Route::group([
     Route::get('/get-penjualan-kategori', [App\Http\Controllers\Dashboard::class, 'getPenjualanPerKategori'])->name('get-penjualan-kategori');
     Route::get('/get-penjualan-kasir', [App\Http\Controllers\Dashboard::class, 'getDashboardPenjualanKasir'])->name('get-penjualan-kasir');
 
+    Route::get('/get-penjualan-kasir-harian', [App\Http\Controllers\Dashboard::class, 'getDashboardPenjualanKasirHarian'])->name('get-penjualan-kasir-harian');
+    Route::get('/get-penjualan-kasir-bulanan', [App\Http\Controllers\Dashboard::class, 'getDashboardPenjualanKasirBulanan'])->name('get-penjualan-kasir-bulanan');
+
     Route::prefix('setup')->group(function () {
         Route::get('/data-pengguna', [App\Http\Controllers\DataPengguna::class, 'index'])->name('data-pengguna');
         Route::get('/data-pengguna-get', [App\Http\Controllers\DataPengguna::class, 'get'])->name('data-pengguna-get');

@@ -66,8 +66,7 @@
                                     <thead>
                                         <tr>
                                             <th class="text-capitalize">No</th>
-                                            <th class="text-capitalize">tahun</th>
-                                            <th class="text-capitalize">bulan</th>
+                                            <th class="text-capitalize">tanggal</th>
                                             <th class="text-capitalize">target</th>
                                             <th class="text-capitalize">keterangan</th>
                                             <th class="text-end">Actions</th>
@@ -96,31 +95,8 @@
                     </div>
                     <div class="modal-body">
                         <div class="mb-2">
-                            <label class="text-capitalize form-label">tahun</label>
-                            <select name="tahun" id="tahun" data-placeholder="Pilih inputan"
-                                class="form-select basic-usage">
-                                <option value="" selected>-- pilih tahun --</option>
-                            </select>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                        <div class="mb-2">
-                            <label class="text-capitalize form-label">bulan</label>
-                            <select name="bulan" id="bulan" data-placeholder="Pilih inputan"
-                                class="form-select basic-usage">
-                                <option value="" selected>-- pilih bulan --</option>
-                                <option value="januari">Januari</option>
-                                <option value="februari">Februari</option>
-                                <option value="maret">Maret</option>
-                                <option value="april">April</option>
-                                <option value="mei">Mei</option>
-                                <option value="juni">Juni</option>
-                                <option value="juli">Juli</option>
-                                <option value="agustus">Agustus</option>
-                                <option value="september">September</option>
-                                <option value="oktober">Oktober</option>
-                                <option value="november">November</option>
-                                <option value="desember">Desember</option>
-                            </select>
+                            <label class="text-capitalize form-label">tanggal</label>
+                            <input type="text" name="tanggal" id="tanggal" class="form-control dateofBirth">
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="mb-2">
@@ -170,16 +146,6 @@
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
         });
-
-        const selectTahun = document.getElementById('tahun');
-        const tahunSekarang = new Date().getFullYear();
-
-        for (let tahun = tahunSekarang; tahun >= 2020; tahun--) {
-            const option = document.createElement('option');
-            option.value = tahun;
-            option.text = tahun;
-            selectTahun.appendChild(option);
-        }
 
         function formatRupiah(angka) {
             let number_string = angka.replace(/[^,\d]/g, '').toString(),
@@ -347,11 +313,7 @@
                         }
                     },
                     {
-                        data: 'tahun',
-                        class: 'mb-kolom-text text-left align-content-center'
-                    },
-                    {
-                        data: 'bulan',
+                        data: 'tanggal',
                         class: 'mb-kolom-text text-left align-content-center'
                     },
                     {

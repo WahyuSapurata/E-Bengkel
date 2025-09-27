@@ -14,8 +14,7 @@ return new class extends Migration
         Schema::create('target_penjualans', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid');
-            $table->string('tahun');
-            $table->string('bulan');
+            $table->string('tanggal');
             $table->string('target');
             $table->text('keterangan')->nullable();
             $table->timestamps();

@@ -894,4 +894,262 @@ class Dashboard extends BaseController
             'data' => $data
         ]);
     }
+
+
+    public function getDashboardPenjualanKasirHarian(Request $request)
+    {
+        $uuidOutlet = $request->uuid_outlet ?? null;
+
+        $query = DB::table('penjualans')
+            ->join('users', 'penjualans.created_by', '=', 'users.nama')
+            ->select(
+                'penjualans.uuid',
+                DB::raw('COALESCE(penjualans.tanggal_transaksi, penjualans.created_at) as tanggal'),
+                'users.nama as kasir',
+                'penjualans.uuid_outlet',
+                'penjualans.pembayaran',
+                'penjualans.uuid_jasa'
+            )
+            ->orderBy('tanggal', 'desc');
+
+        if ($uuidOutlet) {
+            $query->where('penjualans.uuid_outlet', $uuidOutlet);
+        }
+
+        $transaksis = $query->get();
+
+        $rekapTanggal = [];
+
+        foreach ($transaksis as $trx) {
+            $tanggalFormatted = \Carbon\Carbon::parse($trx->tanggal)->format('d-m-Y');
+            $keyKasir   = $tanggalFormatted . '_' . $trx->kasir;
+
+            if (!isset($rekapTanggal[$tanggalFormatted])) {
+                $rekapTanggal[$tanggalFormatted] = [
+                    'tanggal' => $tanggalFormatted,
+                    'kasir'   => []
+                ];
+            }
+
+            if (!isset($rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir])) {
+                $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir] = [
+                    'nama'          => $trx->kasir,
+                    'modal'         => 0,
+                    'penjualan'     => 0,
+                    'jasa'          => 0,
+                    'profit'        => 0,
+                    'tunai'         => 0,
+                    'non_tunai'     => 0,
+                    'total'         => 0,
+                    'target_profit' => 0,
+                    'persentase'    => 0,
+                    'selisih'       => 0,
+                ];
+            }
+
+            // === Produk
+            $produkTotals = DB::table('detail_penjualans')
+                ->join('harga_backup_penjualans', 'detail_penjualans.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+                ->where('uuid_penjualans', $trx->uuid)
+                ->selectRaw('
+                SUM(detail_penjualans.total_harga) as total_penjualan,
+                SUM(detail_penjualans.total_harga) - SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_profit,
+                SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_modal
+            ')
+                ->first();
+
+            // === Paket
+            $paketTotals = DB::table('detail_penjualan_pakets')
+                ->join('harga_backup_penjualans', 'detail_penjualan_pakets.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+                ->where('uuid_penjualans', $trx->uuid)
+                ->selectRaw('
+                SUM(detail_penjualan_pakets.total_harga) as total_penjualan,
+                SUM(detail_penjualan_pakets.total_harga - harga_backup_penjualans.harga_modal * detail_penjualan_pakets.qty) as total_profit,
+                SUM(harga_backup_penjualans.harga_modal * detail_penjualan_pakets.qty) as total_modal
+            ')
+                ->first();
+
+            // === Jasa
+            $totalJasa = 0;
+            if ($trx->uuid_jasa) {
+                $totalJasa = DB::table('jasas')
+                    ->whereRaw('JSON_CONTAINS(?, JSON_QUOTE(jasas.uuid))', [$trx->uuid_jasa])
+                    ->sum('jasas.harga');
+            }
+
+            $modal      = ($produkTotals->total_modal ?? 0) + ($paketTotals->total_modal ?? 0);
+            $penjualan  = ($produkTotals->total_penjualan ?? 0) + ($paketTotals->total_penjualan ?? 0);
+            $profit     = ($produkTotals->total_profit ?? 0) + ($paketTotals->total_profit ?? 0);
+            $total      = $penjualan + $totalJasa;
+
+            // === Update nilai kasir ===
+            $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['modal']     += $modal;
+            $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['penjualan'] += $penjualan;
+            $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['jasa']      += $totalJasa;
+            $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['profit']    += $profit;
+            $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['total']     += $total;
+
+            if ($trx->pembayaran === 'Tunai') {
+                $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['tunai'] += $total;
+            } else {
+                $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['non_tunai'] += $total;
+            }
+        }
+
+        // Hitung target profit + persentase per kasir
+        foreach ($rekapTanggal as $tanggal => &$group) {
+            // $tanggalCarbon = \Carbon\Carbon::createFromFormat('d-m-Y', $tanggal);
+            $targetProfit = (int) DB::table('target_penjualans')
+                ->where('tanggal', $tanggal)
+                ->value('target') ?? 0;
+
+            foreach ($group['kasir'] as &$kasir) {
+                $kasir['target_profit'] = $targetProfit;
+                $kasir['persentase']    = $targetProfit > 0 ? round(($kasir['profit'] / $targetProfit) * 100, 2) : 0;
+                $kasir['selisih']       = $kasir['profit'] - $targetProfit;
+            }
+
+            // Ubah kasir associative jadi array
+            $group['kasir'] = array_values($group['kasir']);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data'   => array_values($rekapTanggal)
+        ]);
+    }
+
+    public function getDashboardPenjualanKasirBulanan(Request $request)
+    {
+        $uuidOutlet = $request->uuid_outlet ?? null;
+
+        // Ambil transaksi
+        $query = DB::table('penjualans')
+            ->join('users', 'penjualans.created_by', '=', 'users.nama')
+            ->select(
+                'penjualans.uuid',
+                'penjualans.tanggal_transaksi as tanggal',
+                'users.nama as kasir',
+                'penjualans.uuid_outlet',
+                'penjualans.pembayaran',
+                'penjualans.uuid_jasa'
+            )
+            ->orderBy('tanggal', 'asc');
+
+        if ($uuidOutlet) {
+            $query->where('penjualans.uuid_outlet', $uuidOutlet);
+        }
+
+        $transaksis = $query->get();
+
+        $rekapBulan = [];
+
+        foreach ($transaksis as $trx) {
+            // === Format tanggal (d-m-Y)
+            $tanggalFormatted = \Carbon\Carbon::parse($trx->tanggal)->format('d-m-Y');
+
+            // === Buat key bulanan
+            $carbonDate = \Carbon\Carbon::createFromFormat('d-m-Y', $tanggalFormatted);
+            $bulanKey   = $carbonDate->format('m-Y');
+            $bulanLabel = $carbonDate->translatedFormat('F Y'); // Contoh: September 2025
+
+            $keyKasir = $bulanKey . '_' . $trx->kasir;
+
+            if (!isset($rekapBulan[$bulanKey])) {
+                $rekapBulan[$bulanKey] = [
+                    'bulan' => $bulanLabel,
+                    'kasir' => []
+                ];
+            }
+
+            if (!isset($rekapBulan[$bulanKey]['kasir'][$keyKasir])) {
+                $rekapBulan[$bulanKey]['kasir'][$keyKasir] = [
+                    'nama'          => $trx->kasir,
+                    'modal'         => 0,
+                    'penjualan'     => 0,
+                    'jasa'          => 0,
+                    'profit'        => 0,
+                    'tunai'         => 0,
+                    'non_tunai'     => 0,
+                    'total'         => 0,
+                    'target_profit' => 0,
+                    'persentase'    => 0,
+                    'selisih'       => 0,
+                ];
+            }
+
+            // === Produk
+            $produkTotals = DB::table('detail_penjualans')
+                ->join('harga_backup_penjualans', 'detail_penjualans.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+                ->where('uuid_penjualans', $trx->uuid)
+                ->selectRaw('
+                SUM(detail_penjualans.total_harga) as total_penjualan,
+                SUM(detail_penjualans.total_harga) - SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_profit,
+                SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_modal
+            ')
+                ->first();
+
+            // === Paket
+            $paketTotals = DB::table('detail_penjualan_pakets')
+                ->join('harga_backup_penjualans', 'detail_penjualan_pakets.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+                ->where('uuid_penjualans', $trx->uuid)
+                ->selectRaw('
+                SUM(detail_penjualan_pakets.total_harga) as total_penjualan,
+                SUM(detail_penjualan_pakets.total_harga - harga_backup_penjualans.harga_modal * detail_penjualan_pakets.qty) as total_profit,
+                SUM(harga_backup_penjualans.harga_modal * detail_penjualan_pakets.qty) as total_modal
+            ')
+                ->first();
+
+            // === Jasa
+            $totalJasa = 0;
+            if ($trx->uuid_jasa) {
+                $totalJasa = DB::table('jasas')
+                    ->whereRaw('JSON_CONTAINS(?, JSON_QUOTE(jasas.uuid))', [$trx->uuid_jasa])
+                    ->sum('jasas.harga');
+            }
+
+            $modal      = ($produkTotals->total_modal ?? 0) + ($paketTotals->total_modal ?? 0);
+            $penjualan  = ($produkTotals->total_penjualan ?? 0) + ($paketTotals->total_penjualan ?? 0);
+            $profit     = ($produkTotals->total_profit ?? 0) + ($paketTotals->total_profit ?? 0);
+            $total      = $penjualan + $totalJasa;
+
+            // Update nilai kasir
+            $rekapBulan[$bulanKey]['kasir'][$keyKasir]['modal']     += $modal;
+            $rekapBulan[$bulanKey]['kasir'][$keyKasir]['penjualan'] += $penjualan;
+            $rekapBulan[$bulanKey]['kasir'][$keyKasir]['jasa']      += $totalJasa;
+            $rekapBulan[$bulanKey]['kasir'][$keyKasir]['profit']    += $profit;
+            $rekapBulan[$bulanKey]['kasir'][$keyKasir]['total']     += $total;
+
+            if ($trx->pembayaran === 'Tunai') {
+                $rekapBulan[$bulanKey]['kasir'][$keyKasir]['tunai'] += $total;
+            } else {
+                $rekapBulan[$bulanKey]['kasir'][$keyKasir]['non_tunai'] += $total;
+            }
+        }
+
+        // === Hitung target profit bulanan
+        foreach ($rekapBulan as $bulanKey => &$group) {
+            $carbon = \Carbon\Carbon::createFromFormat('m-Y', $bulanKey);
+            $awalBulan  = $carbon->copy()->startOfMonth()->format('Y-m-d');
+            $akhirBulan = $carbon->copy()->endOfMonth()->format('Y-m-d');
+
+            $targetProfit = (int) DB::table('target_penjualans')
+                ->whereRaw("STR_TO_DATE(tanggal, '%d-%m-%Y') BETWEEN ? AND ?", [$awalBulan, $akhirBulan])
+                ->sum('target');
+
+            foreach ($group['kasir'] as &$kasir) {
+                $kasir['target_profit'] = $targetProfit;
+                $kasir['persentase']    = $targetProfit > 0 ? round(($kasir['profit'] / $targetProfit) * 100, 2) : 0;
+                $kasir['selisih']       = $kasir['profit'] - $targetProfit;
+            }
+
+            // Ubah kasir associative jadi array
+            $group['kasir'] = array_values($group['kasir']);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data'   => array_values($rekapBulan)
+        ]);
+    }
 }

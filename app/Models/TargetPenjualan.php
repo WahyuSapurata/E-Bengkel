@@ -11,8 +11,7 @@ class TargetPenjualan extends Model
     protected $primaryKey = 'id';
     protected $fillable = [
         'uuid',
-        'tahun',
-        'bulan',
+        'tanggal',
         'target',
         'keterangan',
     ];
