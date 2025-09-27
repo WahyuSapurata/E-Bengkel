@@ -904,7 +904,7 @@ class Dashboard extends BaseController
             ->join('users', 'penjualans.created_by', '=', 'users.nama')
             ->select(
                 'penjualans.uuid',
-                DB::raw('COALESCE(penjualans.tanggal_transaksi, penjualans.created_at) as tanggal'),
+                DB::raw('penjualans.tanggal_transaksi as tanggal'),
                 'users.nama as kasir',
                 'penjualans.uuid_outlet',
                 'penjualans.pembayaran',
@@ -921,7 +921,7 @@ class Dashboard extends BaseController
         $rekapTanggal = [];
 
         foreach ($transaksis as $trx) {
-            $tanggalFormatted = \Carbon\Carbon::parse($trx->tanggal)->format('d-m-Y');
+            $tanggalFormatted = $trx->tanggal;
             $keyKasir   = $tanggalFormatted . '_' . $trx->kasir;
 
             if (!isset($rekapTanggal[$tanggalFormatted])) {
@@ -940,6 +940,7 @@ class Dashboard extends BaseController
                     'profit'        => 0,
                     'tunai'         => 0,
                     'non_tunai'     => 0,
+                    'sub_total'     => 0,
                     'total'         => 0,
                     'target_profit' => 0,
                     'persentase'    => 0,
@@ -980,19 +981,19 @@ class Dashboard extends BaseController
             $modal      = ($produkTotals->total_modal ?? 0) + ($paketTotals->total_modal ?? 0);
             $penjualan  = ($produkTotals->total_penjualan ?? 0) + ($paketTotals->total_penjualan ?? 0);
             $profit     = ($produkTotals->total_profit ?? 0) + ($paketTotals->total_profit ?? 0);
-            $total      = $penjualan + $totalJasa;
+            $sub_total      = $penjualan + $totalJasa;
 
             // === Update nilai kasir ===
             $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['modal']     += $modal;
             $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['penjualan'] += $penjualan;
             $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['jasa']      += $totalJasa;
             $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['profit']    += $profit;
-            $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['total']     += $total;
+            $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['sub_total']     += $sub_total;
 
             if ($trx->pembayaran === 'Tunai') {
-                $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['tunai'] += $total;
+                $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['tunai'] += $sub_total;
             } else {
-                $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['non_tunai'] += $total;
+                $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['non_tunai'] += $sub_total;
             }
         }
 
@@ -1005,11 +1006,13 @@ class Dashboard extends BaseController
 
             // Hitung total profit semua kasir hari ini
             $totalProfitTanggal = collect($group['kasir'])->sum('profit');
+            $total = collect($group['kasir'])->sum('sub_total');
 
             foreach ($group['kasir'] as &$kasir) {
+                $kasir['total'] = $total;
                 $kasir['target_profit'] = $targetProfit;
                 $kasir['persentase']    = $targetProfit > 0
-                    ? round(($kasir['profit'] / $targetProfit) * 100, 2)
+                    ? round(($totalProfitTanggal / $targetProfit) * 100, 2)
                     : 0;
                 // Selisih dihitung dari total profit semua kasir hari itu
                 $kasir['selisih']       = $totalProfitTanggal - $targetProfit;
@@ -1077,7 +1080,8 @@ class Dashboard extends BaseController
                     'profit'        => 0,
                     'tunai'         => 0,
                     'non_tunai'     => 0,
-                    'total'         => 0,
+                    'sub_total'     => 0,
+                    'total'     => 0,
                     'target_profit' => 0,
                     'persentase'    => 0,
                     'selisih'       => 0,
@@ -1117,19 +1121,19 @@ class Dashboard extends BaseController
             $modal      = ($produkTotals->total_modal ?? 0) + ($paketTotals->total_modal ?? 0);
             $penjualan  = ($produkTotals->total_penjualan ?? 0) + ($paketTotals->total_penjualan ?? 0);
             $profit     = ($produkTotals->total_profit ?? 0) + ($paketTotals->total_profit ?? 0);
-            $total      = $penjualan + $totalJasa;
+            $sub_total      = $penjualan + $totalJasa;
 
             // Update nilai kasir
             $rekapBulan[$bulanKey]['kasir'][$keyKasir]['modal']     += $modal;
             $rekapBulan[$bulanKey]['kasir'][$keyKasir]['penjualan'] += $penjualan;
             $rekapBulan[$bulanKey]['kasir'][$keyKasir]['jasa']      += $totalJasa;
             $rekapBulan[$bulanKey]['kasir'][$keyKasir]['profit']    += $profit;
-            $rekapBulan[$bulanKey]['kasir'][$keyKasir]['total']     += $total;
+            $rekapBulan[$bulanKey]['kasir'][$keyKasir]['sub_total']     += $sub_total;
 
             if ($trx->pembayaran === 'Tunai') {
-                $rekapBulan[$bulanKey]['kasir'][$keyKasir]['tunai'] += $total;
+                $rekapBulan[$bulanKey]['kasir'][$keyKasir]['tunai'] += $sub_total;
             } else {
-                $rekapBulan[$bulanKey]['kasir'][$keyKasir]['non_tunai'] += $total;
+                $rekapBulan[$bulanKey]['kasir'][$keyKasir]['non_tunai'] += $sub_total;
             }
         }
 
@@ -1145,10 +1149,12 @@ class Dashboard extends BaseController
 
             // Hitung total profit semua kasir dalam bulan ini
             $totalProfitBulan = collect($group['kasir'])->sum('profit');
+            $total = collect($group['kasir'])->sum('sub_total');
 
             foreach ($group['kasir'] as &$kasir) {
+                $kasir['total'] = $total;
                 $kasir['target_profit'] = $targetProfit;
-                $kasir['persentase']    = $targetProfit > 0 ? round(($kasir['profit'] / $targetProfit) * 100, 2) : 0;
+                $kasir['persentase']    = $targetProfit > 0 ? round(($totalProfitBulan / $targetProfit) * 100, 2) : 0;
                 // Selisih dihitung dari total bulan, bukan per kasir
                 $kasir['selisih']       = $totalProfitBulan - $targetProfit;
             }

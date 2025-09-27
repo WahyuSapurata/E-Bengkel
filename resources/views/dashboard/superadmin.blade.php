@@ -93,6 +93,7 @@
                                                     <th>Profit</th>
                                                     <th>Tunai</th>
                                                     <th>Non Tunai</th>
+                                                    <th>Sub Total</th>
                                                     <th>Total</th>
                                                     <th>Target Profit</th>
                                                     <th>Persentase Target</th>
@@ -125,6 +126,7 @@
                                                     <th>Profit</th>
                                                     <th>Tunai</th>
                                                     <th>Non Tunai</th>
+                                                    <th>Sub Total</th>
                                                     <th>Total</th>
                                                     <th>Target Profit</th>
                                                     <th>Persentase Target</th>
@@ -788,12 +790,13 @@
                     <td>${(item.profit ?? 0).toLocaleString()}</td>
                     <td>${(item.tunai ?? 0).toLocaleString()}</td>
                     <td>${(item.non_tunai ?? 0).toLocaleString()}</td>
-                    <td>${(item.total ?? 0).toLocaleString()}</td>
+                    <td>${(item.sub_total ?? 0).toLocaleString()}</td>
                 `;
 
                             // Target profit, persentase, selisih rowspan
                             if (index === 0) {
                                 row += `
+                        <td rowspan="${kasirList.length}">${(item.total ?? 0).toLocaleString()}</td>
                         <td rowspan="${kasirList.length}">${(item.target_profit ?? 0).toLocaleString()}</td>
                         <td rowspan="${kasirList.length}">${(item.persentase ?? 0)}%</td>
                         <td rowspan="${kasirList.length}">${(item.selisih ?? 0).toLocaleString()}</td>
@@ -847,12 +850,13 @@
                     <td>${(item.profit ?? 0).toLocaleString()}</td>
                     <td>${(item.tunai ?? 0).toLocaleString()}</td>
                     <td>${(item.non_tunai ?? 0).toLocaleString()}</td>
-                    <td>${(item.total ?? 0).toLocaleString()}</td>
+                    <td>${(item.sub_total ?? 0).toLocaleString()}</td>
                 `;
 
                             // Target profit, persentase, selisih rowspan
                             if (index === 0) {
                                 row += `
+                                <td rowspan="${kasirList.length}">${(item.total ?? 0).toLocaleString()}</td>
                         <td rowspan="${kasirList.length}">${(item.target_profit ?? 0).toLocaleString()}</td>
                         <td rowspan="${kasirList.length}">${(item.persentase ?? 0)}%</td>
                         <td rowspan="${kasirList.length}">${(item.selisih ?? 0).toLocaleString()}</td>
