@@ -8,8 +8,6 @@
 
     /* Optional: tetap sticky untuk header */
     .table-responsive thead {
-        position: sticky;
-        top: 0;
         background: #f8f9fa;
         /* warna header */
         z-index: 1;
