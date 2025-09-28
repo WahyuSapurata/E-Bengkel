@@ -107,6 +107,30 @@
                                             <th class="text-end">Actions</th>
                                         </tr>
                                     </thead>
+                                    <tfoot class="bg-info">
+                                        <tr>
+                                            <th colspan="16" style="text-align: left !important; font-size: 15px">TOTAL
+                                                :</th>
+                                        </tr>
+                                        {{-- <tr>
+                                            <th colspan="3">Total Harga</th>
+                                            <th colspan="13" id="total-hrg-modal"></th>
+                                        </tr>
+                                        <tr>
+                                            <th colspan="3">Total Harga Jual</th>
+                                            <th colspan="13" id="total-harga-jual"></th>
+                                        </tr> --}}
+                                        <tr>
+                                            <th colspan="2" class="text-end" style="font-size: 15px">Total Harga Modal
+                                            </th>
+                                            <th colspan="14" id="total-modal-x-stock" style="font-size: 15px"></th>
+                                        </tr>
+                                        <tr>
+                                            <th colspan="2" class="text-end" style="font-size: 15px">Total Harga Jual
+                                            </th>
+                                            <th colspan="14" id="total-jual-x-stock" style="font-size: 15px"></th>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
                         </div>
@@ -871,7 +895,22 @@
                                 </div>
                     `;
                     }
-                }]
+                }],
+                // === di sini tambahkan footerCallback
+                footerCallback: function(row, data, start, end, display) {
+                    let api = this.api();
+
+                    // Ambil total dari response server
+                    let response = api.ajax.json().total;
+
+                    $('#total-hrg-modal').html(': ' + formatRupiah(response.hrg_modal.toString()));
+                    $('#total-harga-jual').html(': ' + formatRupiah(response.harga_jual.toString()));
+                    // $('#total-stock').html(response.stock);
+                    $('#total-modal-x-stock').html(': ' + formatRupiah(response.hrg_modal_kali_stock
+                        .toString()));
+                    $('#total-jual-x-stock').html(': ' + formatRupiah(response.harga_jual_kali_stock
+                        .toString()));
+                }
             });
         };
 

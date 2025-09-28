@@ -327,11 +327,112 @@ class ProdukController extends Controller
 
         $data = $query->get();
 
+        // Hitung total harga modal
+        $totalHargaModal = Produk::sum('hrg_modal');
+
+        // Hitung total harga jual (pakai formula dari select harga_jual)
+        $totalHargaJual = Produk::select(DB::raw('
+    SUM(
+        ROUND(
+            (
+                CAST(hrg_modal AS DECIMAL(15,2))
+                + (CAST(hrg_modal AS DECIMAL(15,2)) * CAST(profit AS DECIMAL(15,2)) / 100)
+            ) / 1000
+        ) * 1000
+    ) as total_harga_jual
+'))->value('total_harga_jual');
+
+        // Subquery untuk stok per produk
+        $sub = Produk::select(
+            'produks.uuid',
+            'produks.hrg_modal',
+            'produks.profit',
+            DB::raw("(
+        CASE
+            WHEN EXISTS (
+                SELECT 1 FROM opnames o
+                WHERE o.uuid_user = '" . Auth::user()->uuid . "'
+                AND o.uuid_produk = produks.uuid
+            )
+            THEN (
+                (SELECT o.stock
+                 FROM opnames o
+                 WHERE o.uuid_user = '" . Auth::user()->uuid . "'
+                 AND o.uuid_produk = produks.uuid
+                 ORDER BY o.created_at DESC
+                 LIMIT 1)
+                +
+                (SELECT COALESCE(SUM(dp.qty),0)
+                 FROM detail_pembelians dp
+                 JOIN pembelians pb ON pb.uuid = dp.uuid_pembelian
+                 WHERE dp.uuid_produk = produks.uuid
+                 AND pb.created_at > (
+                     SELECT o2.created_at
+                     FROM opnames o2
+                     WHERE o2.uuid_user = '" . Auth::user()->uuid . "'
+                     AND o2.uuid_produk = produks.uuid
+                     ORDER BY o2.created_at DESC LIMIT 1
+                 ))
+                -
+                (SELECT COALESCE(SUM(dk.qty),0)
+                 FROM detail_pengiriman_barangs dk
+                 JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
+                 WHERE dk.uuid_produk = produks.uuid
+                 AND pk.created_at > (
+                     SELECT o2.created_at
+                     FROM opnames o2
+                     WHERE o2.uuid_user = '" . Auth::user()->uuid . "'
+                     AND o2.uuid_produk = produks.uuid
+                     ORDER BY o2.created_at DESC LIMIT 1
+                 ))
+            )
+            ELSE (
+                (SELECT COALESCE(SUM(dp.qty),0)
+                 FROM detail_pembelians dp
+                 JOIN pembelians pb ON pb.uuid = dp.uuid_pembelian
+                 WHERE dp.uuid_produk = produks.uuid)
+                -
+                (SELECT COALESCE(SUM(dk.qty),0)
+                 FROM detail_pengiriman_barangs dk
+                 JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
+                 WHERE dk.uuid_produk = produks.uuid)
+            )
+        END
+    ) as total_stok")
+        );
+
+        // Bungkus subquery supaya bisa dihitung SUM-nya
+        $wrapped = DB::table(DB::raw("({$sub->toSql()}) as x"))
+            ->mergeBindings($sub->getQuery());
+
+        // Total stock
+        $totalStock = $wrapped->sum('total_stok');
+
+        // Total harga modal × stok
+        $totalHargaModalKaliStock = $wrapped->selectRaw('SUM(hrg_modal * total_stok) as total')->value('total');
+
+        // Total harga jual × stok (ikutin formula jual)
+        $totalHargaJualKaliStock = $wrapped->selectRaw('SUM(
+    ROUND(
+        (
+            CAST(hrg_modal AS DECIMAL(15,2))
+            + (CAST(hrg_modal AS DECIMAL(15,2)) * CAST(profit AS DECIMAL(15,2)) / 100)
+        ) / 1000
+    ) * 1000 * total_stok
+) as total')->value('total');
+
         return response()->json([
             'draw' => intval($request->draw),
             'recordsTotal' => $totalData,
             'recordsFiltered' => $totalFiltered,
-            'data' => $data
+            'data' => $data,
+            'total' => [
+                'hrg_modal'              => $totalHargaModal,
+                'harga_jual'             => $totalHargaJual,
+                'stock'                  => $totalStock,
+                'hrg_modal_kali_stock'   => $totalHargaModalKaliStock,
+                'harga_jual_kali_stock'  => $totalHargaJualKaliStock,
+            ]
         ]);
     }
 
