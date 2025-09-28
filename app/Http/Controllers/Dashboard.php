@@ -247,8 +247,8 @@ class Dashboard extends BaseController
             ->groupBy('uuid_produk', 'nama_barang');
 
         // Ambil Top 5
-        $topLaku = (clone $query)->orderByDesc('total_terjual')->limit(5)->get();
-        $topUntung = (clone $query)->orderByDesc('total_profit')->limit(5)->get();
+        $topLaku = (clone $query)->orderByDesc('total_terjual')->get();
+        $topUntung = (clone $query)->orderByDesc('total_profit')->get();
 
         return response()->json([
             'top_laku'   => $topLaku,
