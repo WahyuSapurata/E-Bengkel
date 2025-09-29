@@ -14,7 +14,7 @@ const client = new Client({
     }),
     puppeteer: {
         headless: true,
-        executablePath: '/usr/bin/chromium-browser',  // ganti ke versi apt
+        executablePath: '/usr/bin/google-chrome',
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -22,7 +22,6 @@ const client = new Client({
             '--disable-accelerated-2d-canvas',
             '--no-first-run',
             '--no-zygote',
-            '--single-process',
             '--disable-gpu'
         ]
     }

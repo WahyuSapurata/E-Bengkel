@@ -363,7 +363,7 @@ class PenjualanController extends Controller
                     $judulJurnal = 'Penjualan Cash';
                 } else {
                     // Masuk ke Kas (pusat) sesuai bank
-                    $kas = Coa::where('nama', 'Kas')->firstOrFail(); // khusus setor transfer masuk ke kas
+                    $kas = Coa::where('nama', $request->nama_bank)->firstOrFail(); // khusus setor transfer masuk ke kas
                     $akunDebit = $kas;
                     $judulJurnal = 'Penjualan Transfer';
                 }
