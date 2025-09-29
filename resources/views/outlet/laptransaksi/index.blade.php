@@ -121,7 +121,21 @@
                     },
                     {
                         data: 'tanggal_transaksi',
-                        class: 'mb-kolom-tanggal text-left align-content-center'
+                        class: 'mb-kolom-tanggal text-left align-content-center',
+                        render: function(data, type, row, meta) {
+                            // Ubah created_at ke objek Date
+                            let createdAt = new Date(row.created_at);
+
+                            // Ambil jam, menit, detik
+                            let jam = String(createdAt.getHours()).padStart(2, '0');
+                            let menit = String(createdAt.getMinutes()).padStart(2, '0');
+                            let detik = String(createdAt.getSeconds()).padStart(2, '0');
+
+                            // Format HH:MM:SS
+                            let waktu = jam + ':' + menit + ':' + detik;
+
+                            return data + ' ' + waktu;
+                        }
                     },
                     {
                         data: 'pembayaran',

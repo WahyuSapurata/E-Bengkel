@@ -28,7 +28,8 @@ class LapTransakasi extends Controller
             'penjualans.no_bukti',
             'penjualans.tanggal_transaksi',
             'penjualans.pembayaran',
-            'penjualans.created_by'
+            'penjualans.created_by',
+            'penjualans.created_at'
         ];
 
         $totalData = Penjualan::count();
