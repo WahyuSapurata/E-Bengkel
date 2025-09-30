@@ -59,43 +59,83 @@ class Dashboard extends BaseController
 
         // $laba_bersih = $total_pendapatan - $total_beban;
 
-        $coas = Coa::whereIn('tipe', ['pendapatan', 'beban'])->get();
+        // $coas = Coa::whereIn('tipe', ['pendapatan', 'beban'])->get();
 
-        // Hitung saldo jurnal
-        $saldoCoa = Jurnal::select(
-            'uuid_coa',
-            DB::raw('SUM(kredit - debit) as saldo_pendapatan'),
-            DB::raw('SUM(debit - kredit) as saldo_beban')
-        )
-            ->whereIn('uuid_coa', $coas->pluck('uuid'))
-            ->groupBy('uuid_coa')
-            ->get()
-            ->keyBy('uuid_coa');
+        // // Hitung saldo jurnal
+        // $saldoCoa = Jurnal::select(
+        //     'uuid_coa',
+        //     DB::raw('SUM(kredit - debit) as saldo_pendapatan'),
+        //     DB::raw('SUM(debit - kredit) as saldo_beban')
+        // )
+        //     ->whereIn('uuid_coa', $coas->pluck('uuid'))
+        //     ->groupBy('uuid_coa')
+        //     ->get()
+        //     ->keyBy('uuid_coa');
 
-        $total_pendapatan = 0;
-        $total_beban = 0;
+        // $total_pendapatan = 0;
+        // $total_beban = 0;
 
-        // Loop COA pendapatan & beban
-        foreach ($coas as $coa) {
-            if ($coa->tipe === 'pendapatan') {
-                $total_pendapatan += $saldoCoa[$coa->uuid]->saldo_pendapatan ?? 0;
-            }
+        // // Loop COA pendapatan & beban
+        // foreach ($coas as $coa) {
+        //     if ($coa->tipe === 'pendapatan') {
+        //         $total_pendapatan += $saldoCoa[$coa->uuid]->saldo_pendapatan ?? 0;
+        //     }
 
-            if ($coa->tipe === 'beban') {
-                $total_beban += $saldoCoa[$coa->uuid]->saldo_beban ?? 0;
-            }
-        }
+        //     if ($coa->tipe === 'beban') {
+        //         $total_beban += $saldoCoa[$coa->uuid]->saldo_beban ?? 0;
+        //     }
+        // }
 
-        // 🔥 Tambahkan pendapatan jasa service
-        $pendapatanJasa = Penjualan::whereNotNull('uuid_jasa')
-            ->join('jasas', function ($join) {
-                $join->whereRaw('JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))');
-            })
-            ->sum('jasas.harga');
+        // // 🔥 Tambahkan pendapatan jasa service
+        // $pendapatanJasa = Penjualan::whereNotNull('uuid_jasa')
+        //     ->join('jasas', function ($join) {
+        //         $join->whereRaw('JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))');
+        //     })
+        //     ->sum('jasas.harga');
 
-        $total_pendapatan += $pendapatanJasa;
+        // $total_pendapatan += $pendapatanJasa;
 
-        $laba_bersih = $total_pendapatan - $total_beban;
+        // $laba_bersih = $total_pendapatan - $total_beban;
+
+        // === Hitung total pendapatan ===
+        $produkTotals = DB::table('detail_penjualans')
+            ->join('penjualans', 'detail_penjualans.uuid_penjualans', '=', 'penjualans.uuid')
+            ->selectRaw('SUM(detail_penjualans.total_harga) as total_penjualan')
+            ->first();
+
+        $paketTotals = DB::table('detail_penjualan_pakets')
+            ->join('penjualans', 'detail_penjualan_pakets.uuid_penjualans', '=', 'penjualans.uuid')
+            ->selectRaw('SUM(detail_penjualan_pakets.total_harga) as total_penjualan')
+            ->first();
+
+        $jasaTotals = DB::table('penjualans')
+            ->selectRaw('SUM(
+            (SELECT SUM(jasas.harga)
+             FROM jasas
+             WHERE JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))
+            )
+        ) as total_jasa')
+            ->first();
+
+        $totalProdukPaket = ($produkTotals->total_penjualan ?? 0) + ($paketTotals->total_penjualan ?? 0);
+        $totalJasa        = $jasaTotals->total_jasa ?? 0;
+
+        $totalPendapatanHitung = $totalProdukPaket + $totalJasa;
+
+        $hppProduk = DB::table('detail_penjualans')
+            ->join('harga_backup_penjualans', 'detail_penjualans.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+            ->join('penjualans', 'detail_penjualans.uuid_penjualans', '=', 'penjualans.uuid')
+            ->selectRaw('SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_hpp')
+            ->first();
+
+        $hppPaket = DB::table('detail_penjualan_pakets')
+            ->join('harga_backup_penjualans', 'detail_penjualan_pakets.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+            ->join('penjualans', 'detail_penjualan_pakets.uuid_penjualans', '=', 'penjualans.uuid')
+            ->selectRaw('SUM(harga_backup_penjualans.harga_modal * detail_penjualan_pakets.qty) as total_hpp')
+            ->first();
+
+        $totalBebanHPP = ($hppProduk->total_hpp ?? 0) + ($hppPaket->total_hpp ?? 0);
+        $laba_bersih = $totalPendapatanHitung - $totalBebanHPP;
 
         $columns = [
             'po_outlets.uuid' => 'uuid',
@@ -150,43 +190,83 @@ class Dashboard extends BaseController
         $module = 'Dashboard Outlet ' . $nama_outlet;
         $produk = Produk::count();
 
-        $coas = Coa::whereIn('tipe', ['pendapatan', 'beban'])->get();
+        // $coas = Coa::whereIn('tipe', ['pendapatan', 'beban'])->get();
 
-        // Hitung saldo jurnal
-        $saldoCoa = Jurnal::select(
-            'uuid_coa',
-            DB::raw('SUM(kredit - debit) as saldo_pendapatan'),
-            DB::raw('SUM(debit - kredit) as saldo_beban')
-        )
-            ->whereIn('uuid_coa', $coas->pluck('uuid'))
-            ->groupBy('uuid_coa')
-            ->get()
-            ->keyBy('uuid_coa');
+        // // Hitung saldo jurnal
+        // $saldoCoa = Jurnal::select(
+        //     'uuid_coa',
+        //     DB::raw('SUM(kredit - debit) as saldo_pendapatan'),
+        //     DB::raw('SUM(debit - kredit) as saldo_beban')
+        // )
+        //     ->whereIn('uuid_coa', $coas->pluck('uuid'))
+        //     ->groupBy('uuid_coa')
+        //     ->get()
+        //     ->keyBy('uuid_coa');
 
-        $total_pendapatan = 0;
-        $total_beban = 0;
+        // $total_pendapatan = 0;
+        // $total_beban = 0;
 
-        // Loop COA pendapatan & beban
-        foreach ($coas as $coa) {
-            if ($coa->tipe === 'pendapatan') {
-                $total_pendapatan += $saldoCoa[$coa->uuid]->saldo_pendapatan ?? 0;
-            }
+        // // Loop COA pendapatan & beban
+        // foreach ($coas as $coa) {
+        //     if ($coa->tipe === 'pendapatan') {
+        //         $total_pendapatan += $saldoCoa[$coa->uuid]->saldo_pendapatan ?? 0;
+        //     }
 
-            if ($coa->tipe === 'beban') {
-                $total_beban += $saldoCoa[$coa->uuid]->saldo_beban ?? 0;
-            }
-        }
+        //     if ($coa->tipe === 'beban') {
+        //         $total_beban += $saldoCoa[$coa->uuid]->saldo_beban ?? 0;
+        //     }
+        // }
 
-        // 🔥 Tambahkan pendapatan jasa service
-        $pendapatanJasa = Penjualan::whereNotNull('uuid_jasa')
-            ->join('jasas', function ($join) {
-                $join->whereRaw('JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))');
-            })
-            ->sum('jasas.harga');
+        // // 🔥 Tambahkan pendapatan jasa service
+        // $pendapatanJasa = Penjualan::whereNotNull('uuid_jasa')
+        //     ->join('jasas', function ($join) {
+        //         $join->whereRaw('JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))');
+        //     })
+        //     ->sum('jasas.harga');
 
-        $total_pendapatan += $pendapatanJasa;
+        // $total_pendapatan += $pendapatanJasa;
 
-        $laba_bersih = $total_pendapatan - $total_beban;
+        // $laba_bersih = $total_pendapatan - $total_beban;
+
+        // === Hitung total pendapatan ===
+        $produkTotals = DB::table('detail_penjualans')
+            ->join('penjualans', 'detail_penjualans.uuid_penjualans', '=', 'penjualans.uuid')
+            ->selectRaw('SUM(detail_penjualans.total_harga) as total_penjualan')
+            ->first();
+
+        $paketTotals = DB::table('detail_penjualan_pakets')
+            ->join('penjualans', 'detail_penjualan_pakets.uuid_penjualans', '=', 'penjualans.uuid')
+            ->selectRaw('SUM(detail_penjualan_pakets.total_harga) as total_penjualan')
+            ->first();
+
+        $jasaTotals = DB::table('penjualans')
+            ->selectRaw('SUM(
+            (SELECT SUM(jasas.harga)
+             FROM jasas
+             WHERE JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))
+            )
+        ) as total_jasa')
+            ->first();
+
+        $totalProdukPaket = ($produkTotals->total_penjualan ?? 0) + ($paketTotals->total_penjualan ?? 0);
+        $totalJasa        = $jasaTotals->total_jasa ?? 0;
+
+        $totalPendapatanHitung = $totalProdukPaket + $totalJasa;
+
+        $hppProduk = DB::table('detail_penjualans')
+            ->join('harga_backup_penjualans', 'detail_penjualans.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+            ->join('penjualans', 'detail_penjualans.uuid_penjualans', '=', 'penjualans.uuid')
+            ->selectRaw('SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_hpp')
+            ->first();
+
+        $hppPaket = DB::table('detail_penjualan_pakets')
+            ->join('harga_backup_penjualans', 'detail_penjualan_pakets.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+            ->join('penjualans', 'detail_penjualan_pakets.uuid_penjualans', '=', 'penjualans.uuid')
+            ->selectRaw('SUM(harga_backup_penjualans.harga_modal * detail_penjualan_pakets.qty) as total_hpp')
+            ->first();
+
+        $totalBebanHPP = ($hppProduk->total_hpp ?? 0) + ($hppPaket->total_hpp ?? 0);
+        $laba_bersih = $totalPendapatanHitung - $totalBebanHPP;
 
         return view('dashboard.outlet', compact('module', 'produk', 'laba_bersih'));
     }
