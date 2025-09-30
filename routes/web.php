@@ -211,6 +211,7 @@ Route::group([
 
         Route::get('/vw-lap-transaksi', [App\Http\Controllers\LapTransakasi::class, 'index'])->name('vw-lap-transaksi');
         Route::get('/get-lap-transaksi', [App\Http\Controllers\LapTransakasi::class, 'get'])->name('get-lap-transaksi');
+        Route::get('/export-excel/{params?}', [App\Http\Controllers\LapTransakasi::class, 'export_excel'])->name('export-excel');
     });
 
     Route::prefix('tools')->group(function () {

@@ -60,6 +60,8 @@
                             </div>
                         </div>
                         <div class="card-body custom-card-action p-0">
+                            <button class="btn btn-success m-3" id="export-excel"><i
+                                    class="fa-solid fa-file-excel me-2"></i> Export</button>
                             <div class="table-responsive">
                                 <table style="width: 100%" id="dataTables" class="table table-hover mb-0">
                                     <thead>
@@ -164,9 +166,20 @@
         };
 
         $(function() {
+            // Reload datatable kalau filter berubah
             $('#filter-outlet').on('change', function() {
                 $('#dataTables').DataTable().ajax.reload();
             });
+
+            // Event tombol export (ambil nilai filter saat diklik)
+            $('#export-excel').on('click', function(e) {
+                e.preventDefault();
+
+                let outlet = $('#filter-outlet').val() ? $('#filter-outlet').val() : '';
+                let url = '/superadmin/accounting/export-excel' + (outlet ? '/' + outlet : '');
+                window.open(url, '_blank');
+            });
+
             initDatatable();
         });
     </script>

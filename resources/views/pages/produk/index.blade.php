@@ -111,7 +111,7 @@
                                     </thead>
                                     <tfoot class="bg-info">
                                         <tr>
-                                            <th colspan="16" style="text-align: left !important; font-size: 15px">TOTAL
+                                            <th colspan="18" style="text-align: left !important; font-size: 15px">TOTAL
                                                 :</th>
                                         </tr>
                                         {{-- <tr>
@@ -125,12 +125,12 @@
                                         <tr>
                                             <th colspan="2" class="text-end" style="font-size: 15px">Total Harga Modal
                                             </th>
-                                            <th colspan="14" id="total-modal-x-stock" style="font-size: 15px"></th>
+                                            <th colspan="16" id="total-modal-x-stock" style="font-size: 15px"></th>
                                         </tr>
                                         <tr>
                                             <th colspan="2" class="text-end" style="font-size: 15px">Total Harga Jual
                                             </th>
-                                            <th colspan="14" id="total-jual-x-stock" style="font-size: 15px"></th>
+                                            <th colspan="16" id="total-jual-x-stock" style="font-size: 15px"></th>
                                         </tr>
                                     </tfoot>
                                 </table>
