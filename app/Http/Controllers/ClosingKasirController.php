@@ -52,11 +52,22 @@ class ClosingKasirController extends Controller
             $totalPaket  = $p->detailPenjualanPakets->sum('total_harga');
 
             $totalJasa = 0;
-            if ($p->uuid_jasa) {
-                $uuidJasaArray = $p->uuid_jasa; // sudah cast ke array di model
+            if (!empty($p->uuid_jasa)) {
+                $uuidJasaArray = is_array($p->uuid_jasa) ? $p->uuid_jasa : json_decode($p->uuid_jasa, true);
+
                 if (!empty($uuidJasaArray)) {
-                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
-                    $totalJasa = $jasa->sum('harga');
+                    // Hitung frekuensi tiap UUID
+                    $counts = array_count_values($uuidJasaArray);
+
+                    // Ambil semua harga jasa sesuai UUID
+                    $hargaJasa = DB::table('jasas')
+                        ->whereIn('uuid', array_keys($counts))
+                        ->pluck('harga', 'uuid'); // [uuid => harga]
+
+                    // Hitung total jasa sesuai frekuensi
+                    foreach ($counts as $uuid => $qty) {
+                        $totalJasa += ($hargaJasa[$uuid] ?? 0) * $qty;
+                    }
                 }
             }
 
@@ -142,11 +153,22 @@ class ClosingKasirController extends Controller
             $totalPaket  = $p->detailPenjualanPakets->sum('total_harga');
 
             $totalJasa = 0;
-            if ($p->uuid_jasa) {
-                $uuidJasaArray = $p->uuid_jasa; // sudah cast array di model
+            if (!empty($p->uuid_jasa)) {
+                $uuidJasaArray = is_array($p->uuid_jasa) ? $p->uuid_jasa : json_decode($p->uuid_jasa, true);
+
                 if (!empty($uuidJasaArray)) {
-                    $jasa = DB::table('jasas')->whereIn('uuid', $uuidJasaArray)->get();
-                    $totalJasa = $jasa->sum('harga');
+                    // Hitung frekuensi tiap UUID
+                    $counts = array_count_values($uuidJasaArray);
+
+                    // Ambil semua harga jasa sesuai UUID
+                    $hargaJasa = DB::table('jasas')
+                        ->whereIn('uuid', array_keys($counts))
+                        ->pluck('harga', 'uuid'); // [uuid => harga]
+
+                    // Hitung total jasa sesuai frekuensi
+                    foreach ($counts as $uuid => $qty) {
+                        $totalJasa += ($hargaJasa[$uuid] ?? 0) * $qty;
+                    }
                 }
             }
 

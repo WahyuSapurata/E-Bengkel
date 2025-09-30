@@ -469,6 +469,7 @@ class ProdukController extends Controller
             'profit_b' => $request->profit_b,
             'profit_c' => $request->profit_c,
             'foto' => $path,
+            'created_by' => Auth::user()->nama
         ]);
 
         PriceHistory::create([
@@ -636,6 +637,7 @@ class ProdukController extends Controller
             'profit_a' => $update->profit_a,
             'profit_b' => $update->profit_b,
             'profit_c' => $update->profit_c,
+            'update_by' => Auth::user()->nama
         ]);
 
         // Tambahkan price history hanya jika modal berubah

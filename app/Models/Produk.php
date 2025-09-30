@@ -26,6 +26,8 @@ class Produk extends Model
         'profit_b',
         'profit_c',
         'foto',
+        'created_by',
+        'update_by',
     ];
 
     protected static function boot()
