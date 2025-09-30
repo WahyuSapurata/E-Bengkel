@@ -1052,10 +1052,27 @@ class Dashboard extends BaseController
 
             // === Jasa
             $totalJasa = 0;
-            if ($trx->uuid_jasa) {
-                $totalJasa = DB::table('jasas')
-                    ->whereRaw('JSON_CONTAINS(?, JSON_QUOTE(jasas.uuid))', [$trx->uuid_jasa])
-                    ->sum('jasas.harga');
+
+            if (!empty($trx->uuid_jasa)) {
+                // Pastikan uuid_jasa berupa array
+                $uuidJasa = is_array($trx->uuid_jasa)
+                    ? $trx->uuid_jasa
+                    : json_decode($trx->uuid_jasa, true);
+
+                if (!empty($uuidJasa)) {
+                    // Hitung frekuensi tiap UUID
+                    $counts = array_count_values($uuidJasa);
+
+                    // Ambil semua harga jasa
+                    $hargaJasa = DB::table('jasas')
+                        ->whereIn('uuid', array_keys($counts))
+                        ->pluck('harga', 'uuid');
+
+                    // Hitung total harga jasa, termasuk yang UUID-nya sama
+                    foreach ($counts as $uuid => $qty) {
+                        $totalJasa += ($hargaJasa[$uuid] ?? 0) * $qty;
+                    }
+                }
             }
 
             $modal      = ($produkTotals->total_modal ?? 0) + ($paketTotals->total_modal ?? 0);
@@ -1192,10 +1209,27 @@ class Dashboard extends BaseController
 
             // === Jasa
             $totalJasa = 0;
-            if ($trx->uuid_jasa) {
-                $totalJasa = DB::table('jasas')
-                    ->whereRaw('JSON_CONTAINS(?, JSON_QUOTE(jasas.uuid))', [$trx->uuid_jasa])
-                    ->sum('jasas.harga');
+
+            if (!empty($trx->uuid_jasa)) {
+                // Pastikan uuid_jasa berupa array
+                $uuidJasa = is_array($trx->uuid_jasa)
+                    ? $trx->uuid_jasa
+                    : json_decode($trx->uuid_jasa, true);
+
+                if (!empty($uuidJasa)) {
+                    // Hitung frekuensi tiap UUID
+                    $counts = array_count_values($uuidJasa);
+
+                    // Ambil semua harga jasa
+                    $hargaJasa = DB::table('jasas')
+                        ->whereIn('uuid', array_keys($counts))
+                        ->pluck('harga', 'uuid');
+
+                    // Hitung total harga jasa, termasuk yang UUID-nya sama
+                    foreach ($counts as $uuid => $qty) {
+                        $totalJasa += ($hargaJasa[$uuid] ?? 0) * $qty;
+                    }
+                }
             }
 
             $modal      = ($produkTotals->total_modal ?? 0) + ($paketTotals->total_modal ?? 0);

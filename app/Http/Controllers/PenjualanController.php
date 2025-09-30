@@ -349,10 +349,29 @@ class PenjualanController extends Controller
                 $persediaan         = Coa::where('nama', 'Persediaan Sparepart')->firstOrFail();
 
                 $totalJasa = 0;
-                if ($request->uuid_jasa) {
+
+                if (!empty($request->uuid_jasa)) {
                     $jasaCoa = Coa::where('nama', 'Pendapatan Jasa Service')->firstOrFail();
-                    $totalJasa = Jasa::whereIn('uuid', $request->uuid_jasa) // ambil semua jasa yg dipilih
-                        ->sum('harga');
+
+                    // Pastikan uuid_jasa berupa array
+                    $uuidJasa = is_array($request->uuid_jasa)
+                        ? $request->uuid_jasa
+                        : json_decode($request->uuid_jasa, true);
+
+                    if (!empty($uuidJasa)) {
+                        // Hitung frekuensi tiap UUID
+                        $counts = array_count_values($uuidJasa);
+
+                        // Ambil semua harga jasa sekaligus
+                        $hargaJasa = DB::table('jasas')
+                            ->whereIn('uuid', array_keys($counts))
+                            ->pluck('harga', 'uuid'); // pluck(harga, uuid) supaya gampang diakses
+
+                        // Hitung total harga jasa
+                        foreach ($counts as $uuid => $qty) {
+                            $totalJasa += ($hargaJasa[$uuid] ?? 0) * $qty;
+                        }
+                    }
                 }
 
                 // Tentukan akun debit sesuai metode pembayaran
@@ -548,9 +567,21 @@ class PenjualanController extends Controller
         $grandTotal = $allDetails->sum('subtotal');
 
         // Ambil jasa (kalau ada)
-        $jasa = null;
+        $jasa = 0;
         if ($penjualan->uuid_jasa) {
-            $jasa = DB::table('jasas')->whereIn('uuid', $penjualan->uuid_jasa)->sum('harga');
+            $uuidJasa = is_array($penjualan->uuid_jasa) ? $penjualan->uuid_jasa : json_decode($penjualan->uuid_jasa, true);
+
+            // Hitung frekuensi tiap UUID
+            $counts = array_count_values($uuidJasa);
+
+            // Ambil semua harga jasa
+            $hargaJasa = DB::table('jasas')
+                ->whereIn('uuid', array_keys($counts))
+                ->pluck('harga', 'uuid');
+
+            foreach ($counts as $uuid => $qty) {
+                $jasa += ($hargaJasa[$uuid] ?? 0) * $qty;
+            }
         }
 
         return response()->json([

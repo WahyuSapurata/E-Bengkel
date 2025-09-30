@@ -210,6 +210,7 @@ class ReportController extends Controller
 
         $coas = Coa::all();
 
+        // Hitung saldo semua akun
         $saldos = Jurnal::selectRaw("uuid_coa, COALESCE(SUM(debit - kredit),0) as saldo")
             ->whereRaw("STR_TO_DATE(jurnals.tanggal, '%d-%m-%Y') <= STR_TO_DATE(?, '%d-%m-%Y')", [$tanggal_akhir])
             ->groupBy('uuid_coa')
@@ -225,6 +226,12 @@ class ReportController extends Controller
 
         foreach ($coas as $coa) {
             $saldo = $saldos[$coa->uuid] ?? 0;
+
+            // ✅ Sesuaikan saldo normal
+            if (in_array($coa->tipe, ['kewajiban', 'modal', 'pendapatan'])) {
+                $saldo = -$saldo; // normalnya kredit
+            }
+
             if ($saldo == 0) continue;
 
             switch ($coa->tipe) {
@@ -235,6 +242,7 @@ class ReportController extends Controller
                         'saldo' => $saldo,
                     ];
                     break;
+
                 case 'kewajiban':
                     $result['kewajiban'][] = [
                         'kode' => $coa->kode,
@@ -242,6 +250,7 @@ class ReportController extends Controller
                         'saldo' => $saldo,
                     ];
                     break;
+
                 case 'modal':
                     $result['modal'][] = [
                         'kode' => $coa->kode,
@@ -249,19 +258,22 @@ class ReportController extends Controller
                         'saldo' => $saldo,
                     ];
                     break;
+
                 case 'pendapatan':
                     $laba_berjalan += $saldo;
                     break;
+
                 case 'beban':
                     $laba_berjalan -= $saldo;
                     break;
             }
         }
 
+        // Tambahkan Laba Berjalan ke Modal
         if ($laba_berjalan != 0) {
             $result['modal'][] = [
                 'kode' => '309',
-                'nama' => 'Laba Ditahan',
+                'nama' => 'Laba Berjalan',
                 'saldo' => $laba_berjalan,
             ];
         }
@@ -447,12 +459,14 @@ class ReportController extends Controller
 
         $jasaTotals = DB::table('penjualans')
             ->whereRaw("STR_TO_DATE(penjualans.tanggal_transaksi, '%d-%m-%Y') BETWEEN ? AND ?", [$tanggalAwalFormat, $tanggalAkhirFormat])
-            ->selectRaw('SUM(
-            (SELECT SUM(jasas.harga)
-             FROM jasas
-             WHERE JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))
-            )
-        ) as total_jasa')
+            ->selectRaw('SUM(jasas.harga) as total_jasa')
+            ->join(DB::raw(
+                '(SELECT penjualans.id AS penjualan_id, jt.uuid AS jasa_uuid
+          FROM penjualans,
+          JSON_TABLE(penjualans.uuid_jasa, "$[*]" COLUMNS(uuid VARCHAR(255) PATH "$")) AS jt
+        ) AS pj'
+            ), 'pj.penjualan_id', '=', 'penjualans.id')
+            ->join('jasas', 'jasas.uuid', '=', 'pj.jasa_uuid')
             ->first();
 
         $totalProdukPaket = ($produkTotals->total_penjualan ?? 0) + ($paketTotals->total_penjualan ?? 0);
