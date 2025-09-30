@@ -339,10 +339,91 @@ class ReportController extends Controller
     //     ]);
     // }
 
+    // public function get_laba_rugi(Request $request)
+    // {
+    //     $tanggal_awal = $request->get('tanggal_awal', Carbon::now()->startOfMonth()->format('d-m-Y'));
+    //     $tanggal_akhir = $request->get('tanggal_akhir', Carbon::now()->endOfMonth()->format('d-m-Y'));
+
+    //     $coas = Coa::whereIn('tipe', ['pendapatan', 'beban'])->get();
+
+    //     $pendapatan = [];
+    //     $beban = [];
+    //     $total_pendapatan = 0;
+    //     $total_beban = 0;
+
+    //     foreach ($coas as $coa) {
+    //         $saldo = Jurnal::where('uuid_coa', $coa->uuid)
+    //             ->whereRaw("STR_TO_DATE(jurnals.tanggal, '%d-%m-%Y') BETWEEN STR_TO_DATE(?, '%d-%m-%Y') AND STR_TO_DATE(?, '%d-%m-%Y')", [$tanggal_awal, $tanggal_akhir])
+    //             ->selectRaw("COALESCE(SUM(kredit - debit),0) as saldo")
+    //             ->value('saldo');
+
+    //         if ($saldo == 0) continue;
+
+    //         if ($coa->tipe === 'pendapatan') {
+    //             $pendapatan[] = [
+    //                 'kode' => $coa->kode,
+    //                 'nama' => $coa->nama,
+    //                 'total' => $saldo
+    //             ];
+    //             $total_pendapatan += $saldo;
+    //         }
+
+    //         if ($coa->tipe === 'beban') {
+    //             $saldo_beban = Jurnal::where('uuid_coa', $coa->uuid)
+    //                 ->whereRaw("STR_TO_DATE(jurnals.tanggal, '%d-%m-%Y') BETWEEN STR_TO_DATE(?, '%d-%m-%Y') AND STR_TO_DATE(?, '%d-%m-%Y')", [$tanggal_awal, $tanggal_akhir])
+    //                 ->selectRaw("COALESCE(SUM(debit),0) as saldo")
+    //                 ->value('saldo');
+
+    //             $beban[] = [
+    //                 'kode' => $coa->kode,
+    //                 'nama' => $coa->nama,
+    //                 'total' => $saldo_beban
+    //             ];
+    //             $total_beban += $saldo_beban;
+    //         }
+    //     }
+
+    //     // 🔥 Tambahkan Pendapatan Jasa Service dari penjualan
+    //     $pendapatan_jasa = Penjualan::join('jasas', function ($join) {
+    //         $join->whereRaw('JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))');
+    //     })
+    //         ->whereNotNull('penjualans.uuid_jasa')
+    //         ->whereRaw(
+    //             "STR_TO_DATE(penjualans.tanggal_transaksi, '%d-%m-%Y') BETWEEN STR_TO_DATE(?, '%d-%m-%Y') AND STR_TO_DATE(?, '%d-%m-%Y')",
+    //             [$tanggal_awal, $tanggal_akhir]
+    //         )
+    //         ->sum('jasas.harga');
+
+    //     if ($pendapatan_jasa > 0) {
+    //         $pendapatan[] = [
+    //             'kode' => '-',
+    //             'nama' => 'Pendapatan Jasa Service',
+    //             'total' => $pendapatan_jasa
+    //         ];
+    //         $total_pendapatan += $pendapatan_jasa;
+    //     }
+
+    //     $laba_bersih = $total_pendapatan - $total_beban;
+
+    //     return response()->json([
+    //         'tanggal_awal' => $tanggal_awal,
+    //         'tanggal_akhir' => $tanggal_akhir,
+    //         'pendapatan' => $pendapatan,
+    //         'beban' => $beban,
+    //         'total_pendapatan' => $total_pendapatan,
+    //         'total_beban' => $total_beban,
+    //         'laba_bersih' => $laba_bersih
+    //     ]);
+    // }
+
     public function get_laba_rugi(Request $request)
     {
-        $tanggal_awal = $request->get('tanggal_awal', Carbon::now()->startOfMonth()->format('d-m-Y'));
+        $tanggal_awal  = $request->get('tanggal_awal', Carbon::now()->startOfMonth()->format('d-m-Y'));
         $tanggal_akhir = $request->get('tanggal_akhir', Carbon::now()->endOfMonth()->format('d-m-Y'));
+
+        // Ubah ke format Y-m-d untuk dipakai di STR_TO_DATE
+        $tanggalAwalFormat  = Carbon::createFromFormat('d-m-Y', $tanggal_awal)->format('Y-m-d');
+        $tanggalAkhirFormat = Carbon::createFromFormat('d-m-Y', $tanggal_akhir)->format('Y-m-d');
 
         $coas = Coa::whereIn('tipe', ['pendapatan', 'beban'])->get();
 
@@ -351,21 +432,73 @@ class ReportController extends Controller
         $total_pendapatan = 0;
         $total_beban = 0;
 
+        // === Hitung total pendapatan ===
+        $produkTotals = DB::table('detail_penjualans')
+            ->join('penjualans', 'detail_penjualans.uuid_penjualans', '=', 'penjualans.uuid')
+            ->whereRaw("STR_TO_DATE(penjualans.tanggal_transaksi, '%d-%m-%Y') BETWEEN ? AND ?", [$tanggalAwalFormat, $tanggalAkhirFormat])
+            ->selectRaw('SUM(detail_penjualans.total_harga) as total_penjualan')
+            ->first();
+
+        $paketTotals = DB::table('detail_penjualan_pakets')
+            ->join('penjualans', 'detail_penjualan_pakets.uuid_penjualans', '=', 'penjualans.uuid')
+            ->whereRaw("STR_TO_DATE(penjualans.tanggal_transaksi, '%d-%m-%Y') BETWEEN ? AND ?", [$tanggalAwalFormat, $tanggalAkhirFormat])
+            ->selectRaw('SUM(detail_penjualan_pakets.total_harga) as total_penjualan')
+            ->first();
+
+        $jasaTotals = DB::table('penjualans')
+            ->whereRaw("STR_TO_DATE(penjualans.tanggal_transaksi, '%d-%m-%Y') BETWEEN ? AND ?", [$tanggalAwalFormat, $tanggalAkhirFormat])
+            ->selectRaw('SUM(
+            (SELECT SUM(jasas.harga)
+             FROM jasas
+             WHERE JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))
+            )
+        ) as total_jasa')
+            ->first();
+
+        $totalProdukPaket = ($produkTotals->total_penjualan ?? 0) + ($paketTotals->total_penjualan ?? 0);
+        $totalJasa        = $jasaTotals->total_jasa ?? 0;
+
+        $totalPendapatanHitung = $totalProdukPaket + $totalJasa;
+
+        $hppProduk = DB::table('detail_penjualans')
+            ->join('harga_backup_penjualans', 'detail_penjualans.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+            ->join('penjualans', 'detail_penjualans.uuid_penjualans', '=', 'penjualans.uuid')
+            ->whereRaw("STR_TO_DATE(penjualans.tanggal_transaksi, '%d-%m-%Y') BETWEEN ? AND ?", [$tanggalAwalFormat, $tanggalAkhirFormat])
+            ->selectRaw('SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_hpp')
+            ->first();
+
+        $hppPaket = DB::table('detail_penjualan_pakets')
+            ->join('harga_backup_penjualans', 'detail_penjualan_pakets.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+            ->join('penjualans', 'detail_penjualan_pakets.uuid_penjualans', '=', 'penjualans.uuid')
+            ->whereRaw("STR_TO_DATE(penjualans.tanggal_transaksi, '%d-%m-%Y') BETWEEN ? AND ?", [$tanggalAwalFormat, $tanggalAkhirFormat])
+            ->selectRaw('SUM(harga_backup_penjualans.harga_modal * detail_penjualan_pakets.qty) as total_hpp')
+            ->first();
+
+        $totalBebanHPP = ($hppProduk->total_hpp ?? 0) + ($hppPaket->total_hpp ?? 0);
+
+
+        // === Loop COA untuk mapping ===
         foreach ($coas as $coa) {
-            $saldo = Jurnal::where('uuid_coa', $coa->uuid)
-                ->whereRaw("STR_TO_DATE(jurnals.tanggal, '%d-%m-%Y') BETWEEN STR_TO_DATE(?, '%d-%m-%Y') AND STR_TO_DATE(?, '%d-%m-%Y')", [$tanggal_awal, $tanggal_akhir])
-                ->selectRaw("COALESCE(SUM(kredit - debit),0) as saldo")
-                ->value('saldo');
-
-            if ($saldo == 0) continue;
-
             if ($coa->tipe === 'pendapatan') {
-                $pendapatan[] = [
-                    'kode' => $coa->kode,
-                    'nama' => $coa->nama,
-                    'total' => $saldo
-                ];
-                $total_pendapatan += $saldo;
+                $nilai = 0;
+
+                if ($coa->nama === 'Pendapatan Penjualan Sparepart') {
+                    $nilai = $totalProdukPaket;
+                }
+
+                if ($coa->nama === 'Pendapatan Jasa Service') {
+                    $nilai = $totalJasa;
+                }
+
+                if ($nilai > 0) {
+                    $pendapatan[] = [
+                        'kode'  => $coa->kode,
+                        'nama'  => $coa->nama,
+                        'total' => $nilai
+                    ];
+                }
+
+                $total_pendapatan = $totalPendapatanHitung;
             }
 
             if ($coa->tipe === 'beban') {
@@ -374,45 +507,27 @@ class ReportController extends Controller
                     ->selectRaw("COALESCE(SUM(debit),0) as saldo")
                     ->value('saldo');
 
-                $beban[] = [
-                    'kode' => $coa->kode,
-                    'nama' => $coa->nama,
-                    'total' => $saldo_beban
-                ];
-                $total_beban += $saldo_beban;
+                if ($saldo_beban != 0) {
+                    $beban[] = [
+                        'kode'  => $coa->kode,
+                        'nama'  => $coa->nama,
+                        'total' => $totalBebanHPP
+                    ];
+                    $total_beban = $totalBebanHPP;
+                }
             }
-        }
-
-        // 🔥 Tambahkan Pendapatan Jasa Service dari penjualan
-        $pendapatan_jasa = Penjualan::join('jasas', function ($join) {
-            $join->whereRaw('JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))');
-        })
-            ->whereNotNull('penjualans.uuid_jasa')
-            ->whereRaw(
-                "STR_TO_DATE(penjualans.tanggal_transaksi, '%d-%m-%Y') BETWEEN STR_TO_DATE(?, '%d-%m-%Y') AND STR_TO_DATE(?, '%d-%m-%Y')",
-                [$tanggal_awal, $tanggal_akhir]
-            )
-            ->sum('jasas.harga');
-
-        if ($pendapatan_jasa > 0) {
-            $pendapatan[] = [
-                'kode' => '-',
-                'nama' => 'Pendapatan Jasa Service',
-                'total' => $pendapatan_jasa
-            ];
-            $total_pendapatan += $pendapatan_jasa;
         }
 
         $laba_bersih = $total_pendapatan - $total_beban;
 
         return response()->json([
-            'tanggal_awal' => $tanggal_awal,
-            'tanggal_akhir' => $tanggal_akhir,
-            'pendapatan' => $pendapatan,
-            'beban' => $beban,
-            'total_pendapatan' => $total_pendapatan,
-            'total_beban' => $total_beban,
-            'laba_bersih' => $laba_bersih
+            'tanggal_awal'      => $tanggal_awal,
+            'tanggal_akhir'     => $tanggal_akhir,
+            'pendapatan'        => $pendapatan,
+            'beban'             => $beban,
+            'total_pendapatan'  => $total_pendapatan,
+            'total_beban'       => $total_beban,
+            'laba_bersih'       => $laba_bersih
         ]);
     }
 }
