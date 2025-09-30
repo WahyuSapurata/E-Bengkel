@@ -184,6 +184,8 @@ class ProdukController extends Controller
             'produks.satuan',
             'produks.foto',
             'produks.created_at',
+            'produks.created_by',
+            'produks.update_by',
             'kategoris.nama_kategori as kategori',
             'suplayers.nama as suplayer',
         ];
@@ -703,6 +705,8 @@ class ProdukController extends Controller
             'produks.satuan',
             'produks.foto',
             'produks.created_at',
+            'produks.created_by',
+            'produks.update_by',
             'kategoris.nama_kategori as kategori',
             'suplayers.nama as suplayer',
         ];

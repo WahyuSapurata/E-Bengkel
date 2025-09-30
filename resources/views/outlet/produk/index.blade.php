@@ -93,6 +93,8 @@
                                             <th class="text-capitalize">kategori</th>
                                             <th class="text-capitalize">sub kategori</th>
                                             <th class="text-capitalize">suplayer</th>
+                                            <th class="text-capitalize">created by</th>
+                                            <th class="text-capitalize">update by</th>
                                             <th class="text-capitalize">foto</th>
                                             <th class="text-end">Actions</th>
                                         </tr>
@@ -513,6 +515,14 @@
                     },
                     {
                         data: 'suplayer',
+                        class: 'mb-kolom-tanggal text-left align-content-center'
+                    },
+                    {
+                        data: 'created_by',
+                        class: 'mb-kolom-tanggal text-left align-content-center'
+                    },
+                    {
+                        data: 'update_by',
                         class: 'mb-kolom-tanggal text-left align-content-center'
                     },
                     {
