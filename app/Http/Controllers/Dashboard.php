@@ -109,12 +109,14 @@ class Dashboard extends BaseController
             ->first();
 
         $jasaTotals = DB::table('penjualans')
-            ->selectRaw('SUM(
-            (SELECT SUM(jasas.harga)
-             FROM jasas
-             WHERE JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))
-            )
-        ) as total_jasa')
+            ->selectRaw('SUM(jasas.harga) as total_jasa')
+            ->join(DB::raw(
+                '(SELECT penjualans.id AS penjualan_id, jt.uuid AS jasa_uuid
+          FROM penjualans,
+          JSON_TABLE(penjualans.uuid_jasa, "$[*]" COLUMNS(uuid VARCHAR(255) PATH "$")) AS jt
+        ) AS pj'
+            ), 'pj.penjualan_id', '=', 'penjualans.id')
+            ->join('jasas', 'jasas.uuid', '=', 'pj.jasa_uuid')
             ->first();
 
         $totalProdukPaket = ($produkTotals->total_penjualan ?? 0) + ($paketTotals->total_penjualan ?? 0);
@@ -240,12 +242,14 @@ class Dashboard extends BaseController
             ->first();
 
         $jasaTotals = DB::table('penjualans')
-            ->selectRaw('SUM(
-            (SELECT SUM(jasas.harga)
-             FROM jasas
-             WHERE JSON_CONTAINS(penjualans.uuid_jasa, JSON_QUOTE(jasas.uuid))
-            )
-        ) as total_jasa')
+            ->selectRaw('SUM(jasas.harga) as total_jasa')
+            ->join(DB::raw(
+                '(SELECT penjualans.id AS penjualan_id, jt.uuid AS jasa_uuid
+          FROM penjualans,
+          JSON_TABLE(penjualans.uuid_jasa, "$[*]" COLUMNS(uuid VARCHAR(255) PATH "$")) AS jt
+        ) AS pj'
+            ), 'pj.penjualan_id', '=', 'penjualans.id')
+            ->join('jasas', 'jasas.uuid', '=', 'pj.jasa_uuid')
             ->first();
 
         $totalProdukPaket = ($produkTotals->total_penjualan ?? 0) + ($paketTotals->total_penjualan ?? 0);
