@@ -71,6 +71,14 @@
                                         <option value="{{ $s->uuid }}">{{ $s->nama }}</option>
                                     @endforeach
                                 </select>
+                                <select name="uuid" id="filter-outlet" data-placeholder="Pilih outlet"
+                                    class="form-select">
+                                    <option value="">Pilih Outlet</option>
+                                    @foreach ($wirehouse as $w)
+                                        <option value="{{ $w->uuid }}">{{ $w->nama_outlet . ' | ' . $w->tipe }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                             <div class="card-header-action">
                                 <div class="card-header-btn">

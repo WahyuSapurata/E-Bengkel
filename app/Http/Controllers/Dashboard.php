@@ -98,46 +98,107 @@ class Dashboard extends BaseController
         // $laba_bersih = $total_pendapatan - $total_beban;
 
         // === Hitung total pendapatan ===
+        // $produkTotals = DB::table('detail_penjualans')
+        //     ->join('penjualans', 'detail_penjualans.uuid_penjualans', '=', 'penjualans.uuid')
+        //     ->selectRaw('SUM(detail_penjualans.total_harga) as total_penjualan')
+        //     ->first();
+
+        // $paketTotals = DB::table('detail_penjualan_pakets')
+        //     ->join('penjualans', 'detail_penjualan_pakets.uuid_penjualans', '=', 'penjualans.uuid')
+        //     ->selectRaw('SUM(detail_penjualan_pakets.total_harga) as total_penjualan')
+        //     ->first();
+
+        // $jasaTotals = DB::table('penjualans')
+        //     ->selectRaw('SUM(jasas.harga) as total_jasa')
+        //     ->join(DB::raw(
+        //         '(SELECT penjualans.id AS penjualan_id, jt.uuid AS jasa_uuid
+        //   FROM penjualans,
+        //   JSON_TABLE(penjualans.uuid_jasa, "$[*]" COLUMNS(uuid VARCHAR(255) PATH "$")) AS jt
+        // ) AS pj'
+        //     ), 'pj.penjualan_id', '=', 'penjualans.id')
+        //     ->join('jasas', 'jasas.uuid', '=', 'pj.jasa_uuid')
+        //     ->first();
+
+        // $totalProdukPaket = ($produkTotals->total_penjualan ?? 0) + ($paketTotals->total_penjualan ?? 0);
+        // $totalJasa        = $jasaTotals->total_jasa ?? 0;
+
+        // $totalPendapatanHitung = $totalProdukPaket + $totalJasa;
+
+        // $hppProduk = DB::table('detail_penjualans')
+        //     ->join('harga_backup_penjualans', 'detail_penjualans.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+        //     ->join('penjualans', 'detail_penjualans.uuid_penjualans', '=', 'penjualans.uuid')
+        //     ->selectRaw('SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_hpp')
+        //     ->first();
+
+        // $hppPaket = DB::table('detail_penjualan_pakets')
+        //     ->join('harga_backup_penjualans', 'detail_penjualan_pakets.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+        //     ->join('penjualans', 'detail_penjualan_pakets.uuid_penjualans', '=', 'penjualans.uuid')
+        //     ->selectRaw('SUM(harga_backup_penjualans.harga_modal * detail_penjualan_pakets.qty) as total_hpp')
+        //     ->first();
+
+        // $totalBebanHPP = ($hppProduk->total_hpp ?? 0) + ($hppPaket->total_hpp ?? 0);
+        // $laba_bersih = $totalPendapatanHitung - $totalBebanHPP;
+        $bulan = date('m');  // default: bulan ini
+        $tahun = date('Y');  // default: tahun ini
+
+        // === Total Penjualan Produk ===
         $produkTotals = DB::table('detail_penjualans')
             ->join('penjualans', 'detail_penjualans.uuid_penjualans', '=', 'penjualans.uuid')
+            ->whereRaw('MONTH(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$bulan])
+            ->whereRaw('YEAR(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$tahun])
             ->selectRaw('SUM(detail_penjualans.total_harga) as total_penjualan')
             ->first();
 
+        // === Total Penjualan Paket ===
         $paketTotals = DB::table('detail_penjualan_pakets')
             ->join('penjualans', 'detail_penjualan_pakets.uuid_penjualans', '=', 'penjualans.uuid')
+            ->whereRaw('MONTH(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$bulan])
+            ->whereRaw('YEAR(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$tahun])
             ->selectRaw('SUM(detail_penjualan_pakets.total_harga) as total_penjualan')
             ->first();
 
+        // === Total Jasa ===
         $jasaTotals = DB::table('penjualans')
-            ->selectRaw('SUM(jasas.harga) as total_jasa')
+            ->whereRaw('MONTH(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$bulan])
+            ->whereRaw('YEAR(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$tahun])
             ->join(DB::raw(
                 '(SELECT penjualans.id AS penjualan_id, jt.uuid AS jasa_uuid
-          FROM penjualans,
-          JSON_TABLE(penjualans.uuid_jasa, "$[*]" COLUMNS(uuid VARCHAR(255) PATH "$")) AS jt
-        ) AS pj'
+              FROM penjualans,
+              JSON_TABLE(penjualans.uuid_jasa, "$[*]" COLUMNS(uuid VARCHAR(255) PATH "$")) AS jt
+            ) AS pj'
             ), 'pj.penjualan_id', '=', 'penjualans.id')
             ->join('jasas', 'jasas.uuid', '=', 'pj.jasa_uuid')
+            ->selectRaw('SUM(jasas.harga) as total_jasa')
             ->first();
 
+        // === Pendapatan Total ===
         $totalProdukPaket = ($produkTotals->total_penjualan ?? 0) + ($paketTotals->total_penjualan ?? 0);
         $totalJasa        = $jasaTotals->total_jasa ?? 0;
+        $totalPendapatan  = $totalProdukPaket + $totalJasa;
 
-        $totalPendapatanHitung = $totalProdukPaket + $totalJasa;
-
+        // === HPP Produk ===
         $hppProduk = DB::table('detail_penjualans')
             ->join('harga_backup_penjualans', 'detail_penjualans.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
             ->join('penjualans', 'detail_penjualans.uuid_penjualans', '=', 'penjualans.uuid')
+            ->whereRaw('MONTH(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$bulan])
+            ->whereRaw('YEAR(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$tahun])
             ->selectRaw('SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_hpp')
             ->first();
 
+        // === HPP Paket ===
         $hppPaket = DB::table('detail_penjualan_pakets')
             ->join('harga_backup_penjualans', 'detail_penjualan_pakets.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
             ->join('penjualans', 'detail_penjualan_pakets.uuid_penjualans', '=', 'penjualans.uuid')
+            ->whereRaw('MONTH(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$bulan])
+            ->whereRaw('YEAR(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$tahun])
             ->selectRaw('SUM(harga_backup_penjualans.harga_modal * detail_penjualan_pakets.qty) as total_hpp')
             ->first();
 
+        // === Total HPP ===
         $totalBebanHPP = ($hppProduk->total_hpp ?? 0) + ($hppPaket->total_hpp ?? 0);
-        $laba_bersih = $totalPendapatanHitung - $totalBebanHPP;
+
+        // === Laba Bersih ===
+        $laba_bersih = $totalPendapatan - $totalBebanHPP;
 
         $columns = [
             'po_outlets.uuid' => 'uuid',
@@ -231,46 +292,108 @@ class Dashboard extends BaseController
         // $laba_bersih = $total_pendapatan - $total_beban;
 
         // === Hitung total pendapatan ===
+        // $produkTotals = DB::table('detail_penjualans')
+        //     ->join('penjualans', 'detail_penjualans.uuid_penjualans', '=', 'penjualans.uuid')
+        //     ->selectRaw('SUM(detail_penjualans.total_harga) as total_penjualan')
+        //     ->first();
+
+        // $paketTotals = DB::table('detail_penjualan_pakets')
+        //     ->join('penjualans', 'detail_penjualan_pakets.uuid_penjualans', '=', 'penjualans.uuid')
+        //     ->selectRaw('SUM(detail_penjualan_pakets.total_harga) as total_penjualan')
+        //     ->first();
+
+        // $jasaTotals = DB::table('penjualans')
+        //     ->selectRaw('SUM(jasas.harga) as total_jasa')
+        //     ->join(DB::raw(
+        //         '(SELECT penjualans.id AS penjualan_id, jt.uuid AS jasa_uuid
+        //   FROM penjualans,
+        //   JSON_TABLE(penjualans.uuid_jasa, "$[*]" COLUMNS(uuid VARCHAR(255) PATH "$")) AS jt
+        // ) AS pj'
+        //     ), 'pj.penjualan_id', '=', 'penjualans.id')
+        //     ->join('jasas', 'jasas.uuid', '=', 'pj.jasa_uuid')
+        //     ->first();
+
+        // $totalProdukPaket = ($produkTotals->total_penjualan ?? 0) + ($paketTotals->total_penjualan ?? 0);
+        // $totalJasa        = $jasaTotals->total_jasa ?? 0;
+
+        // $totalPendapatanHitung = $totalProdukPaket + $totalJasa;
+
+        // $hppProduk = DB::table('detail_penjualans')
+        //     ->join('harga_backup_penjualans', 'detail_penjualans.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+        //     ->join('penjualans', 'detail_penjualans.uuid_penjualans', '=', 'penjualans.uuid')
+        //     ->selectRaw('SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_hpp')
+        //     ->first();
+
+        // $hppPaket = DB::table('detail_penjualan_pakets')
+        //     ->join('harga_backup_penjualans', 'detail_penjualan_pakets.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
+        //     ->join('penjualans', 'detail_penjualan_pakets.uuid_penjualans', '=', 'penjualans.uuid')
+        //     ->selectRaw('SUM(harga_backup_penjualans.harga_modal * detail_penjualan_pakets.qty) as total_hpp')
+        //     ->first();
+
+        // $totalBebanHPP = ($hppProduk->total_hpp ?? 0) + ($hppPaket->total_hpp ?? 0);
+        // $laba_bersih = $totalPendapatanHitung - $totalBebanHPP;
+
+        $bulan = date('m');  // default: bulan ini
+        $tahun = date('Y');  // default: tahun ini
+
+        // === Total Penjualan Produk ===
         $produkTotals = DB::table('detail_penjualans')
             ->join('penjualans', 'detail_penjualans.uuid_penjualans', '=', 'penjualans.uuid')
+            ->whereRaw('MONTH(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$bulan])
+            ->whereRaw('YEAR(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$tahun])
             ->selectRaw('SUM(detail_penjualans.total_harga) as total_penjualan')
             ->first();
 
+        // === Total Penjualan Paket ===
         $paketTotals = DB::table('detail_penjualan_pakets')
             ->join('penjualans', 'detail_penjualan_pakets.uuid_penjualans', '=', 'penjualans.uuid')
+            ->whereRaw('MONTH(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$bulan])
+            ->whereRaw('YEAR(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$tahun])
             ->selectRaw('SUM(detail_penjualan_pakets.total_harga) as total_penjualan')
             ->first();
 
+        // === Total Jasa ===
         $jasaTotals = DB::table('penjualans')
-            ->selectRaw('SUM(jasas.harga) as total_jasa')
+            ->whereRaw('MONTH(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$bulan])
+            ->whereRaw('YEAR(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$tahun])
             ->join(DB::raw(
                 '(SELECT penjualans.id AS penjualan_id, jt.uuid AS jasa_uuid
-          FROM penjualans,
-          JSON_TABLE(penjualans.uuid_jasa, "$[*]" COLUMNS(uuid VARCHAR(255) PATH "$")) AS jt
-        ) AS pj'
+              FROM penjualans,
+              JSON_TABLE(penjualans.uuid_jasa, "$[*]" COLUMNS(uuid VARCHAR(255) PATH "$")) AS jt
+            ) AS pj'
             ), 'pj.penjualan_id', '=', 'penjualans.id')
             ->join('jasas', 'jasas.uuid', '=', 'pj.jasa_uuid')
+            ->selectRaw('SUM(jasas.harga) as total_jasa')
             ->first();
 
+        // === Pendapatan Total ===
         $totalProdukPaket = ($produkTotals->total_penjualan ?? 0) + ($paketTotals->total_penjualan ?? 0);
         $totalJasa        = $jasaTotals->total_jasa ?? 0;
+        $totalPendapatan  = $totalProdukPaket + $totalJasa;
 
-        $totalPendapatanHitung = $totalProdukPaket + $totalJasa;
-
+        // === HPP Produk ===
         $hppProduk = DB::table('detail_penjualans')
             ->join('harga_backup_penjualans', 'detail_penjualans.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
             ->join('penjualans', 'detail_penjualans.uuid_penjualans', '=', 'penjualans.uuid')
+            ->whereRaw('MONTH(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$bulan])
+            ->whereRaw('YEAR(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$tahun])
             ->selectRaw('SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_hpp')
             ->first();
 
+        // === HPP Paket ===
         $hppPaket = DB::table('detail_penjualan_pakets')
             ->join('harga_backup_penjualans', 'detail_penjualan_pakets.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
             ->join('penjualans', 'detail_penjualan_pakets.uuid_penjualans', '=', 'penjualans.uuid')
+            ->whereRaw('MONTH(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$bulan])
+            ->whereRaw('YEAR(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$tahun])
             ->selectRaw('SUM(harga_backup_penjualans.harga_modal * detail_penjualan_pakets.qty) as total_hpp')
             ->first();
 
+        // === Total HPP ===
         $totalBebanHPP = ($hppProduk->total_hpp ?? 0) + ($hppPaket->total_hpp ?? 0);
-        $laba_bersih = $totalPendapatanHitung - $totalBebanHPP;
+
+        // === Laba Bersih ===
+        $laba_bersih = $totalPendapatan - $totalBebanHPP;
 
         return view('dashboard.outlet', compact('module', 'produk', 'laba_bersih'));
     }
@@ -994,7 +1117,7 @@ class Dashboard extends BaseController
                 'penjualans.pembayaran',
                 'penjualans.uuid_jasa'
             )
-            ->orderBy('tanggal', 'desc');
+            ->orderBy('penjualans.tanggal_transaksi', 'desc');
 
         if ($uuidOutlet) {
             $query->where('penjualans.uuid_outlet', $uuidOutlet);
@@ -1106,7 +1229,7 @@ class Dashboard extends BaseController
                 ->value('target') ?? 0;
 
             // Hitung total profit semua kasir hari ini
-            $totalProfitTanggal = collect($group['kasir'])->sum('profit');
+            $totalProfitTanggal = collect($group['kasir'])->sum('profit') + collect($group['kasir'])->sum('jasa');
             $total = collect($group['kasir'])->sum('sub_total');
 
             foreach ($group['kasir'] as &$kasir) {
@@ -1122,6 +1245,11 @@ class Dashboard extends BaseController
             // Ubah kasir associative jadi array
             $group['kasir'] = array_values($group['kasir']);
         }
+
+        // === Urutkan tanggal terbaru (desc) secara benar ===
+        uksort($rekapTanggal, function ($a, $b) {
+            return strtotime($b) <=> strtotime($a);
+        });
 
         return response()->json([
             'status' => true,
@@ -1266,7 +1394,7 @@ class Dashboard extends BaseController
                 ->sum('target');
 
             // Hitung total profit semua kasir dalam bulan ini
-            $totalProfitBulan = collect($group['kasir'])->sum('profit');
+            $totalProfitBulan = collect($group['kasir'])->sum('profit') + collect($group['kasir'])->sum('jasa');
             $total = collect($group['kasir'])->sum('sub_total');
 
             foreach ($group['kasir'] as &$kasir) {

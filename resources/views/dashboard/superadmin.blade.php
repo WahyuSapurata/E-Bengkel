@@ -88,14 +88,13 @@
                                                     <th>Modal</th>
                                                     <th>Penjualan</th>
                                                     <th>Jasa</th>
-                                                    <th>Profit</th>
                                                     <th>Tunai</th>
                                                     <th>Non Tunai</th>
                                                     <th>Sub Total</th>
                                                     <th>Total</th>
                                                     <th>Target Profit</th>
                                                     <th>Persentase Target</th>
-                                                    <th>Selisih</th>
+                                                    <th>Profit</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="target-body">
@@ -121,14 +120,13 @@
                                                     <th>Modal</th>
                                                     <th>Penjualan</th>
                                                     <th>Jasa</th>
-                                                    <th>Profit</th>
                                                     <th>Tunai</th>
                                                     <th>Non Tunai</th>
                                                     <th>Sub Total</th>
                                                     <th>Total</th>
                                                     <th>Target Profit</th>
                                                     <th>Persentase Target</th>
-                                                    <th>Selisih</th>
+                                                    <th>Profit</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="target-bulanan-body">
@@ -271,7 +269,9 @@
                                 </div>
                                 <div class="col-lg-3">
                                     <div class="p-3 border border-dashed rounded">
-                                        <div class="fs-12 text-muted mb-1">Laba Bersih</div>
+                                        <div class="fs-12 text-muted mb-1">Laba Bersih Bulan
+                                            {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('F') }}
+                                        </div>
                                         <h6 class="fw-bold text-dark">
                                             {{ 'Rp ' . number_format($laba_bersih, 0, ',', '.') }}
                                         </h6>
@@ -785,7 +785,6 @@
                     <td>${(item.modal ?? 0).toLocaleString()}</td>
                     <td>${(item.penjualan ?? 0).toLocaleString()}</td>
                     <td>${(item.jasa ?? 0).toLocaleString()}</td>
-                    <td>${(item.profit ?? 0).toLocaleString()}</td>
                     <td>${(item.tunai ?? 0).toLocaleString()}</td>
                     <td>${(item.non_tunai ?? 0).toLocaleString()}</td>
                     <td>${(item.sub_total ?? 0).toLocaleString()}</td>
@@ -797,7 +796,7 @@
                         <td rowspan="${kasirList.length}">${(item.total ?? 0).toLocaleString()}</td>
                         <td rowspan="${kasirList.length}">${(item.target_profit ?? 0).toLocaleString()}</td>
                         <td rowspan="${kasirList.length}">${(item.persentase ?? 0)}%</td>
-                        <td rowspan="${kasirList.length}">${(item.selisih ?? 0).toLocaleString()}</td>
+                    <td>${(item.profit ?? 0).toLocaleString()}</td>
                     `;
                             }
 
@@ -845,7 +844,6 @@
                     <td>${(item.modal ?? 0).toLocaleString()}</td>
                     <td>${(item.penjualan ?? 0).toLocaleString()}</td>
                     <td>${(item.jasa ?? 0).toLocaleString()}</td>
-                    <td>${(item.profit ?? 0).toLocaleString()}</td>
                     <td>${(item.tunai ?? 0).toLocaleString()}</td>
                     <td>${(item.non_tunai ?? 0).toLocaleString()}</td>
                     <td>${(item.sub_total ?? 0).toLocaleString()}</td>
@@ -857,7 +855,7 @@
                                 <td rowspan="${kasirList.length}">${(item.total ?? 0).toLocaleString()}</td>
                         <td rowspan="${kasirList.length}">${(item.target_profit ?? 0).toLocaleString()}</td>
                         <td rowspan="${kasirList.length}">${(item.persentase ?? 0)}%</td>
-                        <td rowspan="${kasirList.length}">${(item.selisih ?? 0).toLocaleString()}</td>
+                    <td>${(item.profit ?? 0).toLocaleString()}</td>
                     `;
                             }
 

@@ -31,7 +31,17 @@ class ProdukController extends Controller
         // Ambil data kategori dan suplayer untuk dropdown
         $kategoris = Kategori::select('uuid', 'nama_kategori', 'sub_kategori')->get();
         $suplayers = Suplayer::select('uuid', 'nama')->get();
-        return view('pages.produk.index', compact('module', 'kategoris', 'suplayers'));
+
+        $wirehouse = Wirehouse::all();
+        $wirehouse->map(function ($item) {
+            $outlet = Outlet::where('uuid_user', $item->uuid_user)->first();
+
+            $item->nama_outlet = $outlet ? $outlet->nama_outlet : 'Pusat';
+
+            return $item;
+        });
+
+        return view('pages.produk.index', compact('module', 'kategoris', 'suplayers', 'wirehouse'));
     }
 
     public function getSubKategori($uuid)
