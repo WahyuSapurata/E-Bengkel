@@ -50,9 +50,15 @@
         }
 
         .footer {
-            text-align: center;
             font-size: 13px;
             margin-top: 20px;
+        }
+
+        pre {
+            font-family: "Courier New", monospace;
+            white-space: pre-wrap;
+            font-size: 13px;
+            line-height: 1.4;
         }
     </style>
 </head>
@@ -116,8 +122,35 @@
             </tbody>
         </table>
 
-        <div class="footer">
-            <p>~ Laporan ini dikirim otomatis oleh sistem setiap pukul 23:00 ~</p>
+        <hr style="margin: 25px 0;">
+
+        <pre>
+Penjualan yang di void :
+
+
+Data yang dihapus hari ini :
+----------------------------
+ hpl2     | PRODUK |
+
+PRODUK BARU YANG DI ENTRY HARI INI:
+------------------------------------------------------------------------------
+| JAM  | KODE BARANG   |      NAMA BARANG              | HARGA JUAL| CREATE BY
+------------------------------------------------------------------------------
+
+
+PIUTANG OVERDUE :
+-------------------------------------------------------------------------------
+| TANGGAL | NOBUKTI | JATUH TEMPO | OVER | CUSTOMER | JUMLAH | KETERANGAN
+-------------------------------------------------------------------------------
+
+TOTAL OVERDUE :
+
+
+** end of report **
+        </pre>
+
+        <div class="footer" style="text-align:center;">
+            <p>~ Laporan ini dikirim otomatis oleh sistem setiap pukul 00:00 ~</p>
         </div>
     </div>
 </body>
