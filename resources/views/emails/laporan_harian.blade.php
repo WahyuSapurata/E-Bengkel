@@ -150,7 +150,7 @@ TOTAL OVERDUE :
         </pre>
 
         <div class="footer" style="text-align:center;">
-            <p>~ Laporan ini dikirim otomatis oleh sistem setiap pukul 00:00 ~</p>
+            <p>~ Laporan ini dikirim otomatis oleh sistem ~</p>
         </div>
     </div>
 </body>
