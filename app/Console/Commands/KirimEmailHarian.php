@@ -34,7 +34,7 @@ class KirimEmailHarian extends Command
         $outlets = Outlet::all();
 
         // Email owner statis
-        $emailTujuan = 'wm337708@gmail.com';
+        $emailTujuan = 'cv.adsmotorindonesia@gmail.com';
 
         foreach ($outlets as $outlet) {
             $transaksis = DB::table('penjualans')
