@@ -263,7 +263,7 @@ class PenjualanController extends Controller
                         WirehouseStock::create([
                             'uuid_warehouse' => $warehouseToko->uuid,
                             'uuid_produk'    => $uuid_produk,
-                            'qty'            => $qty,
+                            'qty'            => -$qty,
                             'jenis'          => 'keluar',
                             'sumber'         => 'penjualan',
                             'keterangan'     => 'Penjualan kasir',
@@ -334,7 +334,7 @@ class PenjualanController extends Controller
                             WirehouseStock::create([
                                 'uuid_warehouse' => $warehouseToko->uuid,
                                 'uuid_produk'    => $uuid_produk,
-                                'qty'            => $qtyKeluar,
+                                'qty'            => -$qtyKeluar,
                                 'jenis'          => 'keluar',
                                 'sumber'         => 'penjualan',
                                 'keterangan'     => 'Penjualan paket hemat',
