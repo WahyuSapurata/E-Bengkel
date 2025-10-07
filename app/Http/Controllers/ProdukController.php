@@ -6,6 +6,7 @@ use App\Http\Requests\StoreOpnameRequest;
 use App\Http\Requests\StoreProdukRequest;
 use App\Http\Requests\UpdateProdukRequest;
 use App\Models\DetailPembelian;
+use App\Models\KasirOutlet;
 use App\Models\Kategori;
 use App\Models\Opname;
 use App\Models\Outlet;
@@ -60,63 +61,63 @@ class ProdukController extends Controller
         return view('pages.produk.price_history', compact('module', 'produk'));
     }
 
-    public function opname_stock($params)
+    public function opname_stock($uuid_produk)
     {
-        $produk = Produk::where('uuid', $params)->first();
+        $user = Auth::user();
+        $produk = Produk::where('uuid', $uuid_produk)->firstOrFail();
 
-        // Hitung total pembelian
-        $total_pembelian = DB::table('detail_pembelians as dp')
-            ->join('pembelians as pb', 'pb.uuid', '=', 'dp.uuid_pembelian')
-            ->where('dp.uuid_produk', $produk->uuid)
-            ->sum('dp.qty');
+        // Ambil stok dari wirehouse_stocks hanya untuk gudang pusat
+        $stok_wirehouse = DB::table('wirehouse_stocks as ws')
+            ->join('wirehouses as w', 'w.uuid', '=', 'ws.uuid_warehouse')
+            ->where('ws.uuid_produk', $produk->uuid)
+            ->where('w.tipe', 'pusat') // hanya gudang pusat
+            ->sum('ws.qty');
 
-        // Hitung total pengiriman
-        $total_pengiriman = DB::table('detail_pengiriman_barangs as dk')
-            ->join('pengiriman_barangs as pk', 'pk.uuid', '=', 'dk.uuid_pengiriman_barang')
-            ->where('dk.uuid_produk', $produk->uuid)
-            ->sum('dk.qty');
-
-        // Hitung total opname
-        $total_opname = DB::table('opnames')
-            ->where('uuid_user', Auth::user()->uuid)
+        // Ambil hasil opname terakhir untuk produk ini oleh user pusat
+        $stok_opname = DB::table('opnames')
+            ->where('uuid_user', $user->uuid)
             ->where('uuid_produk', $produk->uuid)
-            ->sum('stock');
+            ->orderByDesc('created_at')
+            ->value('stock');
 
-        // Rumus stok akhir
-        $total_stok = $total_pembelian - $total_pengiriman + $total_opname;
+        // Gunakan hasil opname terakhir jika ada, kalau tidak gunakan stok wirehouse
+        $total_stok = $stok_opname !== null ? $stok_opname : $stok_wirehouse;
 
-        $module = 'Opname Stock ' . $produk->nama_barang . ' (' . $total_stok . ')';
-        return view('pages.produk.opname_stock', compact('module', 'produk'));
+        $module = 'Opname Stock Gudang Pusat - ' . $produk->nama_barang . ' (' . $total_stok . ')';
+
+        return view('pages.produk.opname_stock', compact('module', 'produk', 'total_stok'));
     }
 
-    public function opname_stock_outlet($params)
+    public function opname_stock_outlet($uuid_produk)
     {
-        $produk = Produk::where('uuid', $params)->first();
+        $user = Auth::user();
+        $produk = Produk::where('uuid', $uuid_produk)->firstOrFail();
 
-        // Hitung total pengiriman
-        $total_pengiriman = DB::table('detail_pengiriman_barangs as dk')
-            ->join('pengiriman_barangs as pk', 'pk.uuid', '=', 'dk.uuid_pengiriman_barang')
-            ->where('pk.uuid_outlet', Auth::user()->uuid)
-            ->where('dk.uuid_produk', $produk->uuid)
-            ->sum('dk.qty');
+        // Ambil outlet tempat kasir / user login
+        $kasir_outlet = KasirOutlet::where('uuid_user', $user->uuid)->first();
 
-        $total_transfer = DB::table('detail_transfer_barangs as dt')
-            ->join('transfer_barangs as tb', 'tb.uuid', '=', 'dt.uuid_transfer_barangs')
-            ->where('tb.uuid_outlet', Auth::user()->uuid)
-            ->where('dt.uuid_produk', $produk->uuid)
-            ->sum('dt.qty');
+        // Ambil total stok dari wirehouse_stocks berdasarkan outlet
+        $stok_wirehouse = DB::table('wirehouse_stocks as ws')
+            ->join('wirehouses as w', 'w.uuid', '=', 'ws.uuid_warehouse')
+            ->where('ws.uuid_produk', $produk->uuid)
+            ->where('w.uuid_user', $user->uuid) // user/outlet terkait
+            ->where('w.lokasi', 'outlet')
+            ->where('w.tipe', 'toko')
+            ->sum('ws.qty');
 
-        // Hitung total opname
-        $total_opname = DB::table('opnames')
-            ->where('uuid_user', Auth::user()->uuid)
+        // Ambil hasil opname terakhir kalau ada
+        $stok_opname = DB::table('opnames')
+            ->where('uuid_user', $user->uuid)
             ->where('uuid_produk', $produk->uuid)
-            ->sum('stock');
+            ->orderByDesc('created_at')
+            ->value('stock');
 
-        // Rumus stok akhir
-        $total_stok = $total_pengiriman - $total_transfer + $total_opname;
+        // Tentukan stok akhir
+        $total_stok = $stok_opname !== null ? $stok_opname : $stok_wirehouse;
 
         $module = 'Opname Stock ' . $produk->nama_barang . ' (' . $total_stok . ')';
-        return view('outlet.produk.opname_stock', compact('module', 'produk'));
+
+        return view('outlet.produk.opname_stock', compact('module', 'produk', 'total_stok'));
     }
 
     public function get_price_history(Request $request, $params)
@@ -689,11 +690,22 @@ class ProdukController extends Controller
         // Ambil data kategori dan suplayer untuk dropdown
         $kategoris = Kategori::select('uuid', 'nama_kategori')->get();
         $suplayers = Suplayer::select('uuid', 'nama')->get();
-        return view('outlet.produk.index', compact('module', 'kategoris', 'suplayers'));
+
+        $wirehouse = Wirehouse::where('uuid_user', Auth::user()->uuid)->get();
+        $wirehouse->map(function ($item) {
+            $outlet = Outlet::where('uuid_user', $item->uuid_user)->first();
+
+            $item->nama_outlet = $outlet ? $outlet->nama_outlet : 'Pusat';
+
+            return $item;
+        });
+
+        return view('outlet.produk.index', compact('module', 'kategoris', 'suplayers', 'wirehouse'));
     }
 
     public function get_outlet(Request $request)
     {
+        $user = Auth::user();
         $columns = [
             'produks.uuid',
             'produks.uuid_kategori',
@@ -736,71 +748,83 @@ class ProdukController extends Controller
                   AND o.uuid_produk = produks.uuid) as total_opname"),
 
             // total stok dihitung dari 3 sumber
-            DB::raw("(
-                        CASE
-                            WHEN EXISTS (
-                                SELECT 1 FROM opnames o
-                                WHERE o.uuid_user = '" . Auth::user()->uuid . "'
-                                AND o.uuid_produk = produks.uuid
-                            )
-                            THEN (
-                                -- ambil stock opname terakhir
-                                (SELECT o.stock
-                                FROM opnames o
-                                WHERE o.uuid_user = '" . Auth::user()->uuid . "'
-                                AND o.uuid_produk = produks.uuid
-                                ORDER BY o.created_at DESC
-                                LIMIT 1
-                                )
-                                +
-                                -- tambah pengiriman setelah opname
-                                (
-                                    SELECT COALESCE(SUM(dk.qty),0)
-                                    FROM detail_pengiriman_barangs dk
-                                    JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
-                                    WHERE pk.status = 'diterima'
-                                    AND dk.uuid_produk = produks.uuid
-                                    AND pk.uuid_outlet = '" . Auth::user()->uuid . "'
-                                    AND pk.created_at > (
-                                        SELECT o2.created_at FROM opnames o2
-                                        WHERE o2.uuid_user = '" . Auth::user()->uuid . "'
-                                        AND o2.uuid_produk = produks.uuid
-                                        ORDER BY o2.created_at DESC LIMIT 1
-                                    )
-                                )
-                                -
-                                -- kurangi transfer setelah opname
-                                (
-                                    SELECT COALESCE(SUM(dt.qty),0)
-                                    FROM detail_transfer_barangs dt
-                                    JOIN transfer_barangs tb ON tb.uuid = dt.uuid_transfer_barangs
-                                    WHERE dt.uuid_produk = produks.uuid
-                                    AND tb.uuid_outlet = '" . Auth::user()->uuid . "'
-                                    AND tb.created_at > (
-                                        SELECT o2.created_at FROM opnames o2
-                                        WHERE o2.uuid_user = '" . Auth::user()->uuid . "'
-                                        AND o2.uuid_produk = produks.uuid
-                                        ORDER BY o2.created_at DESC LIMIT 1
-                                    )
-                                )
-                            )
-                            ELSE (
-                                -- kalau belum ada opname, hitung normal
-                                (SELECT COALESCE(SUM(dk.qty),0)
-                                FROM detail_pengiriman_barangs dk
-                                JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
-                                WHERE pk.status = 'diterima'
-                                AND dk.uuid_produk = produks.uuid
-                                AND pk.uuid_outlet = '" . Auth::user()->uuid . "')
-                                -
-                                (SELECT COALESCE(SUM(dt.qty),0)
-                                FROM detail_transfer_barangs dt
-                                JOIN transfer_barangs tb ON tb.uuid = dt.uuid_transfer_barangs
-                                WHERE dt.uuid_produk = produks.uuid
-                                AND tb.uuid_outlet = '" . Auth::user()->uuid . "')
-                            )
-                        END
-                    ) as total_stok"),
+            DB::raw("
+(
+    CASE
+        WHEN EXISTS (
+            SELECT 1 FROM opnames o
+            WHERE o.uuid_user = '" . $user->uuid . "'
+            AND o.uuid_produk = produks.uuid
+        )
+        THEN (
+            -- stok terakhir opname
+            (SELECT o.stock
+             FROM opnames o
+             WHERE o.uuid_user = '" . $user->uuid . "'
+             AND o.uuid_produk = produks.uuid
+             ORDER BY o.created_at DESC
+             LIMIT 1)
+            +
+            COALESCE((
+                SELECT SUM(ws.qty)
+                FROM wirehouse_stocks ws
+                JOIN wirehouses w ON w.uuid = ws.uuid_warehouse
+                WHERE ws.uuid_produk = produks.uuid
+                " . (
+                // === Jika user bukan pusat, filter warehouse berdasarkan request
+                !$user->is_pusat && $request->filled('uuid_wirehouse')
+                ? "AND w.uuid = '" . $request->uuid_wirehouse . "'"
+                : ""
+            ) . "
+                " . (
+                // === Jika bukan pusat, hanya lihat warehouse miliknya
+                !$user->is_pusat
+                ? "AND w.uuid_user = '" . $user->uuid . "'"
+                : ""
+            ) . "
+                " . (
+                // === Jika user outlet, batasi lokasi ke outlet
+                !$user->is_pusat
+                ? "AND w.lokasi = 'outlet'"
+                : ""
+            ) . "
+                AND ws.created_at > (
+                    SELECT o2.created_at
+                    FROM opnames o2
+                    WHERE o2.uuid_user = '" . $user->uuid . "'
+                    AND o2.uuid_produk = produks.uuid
+                    ORDER BY o2.created_at DESC
+                    LIMIT 1
+                )
+            ), 0)
+        )
+        ELSE (
+            -- Jika belum opname, total semua pergerakan stok
+            COALESCE((
+                SELECT SUM(ws.qty)
+                FROM wirehouse_stocks ws
+                JOIN wirehouses w ON w.uuid = ws.uuid_warehouse
+                WHERE ws.uuid_produk = produks.uuid
+                " . (
+                !$user->is_pusat && $request->filled('uuid_wirehouse')
+                ? "AND w.uuid = '" . $request->uuid_wirehouse . "'"
+                : ""
+            ) . "
+                " . (
+                !$user->is_pusat
+                ? "AND w.uuid_user = '" . $user->uuid . "'"
+                : ""
+            ) . "
+                " . (
+                !$user->is_pusat
+                ? "AND w.lokasi = 'outlet'"
+                : ""
+            ) . "
+            ), 0)
+        )
+    END
+) AS total_stok
+"),
             DB::raw('
     ROUND(
         (

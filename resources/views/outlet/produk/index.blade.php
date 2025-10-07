@@ -61,6 +61,14 @@
                                         <option value="{{ $s->uuid }}">{{ $s->nama }}</option>
                                     @endforeach
                                 </select>
+                                <select name="uuid" id="filter-outlet" data-placeholder="Pilih outlet"
+                                    class="form-select">
+                                    <option value="">Pilih Outlet</option>
+                                    @foreach ($wirehouse as $w)
+                                        <option value="{{ $w->uuid }}">{{ $w->nama_outlet . ' | ' . $w->tipe }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                             <div class="card-header-action">
                                 <div class="card-header-btn">
@@ -448,6 +456,7 @@
                     data: function(d) {
                         d.uuid_kategori = $('#filter-kategori').val();
                         d.uuid_suplayer = $('#filter-suplayer').val();
+                        d.uuid_wirehouse = $('#filter-outlet').val();
                     },
                 },
                 columns: [{
@@ -579,7 +588,7 @@
             });
         };
 
-        $('#filter-kategori, #filter-suplayer').on('change', function() {
+        $('#filter-kategori, #filter-suplayer, #filter-outlet').on('change', function() {
             $('#dataTables').DataTable().ajax.reload();
         });
 

@@ -1211,7 +1211,7 @@ class Dashboard extends BaseController
             $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['modal']     += $modal;
             $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['penjualan'] += $penjualan;
             $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['jasa']      += $totalJasa;
-            $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['profit']    += $profit;
+            $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['profit']    += $profit + $totalJasa;
             $rekapTanggal[$tanggalFormatted]['kasir'][$keyKasir]['sub_total']     += $sub_total;
 
             if ($trx->pembayaran === 'Tunai') {
@@ -1229,7 +1229,7 @@ class Dashboard extends BaseController
                 ->value('target') ?? 0;
 
             // Hitung total profit semua kasir hari ini
-            $totalProfitTanggal = collect($group['kasir'])->sum('profit') + collect($group['kasir'])->sum('jasa');
+            $totalProfitTanggal = collect($group['kasir'])->sum('profit');
             $total = collect($group['kasir'])->sum('sub_total');
 
             foreach ($group['kasir'] as &$kasir) {
@@ -1373,7 +1373,7 @@ class Dashboard extends BaseController
             $rekapBulan[$bulanKey]['kasir'][$keyKasir]['modal']     += $modal;
             $rekapBulan[$bulanKey]['kasir'][$keyKasir]['penjualan'] += $penjualan;
             $rekapBulan[$bulanKey]['kasir'][$keyKasir]['jasa']      += $totalJasa;
-            $rekapBulan[$bulanKey]['kasir'][$keyKasir]['profit']    += $profit;
+            $rekapBulan[$bulanKey]['kasir'][$keyKasir]['profit']    += $profit + $totalJasa;
             $rekapBulan[$bulanKey]['kasir'][$keyKasir]['sub_total']     += $sub_total;
 
             if ($trx->pembayaran === 'Tunai') {
@@ -1394,7 +1394,7 @@ class Dashboard extends BaseController
                 ->sum('target');
 
             // Hitung total profit semua kasir dalam bulan ini
-            $totalProfitBulan = collect($group['kasir'])->sum('profit') + collect($group['kasir'])->sum('jasa');
+            $totalProfitBulan = collect($group['kasir'])->sum('profit');
             $total = collect($group['kasir'])->sum('sub_total');
 
             foreach ($group['kasir'] as &$kasir) {
