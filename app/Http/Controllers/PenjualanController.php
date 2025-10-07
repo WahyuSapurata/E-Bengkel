@@ -138,7 +138,7 @@ class PenjualanController extends Controller
 ')
         )
             ->where('produks.kode', $kode)
-            ->havingRaw('stock_toko > 0')
+            ->having('total_stok', '>', 0)
             ->first();
 
         if (!$produk) {
