@@ -98,7 +98,7 @@ class KirimEmailHarian extends Command
                 }
 
                 $totalPenjualan = ($produkTotals->total_penjualan ?? 0) + ($paketTotals->total_penjualan ?? 0) + $totalJasa;
-                $totalProfit    = ($produkTotals->total_profit ?? 0) + ($paketTotals->total_profit ?? 0);
+                $totalProfit    = ($produkTotals->total_profit ?? 0) + ($paketTotals->total_profit ?? 0) + $totalJasa;
 
                 // === Kelompokkan per kasir ===
                 if (!isset($laporan[$trx->kasir])) {
