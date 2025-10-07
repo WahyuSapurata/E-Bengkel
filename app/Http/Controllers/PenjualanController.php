@@ -63,31 +63,34 @@ class PenjualanController extends Controller
 
     public function get_stock()
     {
-        $kasir_login = KasirOutlet::where('uuid_user', Auth::user()->uuid)->first();
-        $query = Produk::select(array_merge(['kode', 'nama_barang', 'satuan'], [
-            DB::raw("(SELECT COALESCE(SUM(dt.qty),0)
-                  FROM detail_transfer_barangs dt
-                  JOIN transfer_barangs tb ON tb.uuid = dt.uuid_transfer_barangs
-                  WHERE dt.uuid_produk = produks.uuid) as total_transfer"),
+        $user = Auth::user();
+        $kasir_login = KasirOutlet::where('uuid_user', $user->uuid)->first();
 
-            DB::raw("(SELECT COALESCE(SUM(dp.qty),0)
-                  FROM detail_penjualans dp
-                  JOIN penjualans pj ON pj.uuid = dp.uuid_penjualans
-                  WHERE dp.uuid_produk = produks.uuid) as total_pejualan"),
+        // Pastikan kasir punya outlet
+        if (!$kasir_login) {
+            return response()->json(['message' => 'Kasir belum terhubung ke outlet'], 400);
+        }
 
-            // total stok dihitung dari 3 sumber
-            DB::raw("(
-            (SELECT COALESCE(SUM(dt.qty),0)
-             FROM detail_transfer_barangs dt
-             JOIN transfer_barangs tb ON tb.uuid = dt.uuid_transfer_barangs
-             WHERE tb.uuid_outlet = '" . $kasir_login->uuid_outlet . "' AND dt.uuid_produk = produks.uuid)
-            -
-            (SELECT COALESCE(SUM(dp.qty),0)
-             FROM detail_penjualans dp
-             JOIN penjualans pj ON pj.uuid = dp.uuid_penjualans
-             WHERE pj.uuid_outlet = '" . $kasir_login->uuid_outlet . "' AND dp.uuid_produk = produks.uuid)
-        ) as total_stok")
-        ]))->get();
+        $uuid_outlet = $kasir_login->uuid_outlet;
+
+        $query = Produk::select([
+            'kode',
+            'nama_barang',
+            'satuan',
+            DB::raw("
+            (
+                COALESCE((
+                    SELECT SUM(ws.qty)
+                    FROM wirehouse_stocks ws
+                    JOIN wirehouses w ON w.uuid = ws.uuid_warehouse
+                    WHERE ws.uuid_produk = produks.uuid
+                    AND w.lokasi = 'outlet'
+                    AND w.tipe = 'toko'
+                    AND w.uuid_user = '$uuid_outlet'
+                ), 0)
+            ) AS total_stok
+        ")
+        ])->get();
 
         return response()->json($query);
     }
@@ -112,23 +115,19 @@ class PenjualanController extends Controller
             'produks.kode',
             'produks.satuan',
             'produks.foto',
-            DB::raw("(
-            COALESCE((
-                SELECT SUM(dtb.qty)
-                FROM detail_transfer_barangs dtb
-                JOIN transfer_barangs tb ON tb.uuid = dtb.uuid_transfer_barangs
-                WHERE tb.uuid_outlet = '{$kasir->uuid_outlet}'
-                  AND dtb.uuid_produk = produks.uuid
-            ),0)
-            -
-            COALESCE((
-                SELECT SUM(dp.qty)
-                FROM detail_penjualans dp
-                JOIN penjualans pj ON pj.uuid = dp.uuid_penjualans
-                WHERE pj.uuid_outlet = '{$kasir->uuid_outlet}'
-                  AND dp.uuid_produk = produks.uuid
-            ),0)
-        ) as stock_toko"),
+            DB::raw("
+            (
+                COALESCE((
+                    SELECT SUM(ws.qty)
+                    FROM wirehouse_stocks ws
+                    JOIN wirehouses w ON w.uuid = ws.uuid_warehouse
+                    WHERE ws.uuid_produk = produks.uuid
+                    AND w.lokasi = 'outlet'
+                    AND w.tipe = 'toko'
+                    AND w.uuid_user = '$kasir->uuid_outlet'
+                ), 0)
+            ) AS total_stok
+        "),
             DB::raw('
     ROUND(
         (
@@ -139,7 +138,7 @@ class PenjualanController extends Controller
 ')
         )
             ->where('produks.kode', $kode)
-            // ->havingRaw('stock_toko > 0')
+            ->havingRaw('stock_toko > 0')
             ->first();
 
         if (!$produk) {
