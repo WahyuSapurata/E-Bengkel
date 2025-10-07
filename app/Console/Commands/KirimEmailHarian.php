@@ -122,8 +122,13 @@ class KirimEmailHarian extends Command
             // Hitung total akhir (per kasir)
             $hasil = collect($laporan)->map(function ($item) {
                 $item['total'] = $item['tunai'] + $item['non_tunai'];
-                $item['persentase'] = $item['total'] > 0
-                    ? round(($item['profit'] / $item['total']) * 100, 2)
+                // $item['persentase'] = $item['total'] > 0
+                //     ? round(($item['profit'] / $item['total']) * 100, 2)
+                //     : 0;
+                $target = 1500000;
+
+                $item['persentase'] = $target > 0
+                    ? round(($item['profit'] / $target) * 100, 2)
                     : 0;
                 return $item;
             })->values()->toArray();

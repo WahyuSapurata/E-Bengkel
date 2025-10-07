@@ -106,6 +106,7 @@
                         $grandNonTunai += $row['non_tunai'];
                         $grandTotal += $row['total'];
                         $grandProfit += $row['profit'];
+                        $target = 1500000; // Target harian
                     @endphp
                 @endforeach
 
@@ -116,7 +117,8 @@
                     <td>Rp {{ number_format($grandTotal, 0, ',', '.') }}</td>
                     <td>Rp {{ number_format($grandProfit, 0, ',', '.') }}</td>
                     <td>
-                        {{ $grandTotal > 0 ? round(($grandProfit / $grandTotal) * 100, 2) : 0 }}%
+                        {{-- {{ $grandTotal > 0 ? round(($grandProfit / $grandTotal) * 100, 2) : 0 }}% --}}
+                        {{ $target > 0 ? round(($grandProfit / $target) * 100, 2) : 0 }}%
                     </td>
                 </tr>
             </tbody>
