@@ -179,6 +179,8 @@ class ProdukController extends Controller
 
     public function get(Request $request)
     {
+        $user = Auth::user();
+
         $columns = [
             'produks.uuid',
             'produks.uuid_kategori',
@@ -203,95 +205,88 @@ class ProdukController extends Controller
         $totalData = Produk::count();
 
         $query = Produk::select(array_merge($columns, [
-            // total pembelian
             DB::raw("(SELECT COALESCE(SUM(dp.qty),0)
-                  FROM detail_pembelians dp
-                  JOIN pembelians pb ON pb.uuid = dp.uuid_pembelian
-                  WHERE dp.uuid_produk = produks.uuid) as total_pembelian"),
+            FROM detail_pembelians dp
+            JOIN pembelians pb ON pb.uuid = dp.uuid_pembelian
+            WHERE dp.uuid_produk = produks.uuid) as total_pembelian"),
 
-            // total pengiriman (barang keluar pusat)
             DB::raw("(SELECT COALESCE(SUM(dk.qty),0)
-                  FROM detail_pengiriman_barangs dk
-                  JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
-                  WHERE dk.uuid_produk = produks.uuid) as total_pengiriman"),
+            FROM detail_pengiriman_barangs dk
+            JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
+            WHERE dk.uuid_produk = produks.uuid) as total_pengiriman"),
 
-            // total opname
             DB::raw("(SELECT COALESCE(SUM(o.stock),0)
-                  FROM opnames o
-                  WHERE o.uuid_user = '" . Auth::user()->uuid . "'
-                  AND o.uuid_produk = produks.uuid) as total_opname"),
+            FROM opnames o
+            WHERE o.uuid_user = '" . $user->uuid . "'
+            AND o.uuid_produk = produks.uuid) as total_opname"),
 
-            // total stok dihitung dari 3 sumber
-            DB::raw("(
-                        CASE
-                            WHEN EXISTS (
-                                SELECT 1 FROM opnames o
-                                WHERE o.uuid_user = '" . Auth::user()->uuid . "'
-                                AND o.uuid_produk = produks.uuid
-                            )
-                            THEN (
-                                -- ambil stock terakhir + transaksi setelah opname
-                                (SELECT o.stock
-                                FROM opnames o
-                                WHERE o.uuid_user = '" . Auth::user()->uuid . "'
-                                AND o.uuid_produk = produks.uuid
-                                ORDER BY o.created_at DESC
-                                LIMIT 1
-                                )
-                                +
-                                (
-                                    SELECT COALESCE(SUM(dp.qty),0)
-                                    FROM detail_pembelians dp
-                                    JOIN pembelians pb ON pb.uuid = dp.uuid_pembelian
-                                    WHERE dp.uuid_produk = produks.uuid
-                                    AND pb.created_at > (
-                                        SELECT o2.created_at FROM opnames o2
-                                        WHERE o2.uuid_user = '" . Auth::user()->uuid . "'
-                                        AND o2.uuid_produk = produks.uuid
-                                        ORDER BY o2.created_at DESC LIMIT 1
-                                    )
-                                )
-                                -
-                                (
-                                    SELECT COALESCE(SUM(dk.qty),0)
-                                    FROM detail_pengiriman_barangs dk
-                                    JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
-                                    WHERE dk.uuid_produk = produks.uuid
-                                    AND pk.created_at > (
-                                        SELECT o2.created_at FROM opnames o2
-                                        WHERE o2.uuid_user = '" . Auth::user()->uuid . "'
-                                        AND o2.uuid_produk = produks.uuid
-                                        ORDER BY o2.created_at DESC LIMIT 1
-                                    )
-                                )
-                            )
-                            ELSE (
-                                -- kalau belum ada opname, hitung normal
-                                (SELECT COALESCE(SUM(dp.qty),0)
-                                FROM detail_pembelians dp
-                                JOIN pembelians pb ON pb.uuid = dp.uuid_pembelian
-                                WHERE dp.uuid_produk = produks.uuid)
-                                -
-                                (SELECT COALESCE(SUM(dk.qty),0)
-                                FROM detail_pengiriman_barangs dk
-                                JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
-                                WHERE dk.uuid_produk = produks.uuid)
-                            )
-                        END
-                    ) as total_stok"),
+            // ==== Total stok dengan logika opname + filter warehouse ====
+            DB::raw("
+(
+    CASE
+        WHEN EXISTS (
+            SELECT 1 FROM opnames o
+            WHERE o.uuid_user = '" . $user->uuid . "'
+            AND o.uuid_produk = produks.uuid
+        )
+        THEN (
+            (SELECT o.stock
+             FROM opnames o
+             WHERE o.uuid_user = '" . $user->uuid . "'
+             AND o.uuid_produk = produks.uuid
+             ORDER BY o.created_at DESC
+             LIMIT 1)
+            +
+            COALESCE((
+                SELECT SUM(ws.qty)
+                FROM wirehouse_stocks ws
+                JOIN wirehouses w ON w.uuid = ws.uuid_warehouse
+                WHERE ws.uuid_produk = produks.uuid
+                " . (
+                $request->filled('uuid_wirehouse')
+                ? "AND w.uuid = '" . $request->uuid_wirehouse . "'"
+                : ""
+            ) . "
+                AND ws.created_at > (
+                    SELECT o2.created_at
+                    FROM opnames o2
+                    WHERE o2.uuid_user = '" . $user->uuid . "'
+                    AND o2.uuid_produk = produks.uuid
+                    ORDER BY o2.created_at DESC
+                    LIMIT 1
+                )
+            ), 0)
+        )
+        ELSE (
+            COALESCE((
+                SELECT SUM(ws.qty)
+                FROM wirehouse_stocks ws
+                JOIN wirehouses w ON w.uuid = ws.uuid_warehouse
+                WHERE ws.uuid_produk = produks.uuid
+                " . (
+                $request->filled('uuid_wirehouse')
+                ? "AND w.uuid = '" . $request->uuid_wirehouse . "'"
+                : ""
+            ) . "
+            ), 0)
+        )
+    END
+) AS total_stok
+"),
+
             DB::raw('
-    ROUND(
-        (
-            CAST(produks.hrg_modal AS DECIMAL(15,2))
-            + (CAST(produks.hrg_modal AS DECIMAL(15,2)) * CAST(produks.profit AS DECIMAL(15,2)) / 100)
-        ) / 1000
-    ) * 1000 as harga_jual
-')
+            ROUND(
+                (
+                    CAST(produks.hrg_modal AS DECIMAL(15,2))
+                    + (CAST(produks.hrg_modal AS DECIMAL(15,2)) * CAST(produks.profit AS DECIMAL(15,2)) / 100)
+                ) / 1000
+            ) * 1000 as harga_jual
+        ')
         ]))
             ->leftJoin('kategoris', 'kategoris.uuid', '=', 'produks.uuid_kategori')
             ->leftJoin('suplayers', 'suplayers.uuid', '=', 'produks.uuid_suplayer');
 
-        // ==== filter kategori & supplier
+        // ==== Filter kategori dan supplier
         if ($request->filled('uuid_kategori')) {
             $query->where('produks.uuid_kategori', $request->uuid_kategori);
         }
@@ -299,7 +294,18 @@ class ProdukController extends Controller
             $query->where('produks.uuid_suplayer', $request->uuid_suplayer);
         }
 
-        // ==== searching
+        // ==== Filter warehouse (kalau bukan pusat)
+        if (!$user->is_pusat && $request->filled('uuid')) {
+            $query->whereExists(function ($sub) use ($request) {
+                $sub->select(DB::raw(1))
+                    ->from('wirehouse_stocks as ws')
+                    ->join('wirehouses as w', 'w.uuid', '=', 'ws.uuid_warehouse')
+                    ->whereColumn('ws.uuid_produk', 'produks.uuid')
+                    ->where('w.uuid', $request->uuid);
+            });
+        }
+
+        // ==== Searching
         if (!empty($request->search['value'])) {
             $search = $request->search['value'];
             $query->where(function ($q) use ($search, $columns) {
@@ -312,29 +318,17 @@ class ProdukController extends Controller
 
         $totalFiltered = $query->count();
 
-        // ==== sorting
+        // ==== Sorting
         if (!empty($request->order)) {
             $columnIndex = $request->order[0]['column'];
-            $orderDir = $request->order[0]['dir'] ?? 'asc'; // default ke 'asc'
-
-            // Ambil nama kolom, hilangkan alias jika ada
-            $orderCol = $columns[$columnIndex] ?? 'produks.created_at';
-            $orderCol = explode(' as ', $orderCol)[0];
-
-            // Jika user sorting di kolom selain created_at, gunakan secondary sort by created_at
-            if ($orderCol !== 'produks.created_at') {
-                $query->orderBy($orderCol, $orderDir)
-                    ->orderBy('produks.created_at', 'desc');
-            } else {
-                // Kalau sorting di created_at, cukup satu order
-                $query->orderBy($orderCol, $orderDir);
-            }
+            $orderDir = $request->order[0]['dir'] ?? 'asc';
+            $orderCol = explode(' as ', $columns[$columnIndex] ?? 'produks.created_at')[0];
+            $query->orderBy($orderCol, $orderDir)->orderBy('produks.created_at', 'desc');
         } else {
-            // Default tampilkan data terbaru
             $query->orderBy('produks.created_at', 'desc');
         }
 
-        // ==== pagination
+        // ==== Pagination
         $query->skip($request->start)->take($request->length);
 
         $data = $query->get();
@@ -359,58 +353,58 @@ class ProdukController extends Controller
             'produks.uuid',
             'produks.hrg_modal',
             'produks.profit',
-            DB::raw("(
-        CASE
-            WHEN EXISTS (
-                SELECT 1 FROM opnames o
-                WHERE o.uuid_user = '" . Auth::user()->uuid . "'
-                AND o.uuid_produk = produks.uuid
-            )
-            THEN (
-                (SELECT o.stock
-                 FROM opnames o
-                 WHERE o.uuid_user = '" . Auth::user()->uuid . "'
-                 AND o.uuid_produk = produks.uuid
-                 ORDER BY o.created_at DESC
-                 LIMIT 1)
-                +
-                (SELECT COALESCE(SUM(dp.qty),0)
-                 FROM detail_pembelians dp
-                 JOIN pembelians pb ON pb.uuid = dp.uuid_pembelian
-                 WHERE dp.uuid_produk = produks.uuid
-                 AND pb.created_at > (
-                     SELECT o2.created_at
-                     FROM opnames o2
-                     WHERE o2.uuid_user = '" . Auth::user()->uuid . "'
-                     AND o2.uuid_produk = produks.uuid
-                     ORDER BY o2.created_at DESC LIMIT 1
-                 ))
-                -
-                (SELECT COALESCE(SUM(dk.qty),0)
-                 FROM detail_pengiriman_barangs dk
-                 JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
-                 WHERE dk.uuid_produk = produks.uuid
-                 AND pk.created_at > (
-                     SELECT o2.created_at
-                     FROM opnames o2
-                     WHERE o2.uuid_user = '" . Auth::user()->uuid . "'
-                     AND o2.uuid_produk = produks.uuid
-                     ORDER BY o2.created_at DESC LIMIT 1
-                 ))
-            )
-            ELSE (
-                (SELECT COALESCE(SUM(dp.qty),0)
-                 FROM detail_pembelians dp
-                 JOIN pembelians pb ON pb.uuid = dp.uuid_pembelian
-                 WHERE dp.uuid_produk = produks.uuid)
-                -
-                (SELECT COALESCE(SUM(dk.qty),0)
-                 FROM detail_pengiriman_barangs dk
-                 JOIN pengiriman_barangs pk ON pk.uuid = dk.uuid_pengiriman_barang
-                 WHERE dk.uuid_produk = produks.uuid)
-            )
-        END
-    ) as total_stok")
+            DB::raw("
+(
+    CASE
+        WHEN EXISTS (
+            SELECT 1 FROM opnames o
+            WHERE o.uuid_user = '" . $user->uuid . "'
+            AND o.uuid_produk = produks.uuid
+        )
+        THEN (
+            (SELECT o.stock
+             FROM opnames o
+             WHERE o.uuid_user = '" . $user->uuid . "'
+             AND o.uuid_produk = produks.uuid
+             ORDER BY o.created_at DESC
+             LIMIT 1)
+            +
+            COALESCE((
+                SELECT SUM(ws.qty)
+                FROM wirehouse_stocks ws
+                JOIN wirehouses w ON w.uuid = ws.uuid_warehouse
+                WHERE ws.uuid_produk = produks.uuid
+                " . (
+                $request->filled('uuid_wirehouse')
+                ? "AND w.uuid = '" . $request->uuid_wirehouse . "'"
+                : ""
+            ) . "
+                AND ws.created_at > (
+                    SELECT o2.created_at
+                    FROM opnames o2
+                    WHERE o2.uuid_user = '" . $user->uuid . "'
+                    AND o2.uuid_produk = produks.uuid
+                    ORDER BY o2.created_at DESC
+                    LIMIT 1
+                )
+            ), 0)
+        )
+        ELSE (
+            COALESCE((
+                SELECT SUM(ws.qty)
+                FROM wirehouse_stocks ws
+                JOIN wirehouses w ON w.uuid = ws.uuid_warehouse
+                WHERE ws.uuid_produk = produks.uuid
+                " . (
+                $request->filled('uuid_wirehouse')
+                ? "AND w.uuid = '" . $request->uuid_wirehouse . "'"
+                : ""
+            ) . "
+            ), 0)
+        )
+    END
+) AS total_stok
+")
         );
 
         // Bungkus subquery supaya bisa dihitung SUM-nya

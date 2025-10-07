@@ -756,6 +756,7 @@
                     data: function(d) {
                         d.uuid_kategori = $('#filter-kategori').val();
                         d.uuid_suplayer = $('#filter-suplayer').val();
+                        d.uuid_wirehouse = $('#filter-outlet').val();
                     },
                 },
                 columns: [{
@@ -932,7 +933,7 @@
             });
         };
 
-        $('#filter-kategori, #filter-suplayer').on('change', function() {
+        $('#filter-kategori, #filter-suplayer, #filter-outlet').on('change', function() {
             $('#dataTables').DataTable().ajax.reload();
         });
 
