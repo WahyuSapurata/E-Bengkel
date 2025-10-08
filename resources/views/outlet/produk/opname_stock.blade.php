@@ -63,6 +63,18 @@
                                     <div class="invalid-feedback"></div>
                                 </div>
                                 <div class="mb-2">
+                                    <label class="text-capitalize form-label">Wirehouse</label>
+                                    <select name="uuid_wirehouse" id="filter-outlet" data-placeholder="Pilih wirehouse"
+                                        class="form-select">
+                                        <option value="">Pilih Wirehouse</option>
+                                        @foreach ($wirehouse as $w)
+                                            <option value="{{ $w->uuid }}">{{ $w->nama_outlet . ' | ' . $w->tipe }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                <div class="mb-2">
                                     <label class="text-capitalize form-label">Keterangan</label>
                                     <textarea name="keterangan" id="keterangan" class="form-control" cols="30" rows="5"></textarea>
                                     <div class="invalid-feedback"></div>

@@ -23,6 +23,7 @@ class StoreOpnameRequest extends FormRequest
     {
         return [
             'stock' => 'required',
+            'uuid_wirehouse' => 'required',
         ];
     }
 
@@ -30,6 +31,7 @@ class StoreOpnameRequest extends FormRequest
     {
         return [
             'stock.required' => 'Kolom stock harus di isi.',
+            'uuid_wirehouse.required' => 'Kolom wirehouse harus di isi.',
         ];
     }
 }
