@@ -790,7 +790,7 @@ class ProdukController extends Controller
         THEN (
             COALESCE((
                 -- Tambahkan semua pergerakan stok setelah opname terakhir
-                SELECT SUM(CASE WHEN ws.jenis = 'masuk' THEN ws.qty ELSE -ws.qty END)
+                SELECT SUM(ws.qty)
                 FROM wirehouse_stocks ws
                 JOIN wirehouses w ON w.uuid = ws.uuid_warehouse
                 WHERE ws.uuid_produk = produks.uuid
@@ -804,7 +804,7 @@ class ProdukController extends Controller
         ELSE (
             -- Jika belum pernah opname, total semua stok dari wirehouse terpilih
             COALESCE((
-                SELECT SUM(CASE WHEN ws.jenis = 'masuk' THEN ws.qty ELSE -ws.qty END)
+                SELECT SUM(ws.qty)
                 FROM wirehouse_stocks ws
                 JOIN wirehouses w ON w.uuid = ws.uuid_warehouse
                 WHERE ws.uuid_produk = produks.uuid
