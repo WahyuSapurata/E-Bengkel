@@ -552,9 +552,8 @@
             let scanBuffer = "";
             let scanTimeout;
 
-            document.addEventListener("keydown", function(e) {
-
-                // Kalau ada inputan manual (user ngetik), biarin aja
+            document.addEventListener("keypress", function(e) {
+                // Abaikan input manual
                 if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
                     return;
                 }
@@ -562,17 +561,16 @@
                 if (e.key === "Enter") {
                     e.preventDefault();
                     const kode = scanBuffer.trim();
+
                     if (kode !== "") {
-                        tambahProduk(kode); // default qty = 1
+                        tambahProduk(kode);
                     }
-                    scanBuffer = ""; // reset buffer
+                    scanBuffer = "";
                     return;
                 }
 
-                // Tambah ke buffer
                 scanBuffer += e.key;
 
-                // Reset kalau delay lebih dari 500ms antar ketikan (anggap bukan scan)
                 clearTimeout(scanTimeout);
                 scanTimeout = setTimeout(() => {
                     scanBuffer = "";
