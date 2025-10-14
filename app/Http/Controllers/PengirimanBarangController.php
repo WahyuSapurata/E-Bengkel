@@ -27,7 +27,7 @@ class PengirimanBarangController extends Controller
         $transfer_barang = PengirimanBarang::pluck('uuid_po_outlet'); // langsung ambil list uuid_po_outlet
         $po_outlet = PoOutlet::select('uuid', 'no_po')
             ->where('status', 'aprove')
-            ->where('uuid', '!=', $transfer_barang)
+            ->whereNotIn('uuid', $transfer_barang)
             ->get();
 
         return view('pages.pengiriman.index', compact('module', 'produk', 'po_outlet'));
