@@ -265,6 +265,7 @@ Route::group([
 
     Route::get('/do-vw-outlet', [App\Http\Controllers\PengirimanBarangController::class, 'vw_outlet'])->name('do-vw-outlet');
     Route::get('/do-vw-outlet-get', [App\Http\Controllers\PengirimanBarangController::class, 'get_vw_outlet'])->name('do-vw-outlet-get');
+    Route::get('/detail-do-outlet/{uuid}', [App\Http\Controllers\PengirimanBarangController::class, 'getDetailPengiriman'])->name('detail-do-outlet');
     Route::post('/aprove-do-outlet/{params}', [App\Http\Controllers\PengirimanBarangController::class, 'aprove_do_outlet'])->name('aprove-do-outlet');
 
     Route::get('/from-do/{params}', [App\Http\Controllers\TransferBarangController::class, 'form_do'])->name('from-do');

@@ -789,30 +789,43 @@ class ProdukController extends Controller
         )
         THEN (
             COALESCE((
-                -- Tambahkan semua pergerakan stok setelah opname terakhir
                 SELECT SUM(ws.qty)
                 FROM wirehouse_stocks ws
                 JOIN wirehouses w ON w.uuid = ws.uuid_warehouse
+                LEFT JOIN pengiriman_barangs pb
+                    ON pb.nama_outlet = SUBSTRING_INDEX(ws.keterangan, ': ', -1)
+                    AND ws.sumber = 'delivery order'
                 WHERE ws.uuid_produk = produks.uuid
                 " . (
                 $request->filled('uuid_wirehouse')
                 ? "AND w.uuid = '" . $request->uuid_wirehouse . "'"
                 : ""
             ) . "
+                -- ✅ Hanya DO yang sudah disetujui yang dihitung
+                AND (
+                    (ws.sumber = 'delivery order' AND pb.status IN ('approve', 'diterima'))
+                    OR (ws.sumber != 'delivery order')
+                )
             ), 0)
         )
         ELSE (
-            -- Jika belum pernah opname, total semua stok dari wirehouse terpilih
             COALESCE((
                 SELECT SUM(ws.qty)
                 FROM wirehouse_stocks ws
                 JOIN wirehouses w ON w.uuid = ws.uuid_warehouse
+                LEFT JOIN pengiriman_barangs pb
+                    ON pb.nama_outlet = SUBSTRING_INDEX(ws.keterangan, ': ', -1)
+                    AND ws.sumber = 'delivery order'
                 WHERE ws.uuid_produk = produks.uuid
                 " . (
                 $request->filled('uuid_wirehouse')
                 ? "AND w.uuid = '" . $request->uuid_wirehouse . "'"
                 : ""
             ) . "
+                AND (
+                    (ws.sumber = 'delivery order' AND pb.status IN ('approve', 'diterima'))
+                    OR (ws.sumber != 'delivery order')
+                )
             ), 0)
         )
     END

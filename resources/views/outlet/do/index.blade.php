@@ -95,6 +95,13 @@
                             </select>
                             <div class="invalid-feedback"></div>
                         </div>
+
+                        <hr>
+
+                        <div id="alokasi-container">
+                            <!-- ini akan diisi via JS -->
+                        </div>
+
                     </div>
                     <div class="modal-footer">
                         <button type="submit" class="btn btn-success">Simpan</button>
@@ -223,14 +230,50 @@
             });
         });
 
+        // Validasi total qty (tidak boleh lebih dari jumlah kirim)
+        $(document).on('input', 'input[name^="alokasi"]', function() {
+            const parent = $(this).closest('.border');
+            const total = parseInt(parent.data('total'));
+            const gudang = parseInt(parent.find('input[name*="[qty_gudang]"]').val()) || 0;
+            const toko = parseInt(parent.find('input[name*="[qty_toko]"]').val()) || 0;
+            const totalInput = gudang + toko;
+
+            if (totalInput > total) {
+                parent.find('.warning-text').remove();
+                parent.append(
+                    `<div class="warning-text text-danger mt-1">Total alokasi (${totalInput}) melebihi jumlah dikirim (${total})!</div>`
+                );
+            } else {
+                parent.find('.warning-text').remove();
+            }
+        });
+
         // Edit pembelian
         $('#dataTables').on('click', '.edit', function() {
-            // Reset modal error
-            $('.is-invalid').removeClass('is-invalid');
-            $('.invalid-feedback').remove();
             $('#modal').modal('show');
-
             $('#uuid').val($(this).data('uuid'));
+
+            $.get(`/outlet/detail-do-outlet/${$(this).data('uuid')}`, function(res) {
+                let html = '';
+                res.forEach(item => {
+                    html += `
+                    <div class="border p-2 mb-2" data-total="${item.qty}">
+                        <strong>${item.nama_barang}</strong> (Total dikirim: ${item.qty})
+                        <input type="hidden" name="alokasi[${item.uuid_produk}][uuid_produk]" value="${item.uuid_produk}">
+                        <div class="row mt-1">
+                            <div class="col-md-6">
+                                <label>Ke Gudang</label>
+                                <input type="number" name="alokasi[${item.uuid_produk}][qty_gudang]" class="form-control" min="0" value="0">
+                            </div>
+                            <div class="col-md-6">
+                                <label>Ke Toko</label>
+                                <input type="number" name="alokasi[${item.uuid_produk}][qty_toko]" class="form-control" min="0" value="0">
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                $('#alokasi-container').html(html);
+            });
         });
 
         const initDatatable = () => {

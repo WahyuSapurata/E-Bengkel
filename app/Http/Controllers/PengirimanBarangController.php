@@ -500,36 +500,106 @@ class PengirimanBarangController extends Controller
         ]);
     }
 
+    public function getDetailPengiriman($uuid)
+    {
+        try {
+            // Cari data pengiriman
+            $pengiriman = PengirimanBarang::where('uuid', $uuid)->firstOrFail();
+
+            // Ambil semua detail produk terkait DO
+            $detail = DetailPengirimanBarang::where('uuid_pengiriman_barang', $pengiriman->uuid)
+                ->join('produks', 'produks.uuid', '=', 'detail_pengiriman_barangs.uuid_produk')
+                ->select(
+                    'detail_pengiriman_barangs.uuid_produk',
+                    'produks.nama_barang',
+                    'detail_pengiriman_barangs.qty'
+                )
+                ->get();
+
+            return response()->json($detail);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function aprove_do_outlet(Request $request, $uuidPengiriman)
     {
         DB::beginTransaction();
 
         try {
-            // Ambil PO/DO yang mau diapprove
+            // Ambil DO & detail barang
             $po_outlet = PengirimanBarang::where('uuid', $uuidPengiriman)->firstOrFail();
+            $detailBarang = DetailPengirimanBarang::where('uuid_pengiriman_barang', $po_outlet->uuid)->get()->keyBy('uuid_produk');
 
-            // Update status
+            // Validasi input
+            $request->validate([
+                'status' => 'required',
+                'alokasi' => 'required|array',
+                'alokasi.*.uuid_produk' => 'required|uuid',
+                'alokasi.*.qty_gudang' => 'nullable|integer|min:0',
+                'alokasi.*.qty_toko' => 'nullable|integer|min:0',
+            ]);
+
+            // Validasi tambahan: total qty tidak boleh lebih dari pengiriman
+            foreach ($request->alokasi as $alokasi) {
+                $uuid_produk = $alokasi['uuid_produk'];
+                $qty_gudang = $alokasi['qty_gudang'] ?? 0;
+                $qty_toko = $alokasi['qty_toko'] ?? 0;
+                $total_input = $qty_gudang + $qty_toko;
+
+                if (!isset($detailBarang[$uuid_produk])) {
+                    throw new \Exception("Produk dengan UUID {$uuid_produk} tidak ditemukan di DO ini.");
+                }
+
+                $qty_dikirim = $detailBarang[$uuid_produk]->qty;
+
+                if ($total_input > $qty_dikirim) {
+                    throw new \Exception("Total alokasi ($total_input) untuk produk {$detailBarang[$uuid_produk]->produk->nama_produk} melebihi jumlah pengiriman ($qty_dikirim).");
+                }
+            }
+
+            // Update status DO
             $po_outlet->status = $request->status;
             $po_outlet->save();
 
-            // Ambil outlet
-            $outlet = Outlet::where('uuid_user', $po_outlet->uuid_outlet)->firstOrFail();
+            // Ambil outlet & lokasi warehouse
+            $outlet = Outlet::where('uuid_user', $po_outlet->uuid_outlet)->first();
 
-            // Ambil detail pengiriman
-            $detailBarang = DetailPengirimanBarang::where('uuid_pengiriman_barang', $po_outlet->uuid)->get();
+            // Ambil warehouse tujuan
+            $warehouseGudang = Wirehouse::where('tipe', 'gudang')
+                ->where('uuid_user', $outlet->uuid_user)
+                ->first();
+            $warehouseToko = Wirehouse::where('tipe', 'toko')
+                ->where('uuid_user', $outlet->uuid_user)
+                ->first();
 
-            $warehouseOutlet = Wirehouse::where('tipe', 'gudang')->where('lokasi', 'outlet')->where('uuid_user', $outlet->uuid_user)->first();
+            foreach ($request->alokasi as $alokasi) {
+                // Ke Gudang
+                if (!empty($alokasi['qty_gudang']) && $alokasi['qty_gudang'] > 0) {
+                    WirehouseStock::create([
+                        'uuid_warehouse' => $warehouseGudang->uuid,
+                        'uuid_produk'    => $alokasi['uuid_produk'],
+                        'qty'            => $alokasi['qty_gudang'],
+                        'jenis'          => 'masuk',
+                        'sumber'         => 'delivery order',
+                        'keterangan'     => 'Alokasi ke gudang dari DO ' . $po_outlet->no_do,
+                    ]);
+                }
 
-            foreach ($detailBarang as $detail) {
-                // Catat stok masuk di warehouse outlet
-                WirehouseStock::create([
-                    'uuid_warehouse' => $warehouseOutlet->uuid,
-                    'uuid_produk'    => $detail->uuid_produk,
-                    'qty'            => $detail->qty,
-                    'jenis'          => 'masuk',
-                    'sumber'         => 'delivery order',
-                    'keterangan'     => 'Penerimaan dari gudang pusat',
-                ]);
+                // Ke Toko
+                if (!empty($alokasi['qty_toko']) && $alokasi['qty_toko'] > 0) {
+                    WirehouseStock::create([
+                        'uuid_warehouse' => $warehouseToko->uuid,
+                        'uuid_produk'    => $alokasi['uuid_produk'],
+                        'qty'            => $alokasi['qty_toko'],
+                        'jenis'          => 'masuk',
+                        'sumber'         => 'delivery order',
+                        'keterangan'     => 'Alokasi ke toko dari DO ' . $po_outlet->no_do,
+                    ]);
+                }
             }
 
             DB::commit();
