@@ -43,7 +43,6 @@ class PembelianController extends Controller
 
     public function get(Request $request)
     {
-        // Kolom: database => alias
         $columns = [
             'pembelians.uuid' => 'uuid',
             'pembelians.uuid_suplayer' => 'uuid_suplayer',
@@ -56,6 +55,7 @@ class PembelianController extends Controller
             'COALESCE(SUM(detail_pembelians.qty * produks.hrg_modal),0)' => 'total_harga',
         ];
 
+        // Hitung total tanpa filter
         $totalData = Pembelian::count();
 
         // SELECT dengan alias
@@ -64,7 +64,7 @@ class PembelianController extends Controller
             $selects[] = "$dbCol as $alias";
         }
 
-        $query = Pembelian::selectRaw(implode(", ", $selects))
+        $baseQuery = Pembelian::selectRaw(implode(", ", $selects))
             ->leftJoin('suplayers', 'suplayers.uuid', '=', 'pembelians.uuid_suplayer')
             ->leftJoin('detail_pembelians', 'detail_pembelians.uuid_pembelian', '=', 'pembelians.uuid')
             ->leftJoin('produks', 'produks.uuid', '=', 'detail_pembelians.uuid_produk')
@@ -82,32 +82,33 @@ class PembelianController extends Controller
         // Searching
         if (!empty($request->search['value'])) {
             $search = $request->search['value'];
-            $query->where(function ($q) use ($search, $columns) {
+            $baseQuery->where(function ($q) use ($search, $columns) {
                 foreach ($columns as $dbCol => $alias) {
-                    // kalau kolom pakai SUM() skip pencarian
                     if (str_contains($dbCol, 'SUM')) continue;
                     $q->orWhere($dbCol, 'like', "%{$search}%");
                 }
             });
         }
 
-        $totalFiltered = $query->count();
+        // Clone query untuk menghitung totalFiltered
+        $filteredQuery = clone $baseQuery;
+        $totalFiltered = $filteredQuery->get()->count(); // pakai get()->count() agar sesuai dengan hasil group
 
         // Sorting
         if ($request->order) {
             $orderColIndex = $request->order[0]['column'];
             $orderDir = $request->order[0]['dir'];
-
             $dbCol = array_keys($columns)[$orderColIndex];
-            $query->orderByRaw("$dbCol $orderDir");
+            $baseQuery->orderByRaw("$dbCol $orderDir");
         } else {
-            $query->orderBy('pembelians.created_at', 'desc');
+            $baseQuery->orderBy('pembelians.created_at', 'desc');
         }
 
         // Pagination
-        $query->skip($request->start)->take($request->length);
-
-        $data = $query->get();
+        $data = $baseQuery
+            ->skip($request->start)
+            ->take($request->length)
+            ->get();
 
         return response()->json([
             'draw' => intval($request->draw),
@@ -405,30 +406,26 @@ class PembelianController extends Controller
         // Cari pembelian yang mau dihapus
         $pembelian = Pembelian::where('uuid', $params)->firstOrFail();
 
+        // Ambil semua produk terkait pembelian
+        $uuidProduks = DetailPembelian::where('uuid_pembelian', $pembelian->uuid)
+            ->pluck('uuid_produk');
+
         // Hapus stok yang terkait pembelian ini
         WirehouseStock::where('sumber', 'pembelian')
-            ->where('uuid_produk', function ($q) use ($pembelian) {
-                $q->select('uuid_produk')
-                    ->from('detail_pembelians')
-                    ->where('uuid_pembelian', $pembelian->uuid);
-            })
+            ->whereIn('uuid_produk', $uuidProduks)
             ->delete();
 
         // Hapus detail pembelian
         DetailPembelian::where('uuid_pembelian', $pembelian->uuid)->delete();
 
-        StatusBarang::where('uuid_log_barang', $pembelian->uuid)->delete();
-
+        // Hapus status barang
         StatusBarang::where('uuid_log_barang', $pembelian->uuid)->delete();
 
         // Hapus hutang (jika ada)
         Hutang::where('uuid_pembelian', $pembelian->uuid)->delete();
 
-        // Hapus jurnal yang terkait (berdasarkan no_invoice)
+        // Hapus jurnal yang terkait
         Jurnal::where('ref', $pembelian->no_invoice)->delete();
-
-        // (Opsional) hapus price history terkait produk di pembelian ini
-        // PriceHistory::whereIn('uuid_produk', $pembelian->details->pluck('uuid_produk'))->delete();
 
         // Hapus pembelian utama
         $pembelian->delete();
