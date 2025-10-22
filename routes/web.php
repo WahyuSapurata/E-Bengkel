@@ -173,6 +173,8 @@ Route::group([
         Route::get('/hutang-edit/{params}', [App\Http\Controllers\HutangController::class, 'edit'])->name('hutang-edit');
         Route::post('/hutang-update/{params}', [App\Http\Controllers\HutangController::class, 'update'])->name('hutang-update');
         Route::delete('/hutang-delete/{params}', [App\Http\Controllers\HutangController::class, 'delete'])->name('hutang-delete');
+
+        Route::get('/export-pembelian/{params}', [App\Http\Controllers\PembelianController::class, 'export_excel'])->name('export-pembelian');
     });
 
     Route::prefix('accounting')->group(function () {

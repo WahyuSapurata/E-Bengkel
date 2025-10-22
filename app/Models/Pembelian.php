@@ -35,4 +35,9 @@ class Pembelian extends Model
     {
         return $this->hasMany(DetailPembelian::class, 'uuid_pembelian', 'uuid');
     }
+
+    public function suplayer()
+    {
+        return $this->belongsTo(Suplayer::class, 'uuid_suplayer', 'uuid');
+    }
 }

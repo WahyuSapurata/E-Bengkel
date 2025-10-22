@@ -21,6 +21,12 @@ use App\Models\WirehouseStock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+
 class PembelianController extends Controller
 {
     public function index()
@@ -471,5 +477,104 @@ class PembelianController extends Controller
             ],
             'details' => $detailsFormatted
         ]);
+    }
+
+    public function export_excel($uuid)
+    {
+        // ===== Ambil data pembelian berdasarkan UUID =====
+        $pembelian = Pembelian::with(['details', 'details.produk', 'suplayer'])
+            ->where('uuid', $uuid)
+            ->firstOrFail();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // ===== Header =====
+        $headers = [
+            'A1' => 'No Invoice',
+            'B1' => 'Nama Suplayer',
+            'C1' => 'Pembayaran',
+            'D1' => 'Produk',
+            'E1' => 'Qty',
+            'F1' => 'Harga',
+            'H1' => 'Total Harga',
+        ];
+
+        foreach ($headers as $col => $text) {
+            $sheet->setCellValue($col, $text);
+        }
+
+        // ===== Isi Data =====
+        $row = 2;
+        foreach ($pembelian->details as $index => $detail) {
+            $sheet->setCellValue('A' . $row, $pembelian->no_invoice);
+            $sheet->setCellValue('B' . $row, optional($pembelian->suplayer)->nama ?? '-');
+            $sheet->setCellValue('C' . $row, $pembelian->pembayaran);
+            $sheet->setCellValue('D' . $row, optional($detail->produk)->nama_barang ?? '-');
+            $sheet->setCellValue('E' . $row, $detail->qty);
+            $sheet->setCellValue('F' . $row, $detail->harga);
+            $sheet->setCellValue('H' . $row, '=E' . $row . '*F' . $row);
+            $row++;
+        }
+
+        // Auto width kolom
+        foreach (range('A', 'H') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // ==== Styling Header ====
+        $headerStyle = [
+            'font' => ['bold' => true],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'borders' => [
+                'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'color' => ['rgb' => 'D9E1F2'], // biru muda
+            ],
+        ];
+        $sheet->getStyle('A1:H1')->applyFromArray($headerStyle);
+
+        // ==== Border untuk semua data ====
+        $sheet->getStyle('A1:H' . ($row - 1))->applyFromArray([
+            'borders' => [
+                'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+            ],
+        ]);
+
+        // ==== Total di paling bawah ====
+        $sheet->mergeCells('A' . $row . ':G' . $row);
+        $sheet->setCellValue('A' . $row, 'TOTAL');
+        $sheet->setCellValue('H' . $row, '=SUM(H2:H' . ($row - 1) . ')');
+
+        $totalStyle = [
+            'font' => ['bold' => true],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'borders' => [
+                'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'color' => ['rgb' => 'FCE4D6'], // oranye muda
+            ],
+        ];
+        $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray($totalStyle);
+
+        // Format kolom harga jadi Rupiah
+        $sheet->getStyle('F2:H' . $row)
+            ->getNumberFormat()
+            ->setFormatCode('"Rp" #,##0');
+
+        // ===== Download =====
+        $fileName = 'pembelian-' . $pembelian->no_invoice . '.xlsx';
+        $writer = new Xlsx($spreadsheet);
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header("Content-Disposition: attachment; filename=\"$fileName\"");
+        header('Cache-Control: max-age=0');
+
+        $writer->save('php://output');
+        exit;
     }
 }

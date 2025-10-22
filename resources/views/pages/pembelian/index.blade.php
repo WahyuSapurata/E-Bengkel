@@ -1,4 +1,14 @@
 @extends('layouts.layout')
+<style>
+    .custom-card-action .table-responsive .table tbody tr:last-child .btn {
+        border: 1px solid;
+    }
+
+    .custom-card-action .table-responsive .table tbody tr:last-child .btn:hover {
+        background-color: var(--bs-btn-hover-bg);
+        border-color: var(--bs-btn-hover-border-color);
+    }
+</style>
 @section('content')
     <div class="nxl-content">
         <div class="page-header">
@@ -739,6 +749,9 @@
                                         </svg>
                                     </a>
                                     @endcanDelete
+                                        <button class="btn btn-outline-success btn-sm export" data-uuid="${data}">
+                                            Export
+                                    </button>
                                 </div>
                     `;
                     }
@@ -748,6 +761,14 @@
 
         $(function() {
             initDatatable();
+
+            // Gunakan event delegation agar tombol dinamis bisa ditangkap
+            $(document).on('click', '.export', function(e) {
+                e.preventDefault();
+                let uuid = $(this).data('uuid');
+                let url = '/superadmin/transaksi/export-pembelian/' + uuid;
+                window.open(url, '_blank');
+            });
         });
     </script>
 @endpush
