@@ -1327,83 +1327,109 @@
                         formData.append("kembalian", kembalian);
 
                         // tampilkan loading
+                        // Tampilkan kembalian dulu
                         Swal.fire({
                             title: `Kembalian: Rp ${kembalian.toLocaleString()}`,
-                            text: "Menyimpan Transaksi...",
-                            allowOutsideClick: false,
-                            didOpen: () => Swal.showLoading()
-                        });
+                            icon: "success",
+                            showConfirmButton: false,
+                            timer: 3500, // tampil selama 2.5 detik
+                            timerProgressBar: true,
+                        }).then(() => {
+                            // Setelah popup kembalian selesai, lanjut ke proses simpan
+                            Swal.fire({
+                                title: "Menyimpan Transaksi...",
+                                allowOutsideClick: false,
+                                didOpen: () => Swal.showLoading()
+                            });
 
-                        // kirim ke backend
-                        fetch("/kasir/penjualan-store", {
-                                method: "POST",
-                                body: formData,
-                                headers: {
-                                    "X-CSRF-TOKEN": document.querySelector(
-                                        'meta[name="csrf-token"]').getAttribute("content")
-                                }
-                            })
-                            .then(res => res.json())
-                            .then(res => {
-                                Swal.close();
-                                if (res.status === "success") {
-                                    Swal.fire({
-                                        title: "Transaksi Berhasil ✅",
-                                        text: "Apakah Anda ingin mencetak struk?",
-                                        icon: "success",
-                                        showCancelButton: true,
-                                        confirmButtonText: "Cetak Struk",
-                                        cancelButtonText: "Tidak",
-                                        reverseButtons: true
-                                    }).then(result => {
-                                        if (result.isConfirmed) {
-                                            const strukData = {
-                                                outlet_nama: "{{ $data_outlet->nama_outlet }}",
-                                                outlet_alamat: "{{ $data_outlet->alamat }}",
-                                                outlet_telp: "{{ $data_outlet->telepon }}",
-                                                no_bukti: res.data.no_bukti,
-                                                tanggal: res.data.tanggal,
-                                                kasir: res.data.kasir,
-                                                pembayaran: res.data.pembayaran,
-                                                items: res.data.items.map(i => ({
-                                                    nama: i.nama,
-                                                    qty: Number(i.qty),
-                                                    harga: Number(i
-                                                        .harga),
-                                                    subtotal: Number(i
-                                                        .subtotal)
-                                                })),
-                                                totalJasa: Number(totalJasa),
-                                                totalItem: Number(res.data
-                                                    .totalItem),
-                                                grandTotal: Number(res.data
-                                                    .grandTotal) + totalJasa
-                                            };
-                                            cetakStruk(strukData);
-                                        }
+                            // kirim ke backend
+                            fetch("/kasir/penjualan-store", {
+                                    method: "POST",
+                                    body: formData,
+                                    headers: {
+                                        "X-CSRF-TOKEN": document.querySelector(
+                                            'meta[name="csrf-token"]').getAttribute(
+                                            "content")
+                                    }
+                                })
+                                .then(res => res.json())
+                                .then(res => {
+                                    Swal.close();
+                                    if (res.status === "success") {
+                                        Swal.fire({
+                                            title: "Transaksi Berhasil ✅",
+                                            text: "Apakah Anda ingin mencetak struk?",
+                                            icon: "success",
+                                            showCancelButton: true,
+                                            confirmButtonText: "Cetak Struk",
+                                            cancelButtonText: "Tidak",
+                                            reverseButtons: true
+                                        }).then(result => {
+                                            if (result.isConfirmed) {
+                                                const strukData = {
+                                                    outlet_nama: "{{ $data_outlet->nama_outlet }}",
+                                                    outlet_alamat: "{{ $data_outlet->alamat }}",
+                                                    outlet_telp: "{{ $data_outlet->telepon }}",
+                                                    no_bukti: res.data
+                                                        .no_bukti,
+                                                    tanggal: res.data
+                                                        .tanggal,
+                                                    kasir: res.data.kasir,
+                                                    pembayaran: res.data
+                                                        .pembayaran,
+                                                    items: res.data.items
+                                                        .map(i => ({
+                                                            nama: i
+                                                                .nama,
+                                                            qty: Number(
+                                                                i
+                                                                .qty
+                                                            ),
+                                                            harga: Number(
+                                                                i
+                                                                .harga
+                                                            ),
+                                                            subtotal: Number(
+                                                                i
+                                                                .subtotal
+                                                            )
+                                                        })),
+                                                    totalJasa: Number(
+                                                        totalJasa),
+                                                    totalItem: Number(res
+                                                        .data
+                                                        .totalItem),
+                                                    grandTotal: Number(res
+                                                            .data
+                                                            .grandTotal) +
+                                                        totalJasa
+                                                };
+                                                cetakStruk(strukData);
+                                            }
+                                            resetKasir();
+                                            loadJasa();
+                                        });
+                                    } else {
+                                        Swal.fire({
+                                            title: "Gagal!",
+                                            text: res.message,
+                                            icon: "error",
+                                            confirmButtonText: "OK"
+                                        });
                                         resetKasir();
-                                        loadJasa();
-                                    });
-                                } else {
+                                    }
+                                })
+                                .catch(err => {
+                                    Swal.close();
+                                    console.error("❌ Error simpan transaksi:", err);
                                     Swal.fire({
-                                        title: "Gagal!",
-                                        text: res.message,
+                                        title: "Error!",
+                                        text: "Terjadi kesalahan server",
                                         icon: "error",
                                         confirmButtonText: "OK"
                                     });
-                                    resetKasir();
-                                }
-                            })
-                            .catch(err => {
-                                Swal.close();
-                                console.error("❌ Error simpan transaksi:", err);
-                                Swal.fire({
-                                    title: "Error!",
-                                    text: "Terjadi kesalahan server",
-                                    icon: "error",
-                                    confirmButtonText: "OK"
                                 });
-                            });
+                        });
                     });
                 }
             });
