@@ -69,7 +69,7 @@ class TransferBarangController extends Controller
             'COALESCE(SUM(detail_transfer_barangs.qty * produks.hrg_modal),0)' => 'total_harga',
         ];
 
-        $totalData = TransferBarang::count();
+        $totalData = TransferBarang::where('uuid_user', Auth::user()->uuid)->count();
 
         // SELECT dengan alias
         $selects = [];
@@ -77,7 +77,7 @@ class TransferBarangController extends Controller
             $selects[] = "$dbCol as $alias";
         }
 
-        $query = TransferBarang::selectRaw(implode(", ", $selects))
+        $query = TransferBarang::where('uuid_user', Auth::user()->uuid)->selectRaw(implode(", ", $selects))
             ->leftJoin('detail_transfer_barangs', 'detail_transfer_barangs.uuid_transfer_barangs', '=', 'transfer_barangs.uuid')
             ->leftJoin('produks', 'produks.uuid', '=', 'detail_transfer_barangs.uuid_produk')
             ->groupBy(
