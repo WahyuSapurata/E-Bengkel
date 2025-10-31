@@ -930,7 +930,7 @@ class Dashboard extends BaseController
 
     public function getDashboardPenjualanKasir(Request $request)
     {
-        $uuidOutlet = $request->uuid_outlet ?? null;
+        $uuidOutlet = $request->uuid_user ?? null;
 
         $kasirsQuery = KasirOutlet::query();
         if ($uuidOutlet) {
@@ -1105,7 +1105,7 @@ class Dashboard extends BaseController
 
     public function getDashboardPenjualanKasirHarian(Request $request)
     {
-        $uuidOutlet = $request->uuid_outlet ?? null;
+        $uuidOutlet = $request->uuid_user ?? null;
 
         $query = DB::table('penjualans')
             ->join('users', 'penjualans.created_by', '=', 'users.nama')
@@ -1259,7 +1259,7 @@ class Dashboard extends BaseController
 
     public function getDashboardPenjualanKasirBulanan(Request $request)
     {
-        $uuidOutlet = $request->uuid_outlet ?? null;
+        $uuidOutlet = $request->uuid_user ?? null;
 
         // Ambil transaksi
         $query = DB::table('penjualans')
