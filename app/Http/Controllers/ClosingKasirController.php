@@ -215,13 +215,15 @@ class ClosingKasirController extends Controller
             'batal'               => 0
         ];
 
-        $pdf = Pdf::loadView('kasir.sumaryreport.index', [
-            'report' => $summaryReport,
-            'outlet' => $outlet->nama_outlet,
-            'alamat' => $outlet->alamat
-        ]);
+        // $pdf = Pdf::loadView('kasir.sumaryreport.index', [
+        //     'report' => $summaryReport,
+        //     'outlet' => $outlet->nama_outlet,
+        //     'alamat' => $outlet->alamat
+        // ]);
 
-        return $pdf->stream('summary-report.pdf');
+        // return $pdf->stream('summary-report.pdf');
+
+        return response()->json(['status' => 'success']);
     }
 
     // public function history_summary($params)
@@ -231,18 +233,44 @@ class ClosingKasirController extends Controller
     // }
 
 
-    public function sumaryreport()
+    public function sumaryreport(Request $request)
     {
-        $module = 'Sumary Report';
-        $data = ClosingKasir::latest()->get();
-        $data->map(function ($item) {
-            $kasir = KasirOutlet::where('uuid_user', $item->uuid_kasir_outlet)->firstOrFail();
+        $module = 'Summary Report';
+        $outlet = Outlet::all();
 
-            $item->kasir = User::where('uuid', $kasir->uuid_user)->first()->nama;
-            // $item->uuid_kasir = $item->uuid_kasir_outlet;
-            return $item;
-        });
-        return view('outlet.sumarireort.index', compact('module', 'data'));
+        if ($request->ajax()) {
+            // Tentukan tanggal batas (5 hari terakhir)
+            $tanggalMulai = Carbon::now()->subDays(5)->format('d-m-Y');
+
+            $query = ClosingKasir::with(['kasirOutlet.user', 'kasirOutlet.outlet'])
+                ->whereRaw("STR_TO_DATE(tanggal_closing, '%d-%m-%Y') >= STR_TO_DATE(?, '%d-%m-%Y')", [$tanggalMulai])
+                ->orderByRaw("STR_TO_DATE(tanggal_closing, '%d-%m-%Y') DESC"); // urut dari terbaru
+
+            // Filter outlet
+            if ($request->filled('uuid_outlet')) {
+                $query->whereHas('kasirOutlet', function ($q) use ($request) {
+                    $q->where('uuid_outlet', $request->uuid_outlet);
+                });
+            }
+
+            $data = $query->get()->map(function ($item) {
+                return [
+                    'kasir'            => $item->kasirOutlet->user->nama ?? '-',
+                    'outlet'           => $item->kasirOutlet->outlet->nama_outlet ?? '-',
+                    'tanggal_closing'  => $item->tanggal_closing,
+                    'total_penjualan'  => number_format($item->total_penjualan, 0, ',', '.'),
+                    'total_cash'       => number_format($item->total_cash, 0, ',', '.'),
+                    'total_transfer'   => number_format($item->total_transfer, 0, ',', '.'),
+                    'total_fisik'      => number_format($item->total_fisik, 0, ',', '.'),
+                    'selisih'          => number_format($item->selisih, 0, ',', '.'),
+                    'uuid'             => $item->uuid,
+                ];
+            });
+
+            return response()->json(['data' => $data]);
+        }
+
+        return view('outlet.sumarireort.index', compact('module', 'outlet'));
     }
 
     public function history_summary($params)

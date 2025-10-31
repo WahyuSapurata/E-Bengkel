@@ -221,6 +221,9 @@ Route::group([
         Route::get('/cetak-label-rak-get/{params}', [App\Http\Controllers\CetakLabelRak::class, 'get_produk'])->name('cetak-label-rak-get');
         Route::post('/cetak-label-rak-store', [App\Http\Controllers\CetakLabelRak::class, 'cetakLabelRak'])->name('cetak-label-rak-store');
     });
+
+    Route::get('sumary-report', [App\Http\Controllers\ClosingKasirController::class, 'sumaryreport'])->name('sumary-report');
+    Route::get('/history-summary/{params}', [App\Http\Controllers\ClosingKasirController::class, 'history_summary'])->name('history-summary');
 });
 
 

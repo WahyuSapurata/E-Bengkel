@@ -2422,8 +2422,16 @@
                                         text: 'Data closing kasir sudah disimpan!',
                                         confirmButtonText: 'OK'
                                     }).then(() => {
-                                        window.open("/kasir/sumary-report/" + res.data
-                                            .uuid, "_blank");
+                                        // window.open("/kasir/sumary-report/" + res.data
+                                        //     .uuid, "_blank");
+                                        Swal.fire({
+                                            title: "Berhasil",
+                                            text: res.message,
+                                            icon: "success",
+                                            showConfirmButton: false,
+                                            timer: 1500,
+                                            timerProgressBar: true
+                                        });
                                         localStorage.setItem("closing_done", "1");
                                         location.reload();
                                     });

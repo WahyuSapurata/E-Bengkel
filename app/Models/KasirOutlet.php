@@ -26,4 +26,14 @@ class KasirOutlet extends Model
             $model->uuid = Uuid::uuid4()->toString();
         });
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'uuid_user', 'uuid');
+    }
+
+    public function outlet()
+    {
+        return $this->belongsTo(Outlet::class, 'uuid_outlet', 'uuid_user');
+    }
 }

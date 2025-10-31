@@ -29,4 +29,9 @@ class ClosingKasir extends Model
             $model->uuid = Uuid::uuid4()->toString();
         });
     }
+
+    public function kasirOutlet()
+    {
+        return $this->belongsTo(KasirOutlet::class, 'uuid_kasir_outlet', 'uuid_user');
+    }
 }

@@ -221,6 +221,13 @@
                             </li>
                         </ul>
                     </li>
+
+                    <li class="nxl-item nxl-hasmenu {{ $path[1] === 'sumary-report' ? 'active' : '' }}">
+                        <a href="{{ route('superadmin.sumary-report') }}" class="nxl-link">
+                            <span class="nxl-micon"><i class="feather-repeat"></i></span>
+                            <span class="nxl-mtext">Sumary Report</span>
+                        </a>
+                    </li>
                 </ul>
             @elseif ($role === 'outlet')
                 <ul class="nxl-navbar">
@@ -261,12 +268,6 @@
                         <a href="{{ route('outlet.transfer') }}" class="nxl-link">
                             <span class="nxl-micon"><i class="feather-git-merge"></i></span>
                             <span class="nxl-mtext">Transfer Barang</span>
-                        </a>
-                    </li>
-                    <li class="nxl-item nxl-hasmenu {{ $path[1] === 'sumary-report' ? 'active' : '' }}">
-                        <a href="{{ route('outlet.sumary-report') }}" class="nxl-link">
-                            <span class="nxl-micon"><i class="feather-repeat"></i></span>
-                            <span class="nxl-mtext">Sumary Report</span>
                         </a>
                     </li>
 

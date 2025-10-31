@@ -20,13 +20,13 @@
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg><span>Back</span></a></div>
-                    <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-                        <a href="#" id="openModal" class="btn btn-primary"><svg stroke="currentColor" fill="none"
-                                stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"
-                                class="me-2" height="16" width="16" xmlns="http://www.w3.org/2000/svg">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg><span>Tambah Data</span></a>
+                    <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper" style="width: 250px;">
+                        <select name="uuid_outlet" id="filter-outlet" class="form-select form-select-sm">
+                            <option value="">Semua Outlet</option>
+                            @foreach ($outlet as $o)
+                                <option value="{{ $o->uuid_user }}">{{ $o->nama_outlet }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
                 <div class="d-md-none d-flex align-items-center"><a class="page-header-right-open-toggle"
@@ -60,48 +60,20 @@
                         </div>
                         <div class="card-body custom-card-action p-0">
                             <div class="table-responsive">
-                                <table style="width: 100%" id="dataTables" class="table table-hover mb-0">
+                                <table id="dataTables" class="table table-hover mb-0" style="width: 100%;">
                                     <thead>
                                         <tr>
-                                            <th class="text-capitalize">No</th>
-                                            <th class="text-capitalize">Nama</th>
-                                            <th class="text-capitalize">Tanggal Closing</th>
-                                            <th class="text-capitalize">Total Penjualan</th>
-                                            <th class="text-capitalize">Total Cash</th>
-                                            <th class="text-capitalize">Total Transfer</th>
-                                            <th class="text-capitalize">Total Fisik</th>
-                                            <th class="text-capitalize">Selisih</th>
-                                            <th class="text-end">Actions</th>
+                                            <th>No</th>
+                                            <th>Nama</th>
+                                            <th>Tanggal Closing</th>
+                                            <th>Total Penjualan</th>
+                                            <th>Total Cash</th>
+                                            <th>Total Transfer</th>
+                                            <th>Total Fisik</th>
+                                            <th>Selisih</th>
+                                            {{-- <th class="text-end">Actions</th> --}}
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        @forelse ($data as $item)
-                                            <tr>
-                                                <td class="text-center">{{ $loop->iteration }}</td>
-                                                <td>{{ $item->kasir }}</td>
-                                                <td class="text-center">{{ $item->tanggal_closing }}</td>
-                                                <td class="text-end">Rp
-                                                    {{ number_format($item->total_penjualan, 0, ',', '.') }}</td>
-                                                <td class="text-end">Rp {{ number_format($item->total_cash, 0, ',', '.') }}
-                                                </td>
-                                                <td class="text-end">Rp
-                                                    {{ number_format($item->total_transfer, 0, ',', '.') }}</td>
-                                                <td class="text-end">Rp
-                                                    {{ number_format($item->total_fisik, 0, ',', '.') }}</td>
-                                                <td class="text-end">Rp {{ number_format($item->selisih, 0, ',', '.') }}
-                                                </td>
-                                                <td class="text-center">
-                                                    <!-- Contoh tombol aksi -->
-                                                    <a href="{{ route('outlet.history-summary', ['params' => $item->uuid]) }}"
-                                                        target="_blank" class="btn btn-sm btn-primary">Cetak</a>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="9" class="text-center text-muted">Tidak ada data</td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
                                 </table>
                             </div>
                         </div>
@@ -111,3 +83,63 @@
         </div>
     </div>
 @endsection
+@push('scripts')
+    <script>
+        $(document).ready(function() {
+            let table = $('#dataTables').DataTable({
+                processing: true,
+                serverSide: false,
+                ajax: {
+                    url: "{{ route('superadmin.sumary-report') }}",
+                    data: function(d) {
+                        d.uuid_outlet = $('#filter-outlet').val();
+                    }
+                },
+                columns: [{
+                        data: null,
+                        render: (data, type, row, meta) => meta.row + 1
+                    },
+                    {
+                        data: 'outlet'
+                    },
+                    {
+                        data: 'tanggal_closing',
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'total_penjualan',
+                        className: 'text-end'
+                    },
+                    {
+                        data: 'total_cash',
+                        className: 'text-end'
+                    },
+                    {
+                        data: 'total_transfer',
+                        className: 'text-end'
+                    },
+                    {
+                        data: 'total_fisik',
+                        className: 'text-end'
+                    },
+                    {
+                        data: 'selisih',
+                        className: 'text-end'
+                    },
+                    // {
+                    //     data: 'uuid',
+                    //     className: 'text-center',
+                    //     render: function(data) {
+                    //         return `<a href="/outlet/history-summary/${data}" target="_blank" class="btn btn-sm btn-primary">Cetak</a>`;
+                    //     }
+                    // },
+                ]
+            });
+
+            // Reload DataTables saat dropdown berubah
+            $('#filter-outlet').change(function() {
+                table.ajax.reload();
+            });
+        });
+    </script>
+@endpush
