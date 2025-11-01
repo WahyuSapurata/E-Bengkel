@@ -65,7 +65,9 @@
                                     class="form-select">
                                     <option value="">Pilih Outlet</option>
                                     @foreach ($wirehouse as $w)
-                                        <option value="{{ $w->uuid }}">{{ $w->nama_outlet . ' | ' . $w->tipe }}
+                                        <option value="{{ $w->uuid }}"
+                                            {{ $w->uuid_user === auth()->user()->uuid ? 'selected' : '' }}>
+                                            {{ $w->nama_outlet . ' | ' . $w->tipe }}
                                         </option>
                                     @endforeach
                                 </select>
