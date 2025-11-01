@@ -132,6 +132,13 @@ Route::group([
         Route::get('/paket-edit/{params}', [App\Http\Controllers\PaketHematController::class, 'edit'])->name('paket-edit');
         Route::post('/paket-update/{params}', [App\Http\Controllers\PaketHematController::class, 'update'])->name('paket-update');
         Route::delete('/paket-delete/{params}', [App\Http\Controllers\PaketHematController::class, 'delete'])->name('paket-delete');
+
+        Route::get('/wirehouse', [App\Http\Controllers\WirehouseController::class, 'index'])->name('wirehouse');
+        Route::get('/wirehouse-get', [App\Http\Controllers\WirehouseController::class, 'get'])->name('wirehouse-get');
+        Route::post('/wirehouse-store', [App\Http\Controllers\WirehouseController::class, 'store'])->name('wirehouse-store');
+        Route::get('/wirehouse-edit/{params}', [App\Http\Controllers\WirehouseController::class, 'edit'])->name('wirehouse-edit');
+        Route::post('/wirehouse-update/{params}', [App\Http\Controllers\WirehouseController::class, 'update'])->name('wirehouse-update');
+        Route::delete('/wirehouse-delete/{params}', [App\Http\Controllers\WirehouseController::class, 'delete'])->name('wirehouse-delete');
     });
 
     Route::prefix('transaksi')->group(function () {

@@ -103,6 +103,9 @@
                                 <a class="nxl-link" href="{{ route('superadmin.outlet') }}">Outlet</a>
                             </li>
                             @endcanView
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'wirehouse' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.wirehouse') }}">Wirehouse</a>
+                            </li>
                         </ul>
                     </li>
 
