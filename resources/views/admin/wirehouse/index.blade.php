@@ -204,7 +204,7 @@
 
             let url = uuid ? updateUrl :
                 `{{ route('superadmin.wirehouse-store') }}`;
-            let method = uuid ? 'PUT' : 'POST';
+            let method = uuid ? 'POST' : 'POST';
 
             $.ajax({
                 url: url,
