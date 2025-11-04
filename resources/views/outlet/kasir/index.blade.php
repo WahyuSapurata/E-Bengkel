@@ -339,6 +339,7 @@
 
     <script src="{{ asset('assets/vendors/js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('assets/sweet-alert/sweetalert2.min.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.5/qz-tray.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const scanInput = document.getElementById("scanInput");
@@ -1789,34 +1790,106 @@
                 }
             });
 
-            // ------------------ // Fungsi Cetak Struk // ------------------
-            function cetakStruk(data) {
-                fetch("/kasir/print-struk", {
+            // =====================================
+            //  QZ Tray Setup (Development Mode)
+            // =====================================
+            // qz.security.setCertificatePromise(() => {
+            //     console.warn("⚠️ Development mode: sertifikat dilewati");
+            //     return Promise.resolve();
+            // });
+
+            // qz.security.setSignaturePromise((toSign) => {
+            //     console.warn("⚠️ Development mode: tanda tangan dilewati");
+            //     return Promise.resolve(); // penting! harus return Promise.resolve()
+            // });
+
+            // Setup QZ Tray (dev mode, tanpa sertifikat)
+            // qz.security.setCertificatePromise((resolve, reject) => {
+            //     console.warn("⚠️ Development mode - no certificate");
+            //     resolve();
+            // });
+            // qz.security.setSignaturePromise((toSign) => {
+            //     console.warn("⚠️ Signature skipped (dev mode)");
+            //     return Promise.resolve();
+            // });
+
+            async function cetakStruk(data) {
+                try {
+                    const res = await fetch("/kasir/print-struk", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute(
-                                "content")
+                            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')
+                                .getAttribute("content")
                         },
                         body: JSON.stringify(data)
-                    })
-                    .then(res => res.json())
-                    .then(res => {
-                        if (res.status === "success") {
-                            Swal.fire({
-                                title: "Berhasil!",
-                                text: "Struk berhasil dicetak ✅",
-                                icon: "success",
-                                showConfirmButton: false,
-                                timer: 1500,
-                                timerProgressBar: true
-                            });
-                        } else {
-                            Swal.fire("Gagal!", res.message, "error");
-                        }
-                    })
-                    .catch(err => console.error("❌ Error print struk:", err));
+                    });
+
+                    const result = await res.json();
+                    if (result.status !== "success") throw new Error(result.message);
+
+                    // koneksi ke QZ Tray
+                    if (!qz.websocket.isActive()) {
+                        await qz.websocket.connect();
+                        console.log("✅ Terhubung ke QZ Tray");
+                    }
+
+                    const config = qz.configs.create("POS-80", {
+                        encoding: 'binary'
+                    });
+
+                    qz.print(config, [{
+                        type: 'raw',
+                        format: 'command',
+                        data: atob(result.raw)
+                    }]).then(() => {
+                        console.log("✅ Struk berhasil dicetak & cut otomatis");
+                    }).catch(err => console.error("❌ Error print:", err));
+
+                    Swal.fire({
+                        icon: "success",
+                        title: "Struk berhasil dicetak ✅",
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+
+                    await qz.websocket.disconnect();
+
+                } catch (err) {
+                    console.error("❌ Error print struk:", err);
+                    Swal.fire("Gagal mencetak!", err.message, "error");
+                }
             }
+
+
+
+            // function cetakStruk(data) {
+            //     fetch("/kasir/print-struk", {
+            //             method: "POST",
+            //             headers: {
+            //                 "Content-Type": "application/json",
+            //                 "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute(
+            //                     "content")
+            //             },
+            //             body: JSON.stringify(data)
+            //         })
+            //         .then(res => res.json())
+            //         .then(res => {
+            //             if (res.status === "success") {
+            //                 Swal.fire({
+            //                     title: "Berhasil!",
+            //                     text: "Struk berhasil dicetak ✅",
+            //                     icon: "success",
+            //                     showConfirmButton: false,
+            //                     timer: 1500,
+            //                     timerProgressBar: true
+            //                 });
+            //             } else {
+            //                 Swal.fire("Gagal!", res.message, "error");
+            //             }
+            //         })
+            //         .catch(err => console.error("❌ Error print struk:", err));
+            // }
 
             // function cetakStruk(data) {
             //     // Format item list

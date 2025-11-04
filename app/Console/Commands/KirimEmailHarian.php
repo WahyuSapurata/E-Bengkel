@@ -28,16 +28,29 @@ class KirimEmailHarian extends Command
      */
     public function handle()
     {
-        // $tanggalHariIni = Carbon::now()->format('d-m-Y');
-        $tanggalHariIni = '03-10-2025';
+        $tanggalHariIni = Carbon::now()->format('d-m-Y');
+        // $tanggalHariIni = '03-11-2025';
 
         // Ambil semua outlet
         $outlets = Outlet::all();
 
-        // Email owner statis
-        $emailTujuan = 'alifakbar476@gmail.com';
+        // Email tujuan per outlet
+        $emailTujuanSamata = 'adsmotorsamata@gmail.com';
+        $emailTujuanPallangga = 'cv.adsmotorindonesia@gmail.com';
 
         foreach ($outlets as $outlet) {
+
+            // Tentukan email tujuan berdasarkan nama outlet
+            $emailTujuan = null;
+            if (stripos($outlet->nama_outlet, 'samata') !== false) {
+                $emailTujuan = $emailTujuanSamata;
+            } elseif (stripos($outlet->nama_outlet, 'pallangga') !== false) {
+                $emailTujuan = $emailTujuanPallangga;
+            } else {
+                $this->warn("⚠️ Tidak ada email yang cocok untuk outlet {$outlet->nama_outlet}");
+                continue;
+            }
+
             $transaksis = DB::table('penjualans')
                 ->join('users', 'penjualans.created_by', '=', 'users.nama')
                 ->where('penjualans.uuid_outlet', $outlet->uuid_user)
@@ -63,9 +76,9 @@ class KirimEmailHarian extends Command
                     ->join('harga_backup_penjualans', 'detail_penjualans.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
                     ->where('uuid_penjualans', $trx->uuid)
                     ->selectRaw('
-                        SUM(detail_penjualans.total_harga) as total_penjualan,
-                        SUM(detail_penjualans.total_harga) - SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_profit
-                    ')
+                    SUM(detail_penjualans.total_harga) as total_penjualan,
+                    SUM(detail_penjualans.total_harga) - SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_profit
+                ')
                     ->first();
 
                 // === Paket
@@ -73,9 +86,9 @@ class KirimEmailHarian extends Command
                     ->join('harga_backup_penjualans', 'detail_penjualan_pakets.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
                     ->where('uuid_penjualans', $trx->uuid)
                     ->selectRaw('
-                        SUM(detail_penjualan_pakets.total_harga) as total_penjualan,
-                        SUM(detail_penjualan_pakets.total_harga - harga_backup_penjualans.harga_modal * detail_penjualan_pakets.qty) as total_profit
-                    ')
+                    SUM(detail_penjualan_pakets.total_harga) as total_penjualan,
+                    SUM(detail_penjualan_pakets.total_harga - harga_backup_penjualans.harga_modal * detail_penjualan_pakets.qty) as total_profit
+                ')
                     ->first();
 
                 // === Jasa
@@ -98,8 +111,13 @@ class KirimEmailHarian extends Command
                     }
                 }
 
-                $totalPenjualan = ($produkTotals->total_penjualan ?? 0) + ($paketTotals->total_penjualan ?? 0) + $totalJasa;
-                $totalProfit    = ($produkTotals->total_profit ?? 0) + ($paketTotals->total_profit ?? 0) + $totalJasa;
+                $totalPenjualan = ($produkTotals->total_penjualan ?? 0)
+                    + ($paketTotals->total_penjualan ?? 0)
+                    + $totalJasa;
+
+                $totalProfit    = ($produkTotals->total_profit ?? 0)
+                    + ($paketTotals->total_profit ?? 0)
+                    + $totalJasa;
 
                 // === Kelompokkan per kasir ===
                 if (!isset($laporan[$trx->kasir])) {
@@ -120,21 +138,17 @@ class KirimEmailHarian extends Command
                 $laporan[$trx->kasir]['profit'] += $totalProfit;
             }
 
-            // Hitung total akhir (per kasir)
+            // Hitung total akhir per kasir
             $hasil = collect($laporan)->map(function ($item) {
                 $item['total'] = $item['tunai'] + $item['non_tunai'];
-                // $item['persentase'] = $item['total'] > 0
-                //     ? round(($item['profit'] / $item['total']) * 100, 2)
-                //     : 0;
                 $target = 1500000;
-
                 $item['persentase'] = $target > 0
                     ? round(($item['profit'] / $target) * 100, 2)
                     : 0;
                 return $item;
             })->values()->toArray();
 
-            // === Kirim Email ke Owner Statis ===
+            // === Kirim Email ke Owner yang sesuai outlet ===
             Mail::to($emailTujuan)->send(
                 new KirimLaporanHarianMail($hasil, $tanggalHariIni, $outlet)
             );

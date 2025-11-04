@@ -598,46 +598,161 @@ class PenjualanController extends Controller
         ]);
     }
 
+    // public function cetakStrukThermal(Request $request)
+    // {
+    //     $data = $request->all(); // ambil semua data dari frontend
+
+    //     // panggil fungsi yang sudah kita buat tadi
+    //     $this->printStruk($data);
+
+    //     return response()->json([
+    //         'data' => $data,
+    //         'status' => 'success',
+    //         'message' => 'Struk berhasil dicetak'
+    //     ]);
+    // }
+
+    // function printStruk($data)
+    // {
+    //     $width = 48; // lebar karakter untuk kertas 80mm
+    //     $struk = "";
+
+    //     // ===============================
+    //     // HEADER
+    //     // ===============================
+    //     $struk .= $this->centerText($data['outlet_nama'], $width) . "\n";
+    //     $struk .= $this->centerText($data['outlet_alamat'], $width) . "\n";
+    //     $struk .= $this->centerText("Telp: " . $data['outlet_telp'], $width) . "\n";
+    //     $struk .= str_repeat("=", $width) . "\n";
+
+    //     // ===============================
+    //     // INFO TRANSAKSI
+    //     // ===============================
+    //     $struk .= "No       : " . $data['no_bukti'] . "\n";
+    //     $struk .= "Tanggal  : " . $data['tanggal'] . "\n";
+    //     $struk .= "Kasir    : " . $data['kasir'] . "\n";
+    //     $struk .= "Bayar    : " . $data['pembayaran'] . "\n";
+    //     $struk .= str_repeat("-", $width) . "\n";
+
+    //     // ===============================
+    //     // ITEMS (lebar total = 48)
+    //     // Nama: 20 | Qty: 5 | Harga: 10 | Sub: 13
+    //     // ===============================
+    //     $struk .= str_pad("Barang", 20);
+    //     $struk .= str_pad("Qty", 5, " ", STR_PAD_LEFT);
+    //     $struk .= str_pad("Harga", 10, " ", STR_PAD_LEFT);
+    //     $struk .= str_pad("Sub", 13, " ", STR_PAD_LEFT) . "\n";
+    //     $struk .= str_repeat("-", $width) . "\n";
+
+    //     foreach ($data['items'] as $item) {
+    //         $nama = $item['nama'];
+    //         $qty = $item['qty'];
+    //         $harga = number_format($item['harga'], 0, ',', '.');
+    //         $subtotal = number_format($item['subtotal'], 0, ',', '.');
+
+    //         // Cetak nama produk (maks 20 char di baris utama)
+    //         $struk .= str_pad(substr($nama, 0, 20), 20);
+    //         $struk .= str_pad($qty, 5, " ", STR_PAD_LEFT);
+    //         $struk .= str_pad($harga, 10, " ", STR_PAD_LEFT);
+    //         $struk .= str_pad($subtotal, 13, " ", STR_PAD_LEFT) . "\n";
+
+    //         // Kalau nama produk panjang, lanjutkan di baris bawah
+    //         if (strlen($nama) > 20) {
+    //             $sisa = wordwrap(substr($nama, 20), $width - 1, "\n", true);
+    //             $lines = explode("\n", $sisa);
+    //             foreach ($lines as $line) {
+    //                 $struk .= " " . $line . "\n";
+    //             }
+    //         }
+    //     }
+
+    //     // ===============================
+    //     // TOTAL JASA (jika ada)
+    //     // ===============================
+    //     if (!empty($data['totalJasa']) && $data['totalJasa'] > 0) {
+    //         $struk .= str_pad("Jasa", 20);
+    //         $struk .= str_pad("1", 5, " ", STR_PAD_LEFT);
+    //         $struk .= str_pad(number_format($data['totalJasa'], 0, ',', '.'), 10, " ", STR_PAD_LEFT);
+    //         $struk .= str_pad(number_format($data['totalJasa'], 0, ',', '.'), 13, " ", STR_PAD_LEFT) . "\n";
+    //     }
+
+    //     // ===============================
+    //     // TOTAL
+    //     // ===============================
+    //     $struk .= str_repeat("-", $width) . "\n";
+
+    //     if (!empty($data['totalItem'])) {
+    //         $struk .= str_pad("Total Item", $width - 15, " ", STR_PAD_LEFT);
+    //         $struk .= str_pad(number_format($data['totalItem'], 0, ',', '.'), 15, " ", STR_PAD_LEFT) . "\n";
+    //     }
+
+    //     $struk .= str_repeat("-", $width) . "\n";
+    //     $struk .= str_pad("Grand Total", $width - 15, " ", STR_PAD_LEFT);
+    //     $struk .= str_pad(number_format($data['grandTotal'], 0, ',', '.'), 15, " ", STR_PAD_LEFT) . "\n";
+    //     $struk .= str_repeat("=", $width) . "\n";
+
+    //     // ===============================
+    //     // FOOTER
+    //     // ===============================
+    //     $struk .= $this->centerText("*** Terima Kasih ***", $width) . "\n";
+    //     $struk .= $this->centerText("Barang yang sudah dibeli", $width) . "\n";
+    //     $struk .= $this->centerText("tidak dapat ditukar/dikembalikan", $width) . "\n";
+
+    //     // Feed kosong (biar struk tidak kepotong)
+    //     $struk .= "\n\n";
+
+    //     // CUT PAPER (GS V A 0 = full cut)
+    //     $struk .= chr(29) . chr(86) . chr(65) . chr(0);
+
+    //     // SIMPAN & PRINT (raw mode)
+    //     $tmpFile = '/tmp/struk.txt';
+    //     file_put_contents($tmpFile, $struk);
+    //     shell_exec("lp -d Codeshop -o raw " . escapeshellarg($tmpFile));
+    // }
+
+    // // ===============================
+    // // Helper: Center Text
+    // // ===============================
+    function centerText($text, $width = 48)
+    {
+        $len = strlen($text);
+        if ($len >= $width) return $text;
+        $left = floor(($width - $len) / 2);
+        $right = $width - $len - $left;
+        return str_repeat(" ", $left) . $text . str_repeat(" ", $right);
+    }
+
     public function cetakStrukThermal(Request $request)
     {
-        $data = $request->all(); // ambil semua data dari frontend
-
-        // panggil fungsi yang sudah kita buat tadi
-        $this->printStruk($data);
+        $data = $request->all();
+        $struk = $this->printStruk($data);
 
         return response()->json([
-            'data' => $data,
+            'raw' => base64_encode($struk), // kirim dalam base64 biar aman di JSON
             'status' => 'success',
-            'message' => 'Struk berhasil dicetak'
+            'message' => 'Struk siap dicetak di client'
         ]);
     }
 
     function printStruk($data)
     {
-        $width = 48; // lebar karakter untuk kertas 80mm
+        $width = 48;
         $struk = "";
 
-        // ===============================
         // HEADER
-        // ===============================
         $struk .= $this->centerText($data['outlet_nama'], $width) . "\n";
         $struk .= $this->centerText($data['outlet_alamat'], $width) . "\n";
         $struk .= $this->centerText("Telp: " . $data['outlet_telp'], $width) . "\n";
         $struk .= str_repeat("=", $width) . "\n";
 
-        // ===============================
         // INFO TRANSAKSI
-        // ===============================
         $struk .= "No       : " . $data['no_bukti'] . "\n";
         $struk .= "Tanggal  : " . $data['tanggal'] . "\n";
         $struk .= "Kasir    : " . $data['kasir'] . "\n";
         $struk .= "Bayar    : " . $data['pembayaran'] . "\n";
         $struk .= str_repeat("-", $width) . "\n";
 
-        // ===============================
-        // ITEMS (lebar total = 48)
-        // Nama: 20 | Qty: 5 | Harga: 10 | Sub: 13
-        // ===============================
+        // ITEMS
         $struk .= str_pad("Barang", 20);
         $struk .= str_pad("Qty", 5, " ", STR_PAD_LEFT);
         $struk .= str_pad("Harga", 10, " ", STR_PAD_LEFT);
@@ -650,25 +765,20 @@ class PenjualanController extends Controller
             $harga = number_format($item['harga'], 0, ',', '.');
             $subtotal = number_format($item['subtotal'], 0, ',', '.');
 
-            // Cetak nama produk (maks 20 char di baris utama)
             $struk .= str_pad(substr($nama, 0, 20), 20);
             $struk .= str_pad($qty, 5, " ", STR_PAD_LEFT);
             $struk .= str_pad($harga, 10, " ", STR_PAD_LEFT);
             $struk .= str_pad($subtotal, 13, " ", STR_PAD_LEFT) . "\n";
 
-            // Kalau nama produk panjang, lanjutkan di baris bawah
             if (strlen($nama) > 20) {
                 $sisa = wordwrap(substr($nama, 20), $width - 1, "\n", true);
-                $lines = explode("\n", $sisa);
-                foreach ($lines as $line) {
+                foreach (explode("\n", $sisa) as $line) {
                     $struk .= " " . $line . "\n";
                 }
             }
         }
 
-        // ===============================
-        // TOTAL JASA (jika ada)
-        // ===============================
+        // TOTAL JASA
         if (!empty($data['totalJasa']) && $data['totalJasa'] > 0) {
             $struk .= str_pad("Jasa", 20);
             $struk .= str_pad("1", 5, " ", STR_PAD_LEFT);
@@ -676,50 +786,25 @@ class PenjualanController extends Controller
             $struk .= str_pad(number_format($data['totalJasa'], 0, ',', '.'), 13, " ", STR_PAD_LEFT) . "\n";
         }
 
-        // ===============================
         // TOTAL
-        // ===============================
         $struk .= str_repeat("-", $width) . "\n";
-
         if (!empty($data['totalItem'])) {
             $struk .= str_pad("Total Item", $width - 15, " ", STR_PAD_LEFT);
             $struk .= str_pad(number_format($data['totalItem'], 0, ',', '.'), 15, " ", STR_PAD_LEFT) . "\n";
         }
-
         $struk .= str_repeat("-", $width) . "\n";
         $struk .= str_pad("Grand Total", $width - 15, " ", STR_PAD_LEFT);
         $struk .= str_pad(number_format($data['grandTotal'], 0, ',', '.'), 15, " ", STR_PAD_LEFT) . "\n";
         $struk .= str_repeat("=", $width) . "\n";
 
-        // ===============================
         // FOOTER
-        // ===============================
         $struk .= $this->centerText("*** Terima Kasih ***", $width) . "\n";
         $struk .= $this->centerText("Barang yang sudah dibeli", $width) . "\n";
-        $struk .= $this->centerText("tidak dapat ditukar/dikembalikan", $width) . "\n";
+        $struk .= $this->centerText("tidak dapat ditukar/dikembalikan", $width) . "\n\n\n";
+        $struk .= "\n\n\n"; // beri jarak sebelum potong
+        $struk .= chr(29) . chr(86) . chr(1); // ESC i / command cut
 
-        // Feed kosong (biar struk tidak kepotong)
-        $struk .= "\n\n";
-
-        // CUT PAPER (GS V A 0 = full cut)
-        $struk .= chr(29) . chr(86) . chr(65) . chr(0);
-
-        // SIMPAN & PRINT (raw mode)
-        $tmpFile = '/tmp/struk.txt';
-        file_put_contents($tmpFile, $struk);
-        shell_exec("lp -d Codeshop -o raw " . escapeshellarg($tmpFile));
-    }
-
-    // ===============================
-    // Helper: Center Text
-    // ===============================
-    function centerText($text, $width = 48)
-    {
-        $len = strlen($text);
-        if ($len >= $width) return $text;
-        $left = floor(($width - $len) / 2);
-        $right = $width - $len - $left;
-        return str_repeat(" ", $left) . $text . str_repeat(" ", $right);
+        return $struk;
     }
 
     public function getPaket()
