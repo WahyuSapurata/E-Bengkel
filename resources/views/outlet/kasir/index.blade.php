@@ -1813,59 +1813,30 @@
             //     return Promise.resolve();
             // });
 
-            async function cetakStruk(data) {
+            async function cetakStruk(dataBase64) {
                 try {
+                    // Pastikan QZ Tray sudah aktif
                     if (!qz.websocket.isActive()) {
-                        qz.security.setCertificatePromise(() => Promise.resolve());
-                        qz.security.setSignaturePromise(() => Promise.resolve());
-                        await qz.websocket.connect({
-                            host: "localhost",
-                            port: 8182
-                        });
-                        console.log("✅ Terhubung ke QZ Tray");
+                        await qz.websocket.connect();
                     }
 
-                    const res = await fetch("/kasir/print-struk", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')
-                                .getAttribute("content"),
-                        },
-                        body: JSON.stringify(data),
-                    });
+                    // Setup printer
+                    const config = qz.configs.create("POS-58"); // ganti nama printer sesuai yang terdaftar
 
-                    const result = await res.json();
-                    if (result.status !== "success") throw new Error(result.message);
+                    // Decode base64 hasil dari Laravel
+                    const rawData = atob(dataBase64);
 
-                    const raw = atob(result.raw); // decode base64 → teks ESC/POS
-
-                    const config = qz.configs.create("POS-80", {
-                        encoding: "binary",
-                    });
-
-                    // kirim ESC/POS binary command
                     await qz.print(config, [{
-                        type: "raw",
-                        format: "command",
-                        flavor: "plain",
-                        data: raw,
+                        type: 'raw',
+                        format: 'plain',
+                        data: rawData
                     }]);
-
-                    Swal.fire({
-                        icon: "success",
-                        title: "Struk berhasil dicetak ✅",
-                        timer: 1500,
-                        showConfirmButton: false,
-                    });
-
-                    console.log("🖨️ Struk berhasil dikirim ke printer");
-
+                    console.log("✅ Struk berhasil dikirim ke printer");
                 } catch (err) {
                     console.error("❌ Error print:", err);
-                    Swal.fire("Gagal mencetak!", err.message, "error");
                 }
             }
+
 
 
 
