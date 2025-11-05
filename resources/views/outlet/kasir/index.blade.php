@@ -1815,6 +1815,23 @@
 
             async function cetakStruk(data) {
                 try {
+                    // Pastikan QZ aktif
+                    if (!qz.websocket.isActive()) {
+                        await qz.websocket.connect();
+                        console.log("✅ Terhubung ke QZ Tray");
+                    }
+
+                    // Tunggu koneksi benar-benar siap
+                    await qz.websocket.waitForConnection();
+
+                    const printers = await qz.printers.find();
+                    console.log("🖨️ Printer tersedia:", printers);
+
+                    const printerName = "POS-80"; // ganti sesuai printer kamu
+                    const config = qz.configs.create(printerName, {
+                        encoding: 'binary'
+                    });
+
                     const res = await fetch("/kasir/print-struk", {
                         method: "POST",
                         headers: {
@@ -1828,23 +1845,11 @@
                     const result = await res.json();
                     if (result.status !== "success") throw new Error(result.message);
 
-                    // koneksi ke QZ Tray
-                    if (!qz.websocket.isActive()) {
-                        await qz.websocket.connect();
-                        console.log("✅ Terhubung ke QZ Tray");
-                    }
-
-                    const config = qz.configs.create("POS-80", {
-                        encoding: 'binary'
-                    });
-
-                    qz.print(config, [{
+                    await qz.print(config, [{
                         type: 'raw',
                         format: 'command',
                         data: atob(result.raw)
-                    }]).then(() => {
-                        console.log("✅ Struk berhasil dicetak & cut otomatis");
-                    }).catch(err => console.error("❌ Error print:", err));
+                    }]);
 
                     Swal.fire({
                         icon: "success",
@@ -1853,13 +1858,15 @@
                         showConfirmButton: false
                     });
 
-                    await qz.websocket.disconnect();
+                    // ⚠️ Jangan disconnect langsung
+                    // await qz.websocket.disconnect();
 
                 } catch (err) {
-                    console.error("❌ Error print struk:", err);
+                    console.error("❌ Error print:", err);
                     Swal.fire("Gagal mencetak!", err.message, "error");
                 }
             }
+
 
 
 
