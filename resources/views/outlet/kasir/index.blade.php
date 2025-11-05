@@ -1815,16 +1815,19 @@
 
             async function cetakStruk(dataBase64) {
                 try {
-                    // Pastikan QZ Tray sudah aktif
+                    // Pastikan koneksi QZ aktif
                     if (!qz.websocket.isActive()) {
                         await qz.websocket.connect();
                     }
 
-                    // Setup printer
-                    const config = qz.configs.create("POS-58"); // ganti nama printer sesuai yang terdaftar
+                    // Bersihkan Base64 dari karakter aneh
+                    const cleanBase64 = dataBase64.replace(/\s/g, '');
 
-                    // Decode base64 hasil dari Laravel
-                    const rawData = atob(dataBase64);
+                    // Decode Base64
+                    const rawData = atob(cleanBase64);
+
+                    // Buat config printer
+                    const config = qz.configs.create("POS-58");
 
                     await qz.print(config, [{
                         type: 'raw',
