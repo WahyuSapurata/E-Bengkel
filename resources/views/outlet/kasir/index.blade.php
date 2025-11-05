@@ -161,6 +161,9 @@
                                 <option value="{{ $cp->nama }}">{{ $cp->nama }}</option>
                             @endforeach
                         </select>
+                        <button onclick="testPrint()" type="button" class="btn btn-success">🖨️ Tes Print
+                            Struk</button>
+
 
                         <div class="mt-5">
                             <button type="button" class="btn btn-outline-primary w-100 mb-2">💾 Simpan Transaksi
@@ -335,12 +338,125 @@
                 </div>
             </div>
         </div>
+
     </div>
 
     <script src="{{ asset('assets/vendors/js/bootstrap.min.js') }}"></script>
+    {{-- <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.5/qz-tray.js"></script> --}}
+    {{-- <script src="http://localhost:8182/qz-tray.js"></script> --}}
+    <script src="{{ asset('qz-tray.js') }}"></script>
     <script src="{{ asset('assets/sweet-alert/sweetalert2.min.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.5/qz-tray.js"></script>
+    {{-- <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.5/qz-tray.js"></script> --}}
     <script>
+        // qz.security.setCertificatePromise(() => Promise.resolve());
+        // qz.security.setSignaturePromise(toSign => Promise.resolve());
+
+        // -----------------------------
+        // KONFIGURASI QZ SECURITY
+        // -----------------------------
+        qz.security.setCertificatePromise(() => Promise.resolve(`-----BEGIN CERTIFICATE-----
+MIIDbzCCAlegAwIBAgIIMw3wD9l1tcUwDQYJKoZIhvcNAQELBQAwZjELMAkGA1UE
+BhMCSUQxDzANBgNVBAgTBlN1bHNlbDERMA8GA1UEBxMITWFrYXNzYXIxEjAQBgNV
+BAoTCU15Q29tcGFueTELMAkGA1UECxMCSVQxEjAQBgNVBAMTCWxvY2FsaG9zdDAe
+Fw0yNTExMDUxMzM0NTJaFw0zNTExMDMxMzM0NTJaMGYxCzAJBgNVBAYTAklEMQ8w
+DQYDVQQIEwZTdWxzZWwxETAPBgNVBAcTCE1ha2Fzc2FyMRIwEAYDVQQKEwlNeUNv
+bXBhbnkxCzAJBgNVBAsTAklUMRIwEAYDVQQDEwlsb2NhbGhvc3QwggEiMA0GCSqG
+SIb3DQEBAQUAA4IBDwAwggEKAoIBAQCuOGovm3GcZAMRDfTags1ooJCmZLnFgJ5v
+5WWq6biPxvyfvdzbk5chzMj1G0wB2KZ0QKs8XChulucbfkQ3JRhNy39/lpr3s5zi
+nNVDs9BYQj6OEzYi/eAQYyk2vyaRlEwihg61nJI9j1mWrHFCnv1NKStpHnMJeG5E
+IlFBqboKzCOgHRTwnIAeojlLwRwwf0LpVO9NgUd0Smb/2t35HuEMRAkuberPFQIJ
+5BOWhn5syLM0h8pjXYGkox/eDTGAzxZQXoDhIbNQ6C0Q7UMu1KQqwQn6zT1enHsk
+yquxgLFHWN6NJY6GKWwyHLhyevpENw/8jizKkUtbUIjexWw3IVfTAgMBAAGjITAf
+MB0GA1UdDgQWBBQ5EiDvhC/rzIlh/81p5udQNxtdkTANBgkqhkiG9w0BAQsFAAOC
+AQEASNOAVY0Q6bAPoOLUuZnB9nZu+DuqheCw9iUVxc1elnmWCROTstusp8+G4CIf
+NAaCxAFyqU7BVRdmEgKPQwmnG13tPKeqADP52pT8hKvpja6nlnUKXOBiLlwLM78w
+BZWpJ/MI1fJaN644JJd54kHZo5Nq8On7QseZmVqa/mndWwfoeK7F189AmT/bQ+AU
+tE40MIaWvQ9Q4rfix9iUvcpF9LAgB7LtB2So/sNuCnJWie624t1vxLxz8e1RYzO1
+2To5vZyfa3iPdR8+SrfOVm8j4MsF4O+fr53CKpppO5N21SouTUbj3V8cfR8FTih1
+n5RFUbV0QEuQxGdmQGBuK4A3yg==
+-----END CERTIFICATE-----`));
+
+        qz.security.setSignaturePromise(toSign => {
+            // Untuk pengujian, kita bisa bypass signature
+            return Promise.resolve();
+        });
+
+        console.log("🚀 Inisialisasi QZ Tray...");
+
+        (async () => {
+            try {
+                if (!qz.websocket.isActive()) {
+                    await qz.websocket.connect();
+                }
+
+                const version = await qz.api.getVersion();
+                console.log("✅ Terhubung ke QZ Tray versi:", version);
+
+                const printer = await qz.printers.getDefault();
+                console.log("🖨️ Printer default:", printer);
+
+                const config = qz.configs.create(printer);
+                const data = [
+                    "=====================\n",
+                    " TES PRINT BERHASIL ✅\n",
+                    "=====================\n\n\n",
+                    "\x1B\x69"
+                ];
+
+                await qz.print(config, data);
+                console.log("🎉 Print berhasil!");
+            } catch (err) {
+                console.error("❌ Error QZ Tray:", err);
+            }
+        })();
+
+
+        async function testPrint() {
+            console.log("🧠 Menjalankan tes print...");
+            try {
+                if (!qz.websocket.isActive()) {
+                    await qz.websocket.connect();
+                }
+
+                const printerName = "POS-80"; // Ganti sesuai nama printer di QZ Tray
+                const config = qz.configs.create(printerName);
+
+                // ✅ Gunakan array data sederhana dengan format string biasa
+                const data = [
+                    "\x1B\x40", // Reset printer
+                    "==============================\n",
+                    "     TES PRINT QZ TRAY OK     \n",
+                    "==============================\n",
+                    "Tanggal: " + new Date().toLocaleString() + "\n",
+                    "Terimakasih!\n\n\n",
+                    "\x1D\x56\x00" // Cut kertas
+                ];
+
+                await qz.print(config, data);
+                console.log("✅ Struk uji berhasil dikirim ke printer");
+
+            } catch (err) {
+                console.error("❌ Error saat tes print:", err);
+            }
+        }
+    </script>
+
+    <script>
+        // qz.security.setCertificatePromise(() => Promise.resolve());
+        // qz.security.setSignaturePromise(toSign => Promise.resolve());
+
+        // document.addEventListener("DOMContentLoaded", async () => {
+        //     console.log("🚀 Script QZ dimulai");
+        //     try {
+        //         await qz.websocket.connect();
+        //         console.log("✅ connect() selesai");
+        //         const version = await qz.api.getVersion();
+        //         console.log("✅ Terhubung ke QZ Tray versi:", version);
+        //     } catch (err) {
+        //         console.error("❌ Gagal konek ke QZ Tray:", err);
+        //     }
+        // });
+
         document.addEventListener("DOMContentLoaded", () => {
             const scanInput = document.getElementById("scanInput");
             const modalEl = document.getElementById("exampleModal");
@@ -1813,34 +1929,134 @@
             //     return Promise.resolve();
             // });
 
-            async function cetakStruk(dataBase64) {
-                try {
-                    // Pastikan koneksi QZ aktif
-                    if (!qz.websocket.isActive()) {
-                        await qz.websocket.connect();
-                    }
+            // === KONFIGURASI QZ TRAY DEV ===
+            // Pastikan sudah ada di trusted-sites.json:
+            //   "https://adsmotor.id", "http://localhost", dll
+            // qz.security.setCertificatePromise(() => Promise.resolve());
+            // qz.security.setSignaturePromise(toSign => Promise.resolve());
 
-                    // Bersihkan Base64 dari karakter aneh
-                    const cleanBase64 = dataBase64.replace(/\s/g, '');
-
-                    // Decode Base64
-                    const rawData = atob(cleanBase64);
-
-                    // Buat config printer
-                    const config = qz.configs.create("POS-58");
-
-                    await qz.print(config, [{
-                        type: 'raw',
-                        format: 'plain',
-                        data: rawData
-                    }]);
-                    console.log("✅ Struk berhasil dikirim ke printer");
-                } catch (err) {
-                    console.error("❌ Error print:", err);
-                }
-            }
+            // // Fungsi koneksi QZ
+            // async function connectQZ() {
+            //     if (!qz.websocket.isActive()) {
+            //         try {
+            //             await qz.websocket.connect();
+            //             console.log("✅ QZ Tray connected");
+            //             await new Promise(r => setTimeout(r, 1000)); // tunggu 1 detik
+            //         } catch (err) {
+            //             console.error("❌ Gagal connect QZ Tray:", err);
+            //         }
+            //     }
+            // }
 
 
+            // // Panggil sekali di awal
+            // connectQZ();
+
+            // async function cetakStruk(data) {
+            //     try {
+            //         console.log("📤 Mengirim data ke server...");
+            //         const res = await fetch("/kasir/print-struk", {
+            //             method: "POST",
+            //             headers: {
+            //                 "Content-Type": "application/json",
+            //                 "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')
+            //                     .getAttribute("content")
+            //             },
+            //             body: JSON.stringify(data)
+            //         });
+
+            //         const result = await res.json();
+            //         console.log("📦 Response server:", result);
+
+            //         if (result.status !== "success") throw new Error(result.message);
+
+            //         await connectQZ();
+
+            //         const config = qz.configs.create("POS-80", {
+            //             encoding: 'binary'
+            //         });
+
+            //         qz.print(
+            //             qz.configs.create("POS-80"),
+            //             [{
+            //                 type: 'raw',
+            //                 format: 'command',
+            //                 data: 'Hello World!\n\n\n\n'
+            //             }]
+            //         );
+
+            //         // const rawData = atob(result.raw);
+            //         // console.log("📜 Panjang data raw:", rawData.length);
+
+            //         // // ✅ versi aman
+            //         // await qz.print(config, [{
+            //         //     type: 'raw',
+            //         //     format: 'command',
+            //         //     data: rawData
+            //         // }]);
+
+            //         // console.log("✅ Struk berhasil dicetak");
+            //         // Swal.fire({
+            //         //     icon: "success",
+            //         //     title: "Struk berhasil dicetak ✅",
+            //         //     timer: 1500,
+            //         //     showConfirmButton: false
+            //         // });
+
+            //         await qz.websocket.disconnect();
+
+            //     } catch (err) {
+            //         console.error("❌ Error print struk:", err);
+            //         Swal.fire("Gagal mencetak!", err.message, "error");
+            //     }
+            // }
+
+
+
+            // Fungsi untuk print struk
+            // async function cetakStruk(base64Data) {
+            //     try {
+            //         // Pastikan QZ Tray aktif
+            //         if (!qz.websocket.isActive()) {
+            //             await qz.websocket.connect({
+            //                 host: 'localhost',
+            //                 port: 8182
+            //             });
+            //         }
+
+            //         // Pastikan data base64 valid
+            //         if (typeof base64Data !== 'string' || base64Data.trim() === '') {
+            //             throw new Error("Data base64 tidak valid");
+            //         }
+
+            //         // Decode base64 → string ESC/POS
+            //         const rawData = atob(base64Data);
+
+            //         // Tentukan printer (ganti dengan nama printer kamu)
+            //         const config = qz.configs.create("POS-80");
+
+            //         // Kirim data ke printer
+            //         await qz.print(config, [{
+            //             type: 'raw',
+            //             format: 'command',
+            //             data: rawData
+            //         }]);
+
+            //         console.log("✅ Struk berhasil dikirim ke printer!");
+
+            //     } catch (err) {
+            //         console.error("❌ Error print struk:", err);
+            //     }
+            // }
+
+
+            // Opsional — Disconnect manual kalau logout kasir
+            // async function disconnectQZ() {
+            //     if (qz.websocket.isActive()) {
+            //         await qz.websocket.disconnect();
+            //         console.log("🔌 QZ Tray disconnected");
+            //     }
+            // }
 
 
             // function cetakStruk(data) {
