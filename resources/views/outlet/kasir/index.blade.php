@@ -1815,58 +1815,57 @@
 
             async function cetakStruk(data) {
                 try {
-                    // Pastikan QZ aktif
                     if (!qz.websocket.isActive()) {
-                        await qz.websocket.connect();
+                        qz.security.setCertificatePromise(() => Promise.resolve());
+                        qz.security.setSignaturePromise(() => Promise.resolve());
+                        await qz.websocket.connect({
+                            host: "localhost",
+                            port: 8182
+                        });
                         console.log("✅ Terhubung ke QZ Tray");
                     }
-
-                    // Tunggu koneksi benar-benar siap
-                    await qz.websocket.waitForConnection();
-
-                    const printers = await qz.printers.find();
-                    console.log("🖨️ Printer tersedia:", printers);
-
-                    const printerName = "POS-80"; // ganti sesuai printer kamu
-                    const config = qz.configs.create(printerName, {
-                        encoding: 'binary'
-                    });
 
                     const res = await fetch("/kasir/print-struk", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
                             "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')
-                                .getAttribute("content")
+                                .getAttribute("content"),
                         },
-                        body: JSON.stringify(data)
+                        body: JSON.stringify(data),
                     });
 
                     const result = await res.json();
                     if (result.status !== "success") throw new Error(result.message);
 
+                    const raw = atob(result.raw); // decode base64 → teks ESC/POS
+
+                    const config = qz.configs.create("POS-80", {
+                        encoding: "binary",
+                    });
+
+                    // kirim ESC/POS binary command
                     await qz.print(config, [{
-                        type: 'raw',
-                        format: 'command',
-                        data: atob(result.raw)
+                        type: "raw",
+                        format: "command",
+                        flavor: "plain",
+                        data: raw,
                     }]);
 
                     Swal.fire({
                         icon: "success",
                         title: "Struk berhasil dicetak ✅",
                         timer: 1500,
-                        showConfirmButton: false
+                        showConfirmButton: false,
                     });
 
-                    // ⚠️ Jangan disconnect langsung
-                    // await qz.websocket.disconnect();
+                    console.log("🖨️ Struk berhasil dikirim ke printer");
 
                 } catch (err) {
                     console.error("❌ Error print:", err);
                     Swal.fire("Gagal mencetak!", err.message, "error");
                 }
             }
-
 
 
 
