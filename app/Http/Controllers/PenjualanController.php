@@ -802,7 +802,8 @@ class PenjualanController extends Controller
         $struk .= $this->centerText("Barang yang sudah dibeli", $width) . "\n";
         $struk .= $this->centerText("tidak dapat ditukar/dikembalikan", $width) . "\n\n\n";
         $struk .= "\n\n\n";
-        $struk .= chr(29) . chr(86) . chr(0); // Full cut
+        $struk .= "\n\n\n";
+        $struk .= "\x1D\x56\x00"; // Cut kertas
 
         return $struk;
     }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Dashboard;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [Dashboard::class, 'landing_page'])->name('landing_page');
@@ -306,6 +307,55 @@ Route::group([
     Route::post('/penjualan-store', [App\Http\Controllers\PenjualanController::class, 'store'])->name('penjualan-store');
 
     Route::post('/print-struk', [App\Http\Controllers\PenjualanController::class, 'cetakStrukThermal'])->name('print-struk');
+
+    // Route::get('/qz-cert', function () {
+    //     $path = public_path('qz-tray.pem');
+    //     if (!file_exists($path)) {
+    //         return response('Certificate not found', 404);
+    //     }
+
+    //     // Kirim file PEM langsung sebagai teks biasa
+    //     return response(file_get_contents($path), 200)
+    //         ->header('Content-Type', 'text/plain');
+    // });
+
+    // Route::post('/qz-sign', function (Request $req) {
+    //     $toSign = $req->input('toSign'); // QZ kirim data hex string
+    //     if (empty($toSign)) {
+    //         return response('missing toSign', 400);
+    //     }
+
+    //     // ubah hex ke binary
+    //     $data = @hex2bin($toSign);
+    //     if ($data === false) {
+    //         return response('invalid hex', 400);
+    //     }
+
+    //     // load private key
+    //     $keyPath = storage_path('app/qz/private.key');
+    //     if (!file_exists($keyPath)) {
+    //         return response('private key not found', 500);
+    //     }
+
+    //     $privateKey = file_get_contents($keyPath);
+    //     $pkey = @openssl_pkey_get_private($privateKey);
+
+    //     if (!$pkey) {
+    //         return response('cannot parse private key', 500);
+    //     }
+
+    //     // sign data
+    //     $ok = @openssl_sign($data, $signature, $pkey, OPENSSL_ALGO_SHA256);
+    //     openssl_free_key($pkey);
+
+    //     if (!$ok || empty($signature)) {
+    //         return response('signing failed', 500);
+    //     }
+
+    //     // kembalikan hasil base64 agar QZ Tray bisa membaca
+    //     return response(base64_encode($signature), 200)
+    //         ->header('Content-Type', 'text/plain');
+    // });
 
     Route::get('/get-jasa', [App\Http\Controllers\PenjualanController::class, 'get_jasa'])->name('get-jasa');
     Route::get('/get-stock', [App\Http\Controllers\PenjualanController::class, 'get_stock'])->name('get-stock');
