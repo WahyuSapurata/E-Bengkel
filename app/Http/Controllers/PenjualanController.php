@@ -800,10 +800,13 @@ class PenjualanController extends Controller
         // FOOTER
         $struk .= $this->centerText("*** Terima Kasih ***", $width) . "\n";
         $struk .= $this->centerText("Barang yang sudah dibeli", $width) . "\n";
-        $struk .= $this->centerText("tidak dapat ditukar/dikembalikan", $width) . "\n\n\n";
-        $struk .= "\n\n\n";
-        $struk .= "\n\n\n";
-        $struk .= "\x1D\x56\x00"; // Cut kertas
+        $struk .= $this->centerText("tidak dapat ditukar/dikembalikan", $width) . "\n\n";
+
+        // Tambahkan beberapa line feed agar kertas keluar lebih panjang
+        $struk .= "\n\n\n\n";
+
+        // Command cut khusus Codeshop / XPrinter compatible
+        $struk .= "\x1D\x56\x41\x10"; // ESC/POS partial cut, aman di Codeshop
 
         return $struk;
     }

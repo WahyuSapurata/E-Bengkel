@@ -1942,7 +1942,7 @@
                         throw new Error(result.message || "Gagal memproses struk");
                     }
 
-                    const rawData = atob(result.raw);
+                    const rawData = atob(result.raw).trimEnd();
                     console.log("📜 Panjang data raw:", rawData.length);
 
                     // 2️⃣ Pastikan QZ Tray terkoneksi
@@ -1958,9 +1958,9 @@
                     // 4️⃣ Kirim data ke printer
                     await qz.print(config, [{
                         type: "raw",
-                        format: "command",
+                        format: "plain", // gunakan plain, bukan command
                         data: rawData,
-                    }, ]);
+                    }]);
 
                     console.log("✅ Struk berhasil dicetak");
                     Swal.fire({
