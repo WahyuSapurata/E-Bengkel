@@ -184,30 +184,31 @@ class PoOutletController extends Controller
             $search = $request->search['value'];
             $query->where(function ($q) use ($search, $columns) {
                 foreach ($columns as $dbCol => $alias) {
-                    // kalau kolom pakai SUM() skip pencarian
-                    if (str_contains($dbCol, 'SUM')) continue;
+                    if (str_contains($dbCol, 'SUM') || str_contains($dbCol, 'JSON')) continue;
                     $q->orWhere($dbCol, 'like', "%{$search}%");
                 }
             });
         }
 
-        $totalFiltered = $query->count();
+        // Clone untuk totalFiltered
+        $filteredQuery = clone $query;
+        $totalFiltered = $filteredQuery->get()->count();
 
         // Sorting
-        if ($request->order) {
-            $orderColIndex = $request->order[0]['column'];
-            $orderDir = $request->order[0]['dir'];
-
-            $dbCol = array_keys($columns)[$orderColIndex];
-            $query->orderByRaw("$dbCol $orderDir");
-        } else {
-            $query->orderBy('po_outlets.created_at', 'desc');
-        }
+        // if ($request->order) {
+        //     $orderColIndex = $request->order[0]['column'];
+        //     $orderDir = $request->order[0]['dir'];
+        //     $dbCol = array_keys($columns)[$orderColIndex];
+        //     $query->orderByRaw("$dbCol $orderDir");
+        // } else {
+        $query->orderBy('po_outlets.tanggal_transaksi', 'asc'); // ✅ urut dari input terakhir
+        // }
 
         // Pagination
-        $query->skip($request->start)->take($request->length);
-
-        $data = $query->get();
+        $data = $query
+            ->skip($request->start)
+            ->take($request->length)
+            ->get();
 
         return response()->json([
             'draw' => intval($request->draw),
