@@ -86,12 +86,6 @@
                                 <a class="nxl-link" href="{{ route('superadmin.paket-hemat') }}">Paket Hemat</a>
                             </li>
 
-                            @canView('Customer')
-                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'costumer' ? 'active' : '' }}">
-                                <a class="nxl-link" href="{{ route('superadmin.costumer') }}">Customer</a>
-                            </li>
-                            @endcanView
-
                             @canView('Karyawan')
                             <li class="nxl-item {{ isset($path[2]) && $path[2] === 'karyawan' ? 'active' : '' }}">
                                 <a class="nxl-link" href="{{ route('superadmin.karyawan') }}">Karyawan</a>
@@ -253,6 +247,12 @@
                         <a href="{{ route('outlet.kasir-outlet') }}" class="nxl-link">
                             <span class="nxl-micon"><i class="feather-hard-drive"></i></span>
                             <span class="nxl-mtext">Kasir</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item nxl-hasmenu {{ $path[1] === 'costumer' ? 'active' : '' }}">
+                        <a href="{{ route('outlet.costumer') }}" class="nxl-link">
+                            <span class="nxl-micon"><i class="feather-users"></i></span>
+                            <span class="nxl-mtext">Costumer</span>
                         </a>
                     </li>
                     <li class="nxl-item nxl-hasmenu {{ $path[1] === 'po-outlet' ? 'active' : '' }}">

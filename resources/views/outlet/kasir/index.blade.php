@@ -78,6 +78,10 @@
 
                     <!-- Form bawah -->
                     <div class="row m-0">
+                        <div class="col-md-12 mb-2">
+                            <input type="text" id="searchPlat" class="form-control form-control-sm"
+                                name="search_plat" placeholder="Cari Plat">
+                        </div>
                         <div class="col-md-3 mb-2">
                             <input type="text" class="form-control form-control-sm" name="nama"
                                 placeholder="Nama Customer">
@@ -2190,6 +2194,14 @@
                 if (checkJasa) {
                     checkJasa.checked = false;
                 }
+
+                // 🔹 Reset seluruh input di form kasir
+                const form = document.getElementById("form-kasir");
+                if (form) {
+                    form.reset(); // ini akan reset semua input, select, checkbox, dll
+                }
+
+                window.location.reload(); // reload halaman untuk reset
             }
 
             // function kurangiStok(kode, qty = 1) {
@@ -2686,6 +2698,46 @@
                             });
                     }
                 });
+            });
+
+            document.getElementById("searchPlat").addEventListener("keydown", function(event) {
+                if (event.key === "Enter") {
+                    event.preventDefault(); // cegah form submit
+                    const plat = this.value.trim();
+
+                    if (plat === "") {
+                        alert("Masukkan plat kendaraan terlebih dahulu!");
+                        return;
+                    }
+
+                    // Kirim request ke route Laravel
+                    fetch(`/kasir/get-costumer-byPlat?plat=${encodeURIComponent(plat)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === "success" && data.data) {
+                                // isi inputan form
+                                document.querySelector("input[name='nama']").value = data.data.nama ||
+                                    "";
+                                document.querySelector("input[name='alamat']").value = data.data
+                                    .alamat || "";
+                                document.querySelector("input[name='nomor']").value = data.data.nomor ||
+                                    "";
+                                document.querySelector("input[name='plat']").value = data.data.plat ||
+                                    "";
+                            } else {
+                                Swal.fire({
+                                    title: "Warning!",
+                                    text: "Data pelanggan tidak ditemukan!",
+                                    icon: "warning",
+                                    confirmButtonText: "OK"
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Terjadi kesalahan:", error);
+                            alert("Gagal mengambil data dari server!");
+                        });
+                }
             });
 
         });

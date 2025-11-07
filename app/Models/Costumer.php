@@ -11,6 +11,8 @@ class Costumer extends Model
     protected $primaryKey = 'id';
     protected $fillable = [
         'uuid',
+        'uuid_penjualan',
+        'uuid_outlet',
         'nama',
         'alamat',
         'nomor',
@@ -25,5 +27,17 @@ class Costumer extends Model
         static::creating(function ($model) {
             $model->uuid = Uuid::uuid4()->toString();
         });
+    }
+
+    // Relasi ke tabel penjualan
+    public function penjualan()
+    {
+        return $this->belongsTo(Penjualan::class, 'uuid_penjualan', 'uuid');
+    }
+
+    // Relasi ke tabel outlet
+    public function outlet()
+    {
+        return $this->belongsTo(Outlet::class, 'uuid_outlet', 'uuid_user');
     }
 }

@@ -201,16 +201,6 @@ class PenjualanController extends Controller
                     : 1;
                 $no_bukti = $prefix . "-" . $nextNumber;
 
-                // costumer (opsional)
-                if ($request->nama && $request->alamat && $request->nomor && $request->plat) {
-                    Costumer::create([
-                        'nama'   => $request->nama,
-                        'alamat' => $request->alamat,
-                        'nomor'  => $request->nomor,
-                        'plat'   => $request->plat,
-                    ]);
-                }
-
                 // Simpan header penjualan
                 $penjualan = Penjualan::create([
                     'uuid_outlet'       => $kasir->uuid_outlet,
@@ -220,6 +210,18 @@ class PenjualanController extends Controller
                     'pembayaran'        => $request->pembayaran,
                     'created_by'        => Auth::user()->nama,
                 ]);
+
+                // costumer (opsional)
+                if ($request->nama && $request->alamat && $request->nomor && $request->plat) {
+                    Costumer::create([
+                        'uuid_penjualan'   => $penjualan->uuid,
+                        'uuid_outlet'   => $penjualan->uuid_outlet,
+                        'nama'   => $request->nama,
+                        'alamat' => $request->alamat,
+                        'nomor'  => $request->nomor,
+                        'plat'   => $request->plat,
+                    ]);
+                }
 
                 StatusBarang::create([
                     'uuid_log_barang' => $penjualan->uuid,

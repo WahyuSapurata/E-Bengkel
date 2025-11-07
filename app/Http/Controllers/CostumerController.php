@@ -6,6 +6,7 @@ use App\Http\Requests\StoreCostumerRequest;
 use App\Http\Requests\UpdateCostumerRequest;
 use App\Models\Costumer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CostumerController extends Controller
 {
@@ -23,13 +24,15 @@ class CostumerController extends Controller
             'alamat',
             'nomor',
             'plat',
+            'uuid_penjualan',
         ];
 
-        $totalData = Costumer::count();
+        $totalData = Costumer::where('uuid_outlet', Auth::user()->uuid)->count();
 
-        $query = Costumer::select($columns);
+        // Ambil data beserta relasi outlet dan penjualan
+        $query = Costumer::where('uuid_outlet', Auth::user()->uuid)->with(['penjualan', 'outlet'])->select($columns);
 
-        // Searching
+        // 🔍 Searching
         if (!empty($request->search['value'])) {
             $search = $request->search['value'];
             $query->where(function ($q) use ($search, $columns) {
@@ -41,7 +44,7 @@ class CostumerController extends Controller
 
         $totalFiltered = $query->count();
 
-        // Sorting
+        // 🔽 Sorting
         if ($request->order) {
             $orderCol = $columns[$request->order[0]['column']];
             $orderDir = $request->order[0]['dir'];
@@ -50,12 +53,21 @@ class CostumerController extends Controller
             $query->latest();
         }
 
-        // Pagination
+        // 📄 Pagination
         $query->skip($request->start)->take($request->length);
 
-        $data = $query->get();
+        // 🔹 Ambil data dan ubah formatnya
+        $data = $query->get()->map(function ($item) {
+            return [
+                'uuid' => $item->uuid,
+                'nama' => $item->nama,
+                'alamat' => $item->alamat,
+                'nomor' => $item->nomor,
+                'plat' => $item->plat,
+                'bukti' => $item->penjualan->no_bukti,
+            ];
+        });
 
-        // Format response DataTables
         return response()->json([
             'draw' => intval($request->draw),
             'recordsTotal' => $totalData,
@@ -63,6 +75,7 @@ class CostumerController extends Controller
             'data' => $data
         ]);
     }
+
 
     public function store(StoreCostumerRequest $request)
     {
@@ -98,5 +111,23 @@ class CostumerController extends Controller
     {
         Costumer::where('uuid', $params)->delete();
         return response()->json(['status' => 'success']);
+    }
+
+    public function getCostumerByPlat(Request $request)
+    {
+        $plat = $request->input('plat');
+        $costumer = Costumer::where('plat', $plat)->first();
+
+        if ($costumer) {
+            return response()->json([
+                'status' => 'success',
+                'data' => $costumer
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Costumer not found'
+        ], 404);
     }
 }

@@ -20,16 +20,6 @@
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg><span>Back</span></a></div>
-                    @canCreate('Customer')
-                    <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-                        <a href="#" id="openModal" class="btn btn-primary"><svg stroke="currentColor" fill="none"
-                                stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"
-                                class="me-2" height="16" width="16" xmlns="http://www.w3.org/2000/svg">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg><span>Tambah Data</span></a>
-                    </div>
-                    @endcanCreate
                 </div>
                 <div class="d-md-none d-flex align-items-center"><a class="page-header-right-open-toggle"
                         href="/widgets/tables"><svg stroke="currentColor" fill="none" stroke-width="2"
@@ -70,6 +60,7 @@
                                             <th class="text-capitalize">alamat</th>
                                             <th class="text-capitalize">telepon</th>
                                             <th class="text-capitalize">plat</th>
+                                            <th class="text-capitalize">bukti</th>
                                             <th class="text-end">Actions</th>
                                         </tr>
                                     </thead>
@@ -150,11 +141,11 @@
 
             let uuid = $('#uuid').val();
 
-            let updateUrl = `{{ route('superadmin.costumer-update', ':uuid') }}`;
+            let updateUrl = `{{ route('outlet.costumer-update', ':uuid') }}`;
             updateUrl = updateUrl.replace(':uuid', uuid);
 
             let url = uuid ? updateUrl :
-                `{{ route('superadmin.costumer-store') }}`;
+                `{{ route('outlet.costumer-store') }}`;
             let method = uuid ? 'POST' : 'POST';
 
             $.ajax({
@@ -216,7 +207,7 @@
             $('.invalid-feedback').remove();
             $('#modal').modal('show');
             let uuid = $(this).data('uuid');
-            let editUrl = `{{ route('superadmin.costumer-edit', ':uuid') }}`;
+            let editUrl = `{{ route('outlet.costumer-edit', ':uuid') }}`;
             editUrl = editUrl.replace(':uuid', uuid);
             $.get(editUrl, function(res) {
                 $.each(res, function(key, value) {
@@ -231,7 +222,7 @@
         // Hapus
         $('#dataTables').on('click', '.delete', function() {
             let uuid = $(this).data('uuid');
-            let deleteUrl = `{{ route('superadmin.costumer-delete', ':uuid') }}`;
+            let deleteUrl = `{{ route('outlet.costumer-delete', ':uuid') }}`;
             deleteUrl = deleteUrl.replace(':uuid', uuid);
 
             Swal.fire({
@@ -284,7 +275,7 @@
                 pageLength: 10,
                 processing: true,
                 serverSide: true,
-                ajax: "{{ route('superadmin.costumer-get') }}",
+                ajax: "{{ route('outlet.costumer-get') }}",
                 columns: [{
                         data: null,
                         class: 'mb-kolom-nomor align-content-center',
@@ -309,6 +300,10 @@
                         class: 'mb-kolom-tanggal text-left align-content-center'
                     },
                     {
+                        data: 'bukti',
+                        class: 'mb-kolom-tanggal text-left align-content-center'
+                    },
+                    {
                         data: 'uuid', // akan diganti di columnDefs
                         orderable: false,
                         searchable: false
@@ -321,18 +316,6 @@
                     render: function(data, type, row) {
                         return `
                                 <div class="hstack gap-2 justify-content-end">
-                                    @canEdit('Customer')
-                                    <a href="#" class="avatar-text avatar-md edit" data-uuid="${data}">
-                                        <!-- Icon Edit -->
-                                        <svg stroke="currentColor" fill="none" stroke-width="2"
-                                            viewBox="0 0 24 24" stroke-linecap="round"
-                                            stroke-linejoin="round" height="1em" width="1em">
-                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                        </svg>
-                                    </a>
-                                    @endcanEdit
-                                    @canDelete('Customer')
                                     <a href="#" class="avatar-text avatar-md delete" data-uuid="${data}">
                                         <!-- Icon Delete -->
                                         <svg stroke="currentColor" fill="none" stroke-width="2"
@@ -345,7 +328,6 @@
                                             <line x1="14" y1="11" x2="14" y2="17"></line>
                                         </svg>
                                     </a>
-                                    @endcanDelete
                                 </div>
                     `;
                     }

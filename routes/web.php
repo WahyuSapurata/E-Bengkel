@@ -104,13 +104,6 @@ Route::group([
         Route::post('/produk-price-update/{params}', [App\Http\Controllers\ProdukPriceController::class, 'update'])->name('produk-price-update');
         Route::delete('/produk-price-delete/{params}', [App\Http\Controllers\ProdukPriceController::class, 'delete'])->name('produk-price-delete');
 
-        Route::get('/costumer', [App\Http\Controllers\CostumerController::class, 'index'])->name('costumer');
-        Route::get('/costumer-get', [App\Http\Controllers\CostumerController::class, 'get'])->name('costumer-get');
-        Route::post('/costumer-store', [App\Http\Controllers\CostumerController::class, 'store'])->name('costumer-store');
-        Route::get('/costumer-edit/{params}', [App\Http\Controllers\CostumerController::class, 'edit'])->name('costumer-edit');
-        Route::post('/costumer-update/{params}', [App\Http\Controllers\CostumerController::class, 'update'])->name('costumer-update');
-        Route::delete('/costumer-delete/{params}', [App\Http\Controllers\CostumerController::class, 'delete'])->name('costumer-delete');
-
         Route::get('/outlet', [App\Http\Controllers\OutletController::class, 'index'])->name('outlet');
         Route::get('/outlet-get', [App\Http\Controllers\OutletController::class, 'get'])->name('outlet-get');
         Route::post('/outlet-store', [App\Http\Controllers\OutletController::class, 'store'])->name('outlet-store');
@@ -294,6 +287,13 @@ Route::group([
 
     Route::get('/vw-lap-transaksi', [App\Http\Controllers\LapTransakasi::class, 'index_outlet'])->name('vw-lap-transaksi');
     Route::get('/get-lap-transaksi', [App\Http\Controllers\LapTransakasi::class, 'get'])->name('get-lap-transaksi');
+
+    Route::get('/costumer', [App\Http\Controllers\CostumerController::class, 'index'])->name('costumer');
+    Route::get('/costumer-get', [App\Http\Controllers\CostumerController::class, 'get'])->name('costumer-get');
+    Route::post('/costumer-store', [App\Http\Controllers\CostumerController::class, 'store'])->name('costumer-store');
+    Route::get('/costumer-edit/{params}', [App\Http\Controllers\CostumerController::class, 'edit'])->name('costumer-edit');
+    Route::post('/costumer-update/{params}', [App\Http\Controllers\CostumerController::class, 'update'])->name('costumer-update');
+    Route::delete('/costumer-delete/{params}', [App\Http\Controllers\CostumerController::class, 'delete'])->name('costumer-delete');
 });
 
 Route::group([
@@ -371,6 +371,8 @@ Route::group([
 
     Route::get('/get-paket', [App\Http\Controllers\PenjualanController::class, 'getPaket'])->name('get-paket');
     Route::get('/detail-paket/{params}', [App\Http\Controllers\PenjualanController::class, 'detailPaket'])->name('detail-paket');
+
+    Route::get('/get-costumer-byPlat', [App\Http\Controllers\CostumerController::class, 'getCostumerByPlat'])->name('get-costumer-byPlat');
 });
 
 Route::get('/logout', [App\Http\Controllers\Auth::class, 'logout'])->name('logout');
