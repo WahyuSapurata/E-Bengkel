@@ -799,56 +799,67 @@
                 $.get("/superadmin/get-penjualan-kasir-harian", {
                     uuid_user: uuidOutlet
                 }, function(res) {
-                    let tbody = $("#target-body");
+                    const tbody = $("#target-body");
                     tbody.empty();
 
+                    // Jika tidak ada data
                     if (!res.data || res.data.length === 0) {
-                        tbody.append(`<tr>
-                <td colspan="12" class="text-center">Tidak ada data</td>
-            </tr>`);
+                        tbody.append(`
+                <tr>
+                    <td colspan="12" class="text-center">Tidak ada data</td>
+                </tr>
+            `);
                         return;
                     }
 
+                    // Loop per tanggal
                     res.data.forEach(group => {
-                        let kasirList = group.kasir;
+                        const kasirList = group.kasir || [];
+
                         kasirList.forEach((item, index) => {
                             let row = "<tr>";
 
-                            // Tanggal rowspan
+                            // Kolom tanggal hanya di baris pertama
                             if (index === 0) {
                                 row +=
-                                    `<td rowspan="${kasirList.length}">${group.tanggal}</td>`;
+                                    `<td rowspan="${kasirList.length}">${group.tanggal || "-"}</td>`;
                             }
 
-                            // Data kasir
+                            // Data per kasir
                             row += `
-                    <td>${item.nama}</td>
-                    <td>${(item.modal ?? 0).toLocaleString()}</td>
-                    <td>${(item.penjualan ?? 0).toLocaleString()}</td>
-                    <td>${(item.jasa ?? 0).toLocaleString()}</td>
-                    <td>${(item.tunai ?? 0).toLocaleString()}</td>
-                    <td>${(item.non_tunai ?? 0).toLocaleString()}</td>
-                    <td>${(item.sub_total ?? 0).toLocaleString()}</td>
+                    <td>${item.nama || "-"}</td>
+                    <td>${Number(item.modal || 0).toLocaleString()}</td>
+                    <td>${Number(item.penjualan || 0).toLocaleString()}</td>
+                    <td>${Number(item.jasa || 0).toLocaleString()}</td>
+                    <td>${Number(item.tunai || 0).toLocaleString()}</td>
+                    <td>${Number(item.non_tunai || 0).toLocaleString()}</td>
+                    <td>${Number(item.sub_total || 0).toLocaleString()}</td>
                 `;
 
-                            // Target profit, persentase, selisih rowspan
+                            // Kolom total, target profit, persentase (hanya 1x di tanggal yang sama)
                             if (index === 0) {
                                 row += `
-                        <td rowspan="${kasirList.length}">${(item.total ?? 0).toLocaleString()}</td>
-                        <td rowspan="${kasirList.length}">${(item.target_profit ?? 0).toLocaleString()}</td>
-                        <td rowspan="${kasirList.length}">${(item.persentase ?? 0)}%</td>
-                    <td>${(item.profit ?? 0).toLocaleString()}</td>
+                        <td rowspan="${kasirList.length}">${Number(item.total || 0).toLocaleString()}</td>
+                        <td rowspan="${kasirList.length}">${Number(item.target_profit || 0).toLocaleString()}</td>
+                        <td rowspan="${kasirList.length}">${Number(item.persentase || 0)}%</td>
                     `;
                             }
+
+                            // Profit selalu di kolom paling akhir (setiap kasir punya profit sendiri)
+                            row += `
+                    <td>${Number(item.profit || 0).toLocaleString()}</td>
+                `;
 
                             row += "</tr>";
                             tbody.append(row);
                         });
                     });
                 }).fail(function() {
-                    $("#target-body").html(`<tr>
-            <td colspan="12" class="text-center text-danger">Gagal memuat data</td>
-        </tr>`);
+                    $("#target-body").html(`
+            <tr>
+                <td colspan="12" class="text-center text-danger">Gagal memuat data</td>
+            </tr>
+        `);
                 });
             }
 
@@ -858,58 +869,70 @@
                 $.get("/superadmin/get-penjualan-kasir-bulanan", {
                     uuid_user: uuidOutlet
                 }, function(res) {
-                    let tbody = $("#target-bulanan-body");
+                    const tbody = $("#target-bulanan-body");
                     tbody.empty();
 
+                    // Jika tidak ada data
                     if (!res.data || res.data.length === 0) {
-                        tbody.append(`<tr>
-                <td colspan="12" class="text-center">Tidak ada data</td>
-            </tr>`);
+                        tbody.append(`
+                <tr>
+                    <td colspan="12" class="text-center">Tidak ada data</td>
+                </tr>
+            `);
                         return;
                     }
 
+                    // Loop setiap grup per bulan
                     res.data.forEach(group => {
-                        let kasirList = group.kasir;
+                        const kasirList = group.kasir || [];
+
                         kasirList.forEach((item, index) => {
                             let row = "<tr>";
 
-                            // Tanggal rowspan
+                            // Kolom bulan hanya di baris pertama
                             if (index === 0) {
                                 row +=
-                                    `<td rowspan="${kasirList.length}">${group.bulan}</td>`;
+                                    `<td rowspan="${kasirList.length}">${group.bulan || "-"}</td>`;
                             }
 
-                            // Data kasir
+                            // Data utama per kasir
                             row += `
-                    <td>${item.nama}</td>
-                    <td>${(item.modal ?? 0).toLocaleString()}</td>
-                    <td>${(item.penjualan ?? 0).toLocaleString()}</td>
-                    <td>${(item.jasa ?? 0).toLocaleString()}</td>
-                    <td>${(item.tunai ?? 0).toLocaleString()}</td>
-                    <td>${(item.non_tunai ?? 0).toLocaleString()}</td>
-                    <td>${(item.sub_total ?? 0).toLocaleString()}</td>
+                    <td>${item.nama || "-"}</td>
+                    <td>${Number(item.modal || 0).toLocaleString()}</td>
+                    <td>${Number(item.penjualan || 0).toLocaleString()}</td>
+                    <td>${Number(item.jasa || 0).toLocaleString()}</td>
+                    <td>${Number(item.tunai || 0).toLocaleString()}</td>
+                    <td>${Number(item.non_tunai || 0).toLocaleString()}</td>
+                    <td>${Number(item.sub_total || 0).toLocaleString()}</td>
                 `;
 
-                            // Target profit, persentase, selisih rowspan
+                            // Kolom total, target, dan persentase hanya di baris pertama
                             if (index === 0) {
                                 row += `
-                                <td rowspan="${kasirList.length}">${(item.total ?? 0).toLocaleString()}</td>
-                        <td rowspan="${kasirList.length}">${(item.target_profit ?? 0).toLocaleString()}</td>
-                        <td rowspan="${kasirList.length}">${(item.persentase ?? 0)}%</td>
-                    <td>${(item.profit ?? 0).toLocaleString()}</td>
+                        <td rowspan="${kasirList.length}">${Number(item.total || 0).toLocaleString()}</td>
+                        <td rowspan="${kasirList.length}">${Number(item.target_profit || 0).toLocaleString()}</td>
+                        <td rowspan="${kasirList.length}">${Number(item.persentase || 0)}%</td>
                     `;
                             }
+
+                            // Profit di akhir setiap baris
+                            row += `
+                    <td>${Number(item.profit || 0).toLocaleString()}</td>
+                `;
 
                             row += "</tr>";
                             tbody.append(row);
                         });
                     });
                 }).fail(function() {
-                    $("#target-bulanan-body").html(`<tr>
-            <td colspan="12" class="text-center text-danger">Gagal memuat data</td>
-        </tr>`);
+                    $("#target-bulanan-body").html(`
+            <tr>
+                <td colspan="12" class="text-center text-danger">Gagal memuat data</td>
+            </tr>
+        `);
                 });
             }
+
 
             loadPenjualanTargetBulanan(); // Panggil fungsi untuk load penjualan harian
 
