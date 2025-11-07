@@ -503,7 +503,7 @@ class PenjualanController extends Controller
         // ambil penjualan untuk tanggal hari ini
         $penjualans = Penjualan::where('uuid_outlet', $kasir->uuid_outlet)
             ->where('created_by', Auth::user()->nama)
-            ->whereNotIn('tanggal_transaksi', $closingDates)
+            ->where('tanggal_transaksi', $today)
             ->orderBy('created_at', 'desc')
             ->get();
 

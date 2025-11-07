@@ -1414,6 +1414,15 @@ class Dashboard extends BaseController
             $group['kasir'] = array_values($group['kasir']);
         }
 
+        uksort($rekapBulan, function ($a, $b) {
+            [$bulanA, $tahunA] = explode('-', $a);
+            [$bulanB, $tahunB] = explode('-', $b);
+
+            if ($tahunA == $tahunB) {
+                return $bulanB <=> $bulanA;
+            }
+            return $tahunB <=> $tahunA;
+        });
 
         return response()->json([
             'status' => true,
