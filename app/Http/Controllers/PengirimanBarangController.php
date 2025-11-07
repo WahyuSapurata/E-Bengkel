@@ -471,15 +471,15 @@ class PengirimanBarangController extends Controller
         $totalFiltered = $totalFilteredQuery->distinct('pengiriman_barangs.uuid')->count('pengiriman_barangs.uuid');
 
         // Sorting
-        // if ($request->order) {
-        //     $orderColIndex = $request->order[0]['column'];
-        //     $orderDir = $request->order[0]['dir'];
+        if ($request->order) {
+            $orderColIndex = $request->order[0]['column'];
+            $orderDir = $request->order[0]['dir'];
 
-        //     $dbCol = array_keys($columns)[$orderColIndex];
-        //     $query->orderByRaw("$dbCol $orderDir");
-        // } else {
-        $query->orderBy('pengiriman_barangs.created_at', 'desc');
-        // }
+            $dbCol = array_keys($columns)[$orderColIndex];
+            $query->orderByRaw("$dbCol $orderDir");
+        } else {
+            $query->orderBy('pengiriman_barangs.tanggal_kirim', 'asc');
+        }
 
         // Pagination
         $query->skip($request->start)->take($request->length);
