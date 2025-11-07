@@ -592,6 +592,15 @@ class PengirimanBarangController extends Controller
                 // Ke Toko
                 if (!empty($alokasi['qty_toko']) && $alokasi['qty_toko'] > 0) {
                     WirehouseStock::create([
+                        'uuid_warehouse' => $warehouseGudang->uuid,
+                        'uuid_produk'    => $alokasi['uuid_produk'],
+                        'qty'            => -$alokasi['qty_gudang'],
+                        'jenis'          => 'keluar',
+                        'sumber'         => 'delivery order',
+                        'keterangan'     => 'Alokasi ke gudang dari DO ' . $po_outlet->no_do,
+                    ]);
+
+                    WirehouseStock::create([
                         'uuid_warehouse' => $warehouseToko->uuid,
                         'uuid_produk'    => $alokasi['uuid_produk'],
                         'qty'            => $alokasi['qty_toko'],
