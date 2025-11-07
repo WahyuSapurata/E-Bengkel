@@ -339,6 +339,7 @@ class Dashboard extends BaseController
         // === Total Penjualan Produk ===
         $produkTotals = DB::table('detail_penjualans')
             ->join('penjualans', 'detail_penjualans.uuid_penjualans', '=', 'penjualans.uuid')
+            ->where('penjualans.uuid_outlet', $user->uuid)
             ->whereRaw('MONTH(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$bulan])
             ->whereRaw('YEAR(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$tahun])
             ->selectRaw('SUM(detail_penjualans.total_harga) as total_penjualan')
@@ -347,6 +348,7 @@ class Dashboard extends BaseController
         // === Total Penjualan Paket ===
         $paketTotals = DB::table('detail_penjualan_pakets')
             ->join('penjualans', 'detail_penjualan_pakets.uuid_penjualans', '=', 'penjualans.uuid')
+            ->where('penjualans.uuid_outlet', $user->uuid)
             ->whereRaw('MONTH(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$bulan])
             ->whereRaw('YEAR(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$tahun])
             ->selectRaw('SUM(detail_penjualan_pakets.total_harga) as total_penjualan')
@@ -354,6 +356,7 @@ class Dashboard extends BaseController
 
         // === Total Jasa ===
         $jasaTotals = DB::table('penjualans')
+            ->where('penjualans.uuid_outlet', $user->uuid)
             ->whereRaw('MONTH(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$bulan])
             ->whereRaw('YEAR(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$tahun])
             ->join(DB::raw(
@@ -375,6 +378,7 @@ class Dashboard extends BaseController
         $hppProduk = DB::table('detail_penjualans')
             ->join('harga_backup_penjualans', 'detail_penjualans.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
             ->join('penjualans', 'detail_penjualans.uuid_penjualans', '=', 'penjualans.uuid')
+            ->where('penjualans.uuid_outlet', $user->uuid)
             ->whereRaw('MONTH(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$bulan])
             ->whereRaw('YEAR(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$tahun])
             ->selectRaw('SUM(harga_backup_penjualans.harga_modal * detail_penjualans.qty) as total_hpp')
@@ -384,6 +388,7 @@ class Dashboard extends BaseController
         $hppPaket = DB::table('detail_penjualan_pakets')
             ->join('harga_backup_penjualans', 'detail_penjualan_pakets.uuid', '=', 'harga_backup_penjualans.uuid_detail_penjualan')
             ->join('penjualans', 'detail_penjualan_pakets.uuid_penjualans', '=', 'penjualans.uuid')
+            ->where('penjualans.uuid_outlet', $user->uuid)
             ->whereRaw('MONTH(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$bulan])
             ->whereRaw('YEAR(STR_TO_DATE(penjualans.tanggal_transaksi, "%d-%m-%Y")) = ?', [$tahun])
             ->selectRaw('SUM(harga_backup_penjualans.harga_modal * detail_penjualan_pakets.qty) as total_hpp')

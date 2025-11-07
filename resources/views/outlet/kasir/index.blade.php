@@ -161,9 +161,6 @@
                                 <option value="{{ $cp->nama }}">{{ $cp->nama }}</option>
                             @endforeach
                         </select>
-                        <button onclick="testPrint()" type="button" class="btn btn-success">🖨️ Tes Print
-                            Struk</button>
-
 
                         <div class="mt-5">
                             <button type="button" class="btn btn-outline-primary w-100 mb-2">💾 Simpan Transaksi
@@ -1902,6 +1899,7 @@
 
             // // Fungsi koneksi QZ
             // async function connectQZ() {
+
             //     if (!qz.websocket.isActive()) {
             //         try {
             //             await qz.websocket.connect();
@@ -1919,9 +1917,7 @@
 
             async function cetakStruk(data) {
                 try {
-                    console.log("📤 Mengirim data ke server...");
-
-                    // 1️⃣ Kirim data ke server untuk mendapatkan data struk
+                    // 1️⃣ Kirim data ke server untuk mendapatkan raw struk
                     const res = await fetch("/kasir/print-struk", {
                         method: "POST",
                         headers: {
@@ -1933,57 +1929,59 @@
                         body: JSON.stringify(data),
                     });
 
-                    if (!res.ok) throw new Error("Server tidak merespons dengan benar");
-
                     const result = await res.json();
-                    console.log("📦 Response server:", result);
 
-                    if (result.status !== "success") {
-                        throw new Error(result.message || "Gagal memproses struk");
+                    if (!result.raw) {
+                        throw new Error("Server tidak mengembalikan data struk (result.raw kosong)");
                     }
 
-                    const rawData = atob(result.raw).trimEnd();
-                    console.log("📜 Panjang data raw:", rawData.length);
+                    const rawBase64 = result.raw.trim();
+                    const rawDecoded = atob(rawBase64);
 
-                    // 2️⃣ Pastikan QZ Tray terkoneksi
+                    const printer = "POS-80-2"; // ubah sesuai nama printer kamu
+                    const config = qz.configs.create(printer);
+
+                    // 🔌 Pastikan koneksi QZ Tray terbuka
                     if (!qz.websocket.isActive()) {
-                        console.log("🔌 Menghubungkan ke QZ Tray...");
                         await qz.websocket.connect();
                     }
 
-                    // 3️⃣ Tentukan printer default (atau bisa kamu ganti nama printernya)
-                    const printerName = "POS-80-2"; // ganti sesuai nama printermu
-                    const config = qz.configs.create(printerName);
-
-                    // 4️⃣ Kirim data ke printer
-                    await qz.print(config, [{
-                        type: "raw",
-                        format: "plain", // gunakan plain, bukan command
-                        data: rawData,
-                    }]);
-
-                    console.log("✅ Struk berhasil dicetak");
-                    Swal.fire({
-                        icon: "success",
-                        title: "Struk berhasil dicetak ✅",
-                        timer: 1500,
-                        showConfirmButton: false,
-                    });
-
-                    // 5️⃣ (Opsional) putuskan koneksi QZ setelah selesai
-                    await qz.websocket.disconnect();
-                } catch (err) {
-                    console.error("❌ Error print struk:", err);
-                    Swal.fire("Gagal mencetak!", err.message || "Terjadi kesalahan", "error");
-
-                    // Coba putuskan koneksi agar tidak ngegantung
-                    try {
-                        if (qz.websocket.isActive()) await qz.websocket.disconnect();
-                    } catch (e) {
-                        console.warn("Gagal disconnect:", e);
+                    // ✅ Pecah data panjang menjadi beberapa potongan (max 900 byte)
+                    const chunkSize = 900;
+                    const chunks = [];
+                    for (let i = 0; i < rawDecoded.length; i += chunkSize) {
+                        chunks.push(rawDecoded.substring(i, i + chunkSize));
                     }
+
+                    // Cetak semua chunk satu per satu
+                    for (const [i, chunk] of chunks.entries()) {
+                        await qz.print(config, [{
+                            type: "raw",
+                            format: "plain",
+                            data: chunk,
+                        }]);
+                    }
+
+                    // ✅ Tambahkan perintah cut manual di akhir (jaga-jaga)
+                    // const cutCmd = "\x1D\x56\x42\x00"; // ESC/POS partial cut
+                    // await qz.print(config, [{
+                    //     type: "raw",
+                    //     format: "plain",
+                    //     data: cutCmd,
+                    // }]);
+
+                } catch (err) {
+                    alert("Terjadi kesalahan saat mencetak: " + err.message);
+                } finally {
+                    // Jangan langsung disconnect biar print buffer selesai dulu
+                    setTimeout(() => {
+                        if (qz.websocket.isActive()) {
+                            qz.websocket.disconnect();
+                        }
+                    }, 1500);
                 }
             }
+
 
 
             // Fungsi untuk print struk

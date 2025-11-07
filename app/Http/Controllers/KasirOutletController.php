@@ -25,6 +25,7 @@ class KasirOutletController extends Controller
         $columns = [
             'kasir_outlets.uuid',
             'kasir_outlets.uuid_user',
+            'kasir_outlets.uuid_outlet',
             'kasir_outlets.alamat',
             'kasir_outlets.telepon',
             'users.nama',
@@ -32,9 +33,9 @@ class KasirOutletController extends Controller
             'users.password_hash',
         ];
 
-        $totalData = KasirOutlet::where('uuid_user', Auth::user()->uuid)->count();
+        $totalData = KasirOutlet::where('uuid_outlet', Auth::user()->uuid)->count();
 
-        $query = KasirOutlet::where('uuid_user', Auth::user()->uuid)->select($columns)
+        $query = KasirOutlet::where('uuid_outlet', Auth::user()->uuid)->select($columns)
             ->leftJoin('users', 'users.uuid', '=', 'kasir_outlets.uuid_user');
 
         // Searching

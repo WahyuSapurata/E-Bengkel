@@ -737,79 +737,75 @@ class PenjualanController extends Controller
     function printStruk($data)
     {
         $width = 48;
+        $ESC = "\x1B";
+        $GS  = "\x1D";
         $struk = "";
 
-        // HEADER
-        $struk .= $this->centerText($data['outlet_nama'], $width) . "\n";
-        $struk .= $this->centerText($data['outlet_alamat'], $width) . "\n";
-        $struk .= $this->centerText("Telp: " . $data['outlet_telp'], $width) . "\n";
+        // Reset printer
+        $struk .= $ESC . "@";
+        $struk .= $ESC . "a" . "\x01"; // Center
+        $struk .= strtoupper($data['outlet_nama']) . "\n";
+        $struk .= $data['outlet_alamat'] . "\n";
+        $struk .= "Telp: " . $data['outlet_telp'] . "\n";
         $struk .= str_repeat("=", $width) . "\n";
 
-        // INFO TRANSAKSI
-        $struk .= "No       : " . $data['no_bukti'] . "\n";
-        $struk .= "Tanggal  : " . $data['tanggal'] . "\n";
-        $struk .= "Kasir    : " . $data['kasir'] . "\n";
-        $struk .= "Bayar    : " . $data['pembayaran'] . "\n";
+        // Info transaksi
+        $struk .= $ESC . "a" . "\x00";
+        $struk .= "No      : {$data['no_bukti']}\n";
+        $struk .= "Tanggal : {$data['tanggal']}\n";
+        $struk .= "Kasir   : {$data['kasir']}\n";
+        $struk .= "Bayar   : {$data['pembayaran']}\n";
         $struk .= str_repeat("-", $width) . "\n";
 
-        // ITEMS
-        $struk .= str_pad("Barang", 20);
-        $struk .= str_pad("Qty", 5, " ", STR_PAD_LEFT);
-        $struk .= str_pad("Harga", 10, " ", STR_PAD_LEFT);
-        $struk .= str_pad("Sub", 13, " ", STR_PAD_LEFT) . "\n";
+        // Header tabel
+        $struk .= sprintf("%-30s %5s %12s\n", "Barang", "Qty", "Harga");
         $struk .= str_repeat("-", $width) . "\n";
 
+        // Isi barang
         foreach ($data['items'] as $item) {
-            $nama = $item['nama'];
+            $nama = trim($item['nama']);
             $qty = $item['qty'];
             $harga = number_format($item['harga'], 0, ',', '.');
             $subtotal = number_format($item['subtotal'], 0, ',', '.');
 
-            $struk .= str_pad(substr($nama, 0, 20), 20);
-            $struk .= str_pad($qty, 5, " ", STR_PAD_LEFT);
-            $struk .= str_pad($harga, 10, " ", STR_PAD_LEFT);
-            $struk .= str_pad($subtotal, 13, " ", STR_PAD_LEFT) . "\n";
+            // Bungkus nama barang biar tidak nabrak
+            $wrapped = wordwrap($nama, 30, "\n", true);
+            $lines = explode("\n", $wrapped);
 
-            if (strlen($nama) > 20) {
-                $sisa = wordwrap(substr($nama, 20), $width - 1, "\n", true);
-                foreach (explode("\n", $sisa) as $line) {
-                    $struk .= " " . $line . "\n";
-                }
+            // Cetak baris pertama dengan qty dan harga
+            $struk .= sprintf("%-30s %5s %12s\n", $lines[0], $qty, $subtotal);
+
+            // Kalau nama barang lebih dari 1 baris, cetak baris lanjutannya
+            for ($i = 1; $i < count($lines); $i++) {
+                $struk .= sprintf("%-30s\n", $lines[$i]);
             }
         }
 
-        // TOTAL JASA
+        // Total jasa
         if (!empty($data['totalJasa']) && $data['totalJasa'] > 0) {
-            $struk .= str_pad("Jasa", 20);
-            $struk .= str_pad("1", 5, " ", STR_PAD_LEFT);
-            $struk .= str_pad(number_format($data['totalJasa'], 0, ',', '.'), 10, " ", STR_PAD_LEFT);
-            $struk .= str_pad(number_format($data['totalJasa'], 0, ',', '.'), 13, " ", STR_PAD_LEFT) . "\n";
+            $totalJasa = number_format($data['totalJasa'], 0, ',', '.');
+            $struk .= str_repeat("-", $width) . "\n";
+            $struk .= sprintf("%-30s %5s %12s\n", "Jasa", 1, $totalJasa);
         }
 
-        // TOTAL
+        // Total & Grand total
         $struk .= str_repeat("-", $width) . "\n";
-        if (!empty($data['totalItem'])) {
-            $struk .= str_pad("Total Item", $width - 15, " ", STR_PAD_LEFT);
-            $struk .= str_pad(number_format($data['totalItem'], 0, ',', '.'), 15, " ", STR_PAD_LEFT) . "\n";
-        }
-        $struk .= str_repeat("-", $width) . "\n";
-        $struk .= str_pad("Grand Total", $width - 15, " ", STR_PAD_LEFT);
-        $struk .= str_pad(number_format($data['grandTotal'], 0, ',', '.'), 15, " ", STR_PAD_LEFT) . "\n";
+        $struk .= sprintf("%-30s %5s %12s\n", "Total Item", $data['totalItem'], "");
+        $struk .= sprintf("%-30s %5s %12s\n", "Grand Total", "", number_format($data['grandTotal'], 0, ',', '.'));
         $struk .= str_repeat("=", $width) . "\n";
 
-        // FOOTER
-        $struk .= $this->centerText("*** Terima Kasih ***", $width) . "\n";
-        $struk .= $this->centerText("Barang yang sudah dibeli", $width) . "\n";
-        $struk .= $this->centerText("tidak dapat ditukar/dikembalikan", $width) . "\n\n";
-
-        // Tambahkan beberapa line feed agar kertas keluar lebih panjang
-        $struk .= "\n\n\n\n";
-
-        // Command cut khusus Codeshop / XPrinter compatible
-        $struk .= "\x1D\x56\x41\x10"; // ESC/POS partial cut, aman di Codeshop
+        // Footer
+        $struk .= $ESC . "a" . "\x01"; // Center
+        $struk .= "*** Terima Kasih ***\n";
+        $struk .= "Barang yang sudah dibeli\n";
+        $struk .= "tidak dapat ditukar/dikembalikan\n";
+        $struk .= $ESC . "d" . "\x03"; // Feed
+        $struk .= $GS . "V" . "\x42" . "\x00"; // Cut
 
         return $struk;
     }
+
+
 
     public function getPaket()
     {
