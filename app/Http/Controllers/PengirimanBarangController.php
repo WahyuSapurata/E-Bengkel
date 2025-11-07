@@ -471,15 +471,15 @@ class PengirimanBarangController extends Controller
         $totalFiltered = $totalFilteredQuery->distinct('pengiriman_barangs.uuid')->count('pengiriman_barangs.uuid');
 
         // Sorting
-        if ($request->order) {
-            $orderColIndex = $request->order[0]['column'];
-            $orderDir = $request->order[0]['dir'];
+        // if ($request->order) {
+        //     $orderColIndex = $request->order[0]['column'];
+        //     $orderDir = $request->order[0]['dir'];
 
-            $dbCol = array_keys($columns)[$orderColIndex];
-            $query->orderByRaw("$dbCol $orderDir");
-        } else {
-            $query->orderBy('pengiriman_barangs.created_at', 'desc');
-        }
+        //     $dbCol = array_keys($columns)[$orderColIndex];
+        //     $query->orderByRaw("$dbCol $orderDir");
+        // } else {
+        $query->orderBy('pengiriman_barangs.created_at', 'desc');
+        // }
 
         // Pagination
         $query->skip($request->start)->take($request->length);
@@ -594,7 +594,7 @@ class PengirimanBarangController extends Controller
                     WirehouseStock::create([
                         'uuid_warehouse' => $warehouseGudang->uuid,
                         'uuid_produk'    => $alokasi['uuid_produk'],
-                        'qty'            => -$alokasi['qty_gudang'],
+                        'qty'            => -$alokasi['qty_toko'],
                         'jenis'          => 'keluar',
                         'sumber'         => 'delivery order',
                         'keterangan'     => 'Alokasi ke gudang dari DO ' . $po_outlet->no_do,
