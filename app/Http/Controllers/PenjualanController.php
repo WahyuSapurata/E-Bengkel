@@ -193,7 +193,7 @@ class PenjualanController extends Controller
                 // Generate nomor penjualan
                 $today = now()->format('dmy');
                 $prefix = "TRS-" . $today;
-                $lastPenjualan = Penjualan::whereDate('created_at', now()->toDateString())
+                $lastPenjualan = Penjualan::where('uuid_outlet', $kasir->uuid_outlet)->whereDate('created_at', now()->toDateString())
                     ->orderBy('created_at', 'desc')
                     ->first();
                 $nextNumber = $lastPenjualan
