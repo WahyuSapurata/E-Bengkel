@@ -51,10 +51,9 @@ class PoOutletController extends Controller
             'po_outlets.created_by' => 'created_by',
             'po_outlets.updated_by' => 'updated_by',
             'po_outlets.status' => 'status',
+            'po_outlets.created_at' => 'created_at', // ✅ Tambahkan kolom ini
             'COALESCE(SUM(detail_po_outlets.qty * produks.hrg_modal),0)' => 'total_harga',
             'COALESCE(SUM(detail_po_outlets.qty),0)' => 'total_qty',
-
-            // Array JSON berisi detail produk
             "JSON_ARRAYAGG(
             JSON_OBJECT(
                 'uuid_produk', detail_po_outlets.uuid_produk,
@@ -66,6 +65,7 @@ class PoOutletController extends Controller
 
         $totalData = PoOutlet::count();
 
+        // SELECT alias
         $selects = [];
         foreach ($columns as $dbCol => $alias) {
             $selects[] = "$dbCol as $alias";
@@ -81,7 +81,8 @@ class PoOutletController extends Controller
                 'po_outlets.keterangan',
                 'po_outlets.created_by',
                 'po_outlets.updated_by',
-                'po_outlets.status'
+                'po_outlets.status',
+                'po_outlets.created_at' // ✅ ikutkan di groupBy agar bisa di-order
             );
 
         // Searching
@@ -95,24 +96,27 @@ class PoOutletController extends Controller
             });
         }
 
-        $totalFiltered = $query->count();
+        // Clone untuk totalFiltered
+        $filteredQuery = clone $query;
+        $totalFiltered = $filteredQuery->get()->count();
 
         // Sorting
-        if ($request->order) {
-            $orderColIndex = $request->order[0]['column'];
-            $orderDir = $request->order[0]['dir'];
-            $dbCol = array_keys($columns)[$orderColIndex];
-            $query->orderByRaw("$dbCol $orderDir");
-        } else {
-            $query->orderBy('po_outlets.created_at', 'desc');
-        }
+        // if ($request->order) {
+        //     $orderColIndex = $request->order[0]['column'];
+        //     $orderDir = $request->order[0]['dir'];
+        //     $dbCol = array_keys($columns)[$orderColIndex];
+        //     $query->orderByRaw("$dbCol $orderDir");
+        // } else {
+        $query->orderBy('po_outlets.tanggal_transaksi', 'asc'); // ✅ urut dari input terakhir
+        // }
 
         // Pagination
-        $query->skip($request->start)->take($request->length);
+        $data = $query
+            ->skip($request->start)
+            ->take($request->length)
+            ->get();
 
-        $data = $query->get();
-
-        // Ubah kolom detail_produk (string JSON → array PHP)
+        // Decode JSON kolom detail_produk
         $data->transform(function ($row) {
             $row->detail_produk = json_decode($row->detail_produk, true) ?? [];
             return $row;
