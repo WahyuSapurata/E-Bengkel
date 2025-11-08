@@ -738,7 +738,7 @@ class PenjualanController extends Controller
 
     function printStruk($data)
     {
-        $width = 48;
+        $width = 46;
         $ESC = "\x1B";
         $GS  = "\x1D";
         $struk = "";
@@ -760,7 +760,7 @@ class PenjualanController extends Controller
         $struk .= str_repeat("-", $width) . "\n";
 
         // Header tabel
-        $struk .= sprintf("%-30s %5s %12s\n", "Barang", "Qty", "Harga");
+        $struk .= sprintf("%-27s %5s %12s\n", "Barang", "Qty", "Harga");
         $struk .= str_repeat("-", $width) . "\n";
 
         // Isi barang
@@ -771,15 +771,15 @@ class PenjualanController extends Controller
             $subtotal = number_format($item['subtotal'], 0, ',', '.');
 
             // Bungkus nama barang biar tidak nabrak
-            $wrapped = wordwrap($nama, 30, "\n", true);
+            $wrapped = wordwrap($nama, 27, "\n", true);
             $lines = explode("\n", $wrapped);
 
             // Cetak baris pertama dengan qty dan harga
-            $struk .= sprintf("%-30s %5s %12s\n", $lines[0], $qty, $subtotal);
+            $struk .= sprintf("%-27s %5s %12s\n", $lines[0], $qty, $subtotal);
 
             // Kalau nama barang lebih dari 1 baris, cetak baris lanjutannya
             for ($i = 1; $i < count($lines); $i++) {
-                $struk .= sprintf("%-30s\n", $lines[$i]);
+                $struk .= sprintf("%-27s\n", $lines[$i]);
             }
         }
 
@@ -787,13 +787,13 @@ class PenjualanController extends Controller
         if (!empty($data['totalJasa']) && $data['totalJasa'] > 0) {
             $totalJasa = number_format($data['totalJasa'], 0, ',', '.');
             $struk .= str_repeat("-", $width) . "\n";
-            $struk .= sprintf("%-30s %5s %12s\n", "Jasa", 1, $totalJasa);
+            $struk .= sprintf("%-27s %5s %12s\n", "Jasa", 1, $totalJasa);
         }
 
         // Total & Grand total
         $struk .= str_repeat("-", $width) . "\n";
-        $struk .= sprintf("%-30s %5s %12s\n", "Total Item", $data['totalItem'], "");
-        $struk .= sprintf("%-30s %5s %12s\n", "Grand Total", "", number_format($data['grandTotal'], 0, ',', '.'));
+        $struk .= sprintf("%-27s %5s %12s\n", "Total Item", $data['totalItem'], "");
+        $struk .= sprintf("%-27s %5s %12s\n", "Grand Total", "", number_format($data['grandTotal'], 0, ',', '.'));
         $struk .= str_repeat("=", $width) . "\n";
 
         // Footer

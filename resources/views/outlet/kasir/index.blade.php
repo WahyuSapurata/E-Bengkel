@@ -2200,8 +2200,6 @@
                 if (form) {
                     form.reset(); // ini akan reset semua input, select, checkbox, dll
                 }
-
-                window.location.reload(); // reload halaman untuk reset
             }
 
             // function kurangiStok(kode, qty = 1) {
