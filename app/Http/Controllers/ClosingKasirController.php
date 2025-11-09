@@ -34,7 +34,8 @@ class ClosingKasirController extends Controller
         );
 
         $kasir = KasirOutlet::where('uuid_user', Auth::user()->uuid)->firstOrFail();
-        $tanggal = Carbon::now()->format('d-m-Y');
+        // $tanggal = Carbon::now()->format('d-m-Y');
+        $tanggal = '08-11-2025';
 
         $closingDates = ClosingKasir::where('uuid_kasir_outlet', $kasir->uuid_user)
             ->pluck('tanggal_closing')
