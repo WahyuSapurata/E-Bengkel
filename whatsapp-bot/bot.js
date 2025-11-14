@@ -32,144 +32,131 @@ client.on('qr', qr => {
 });
 
 client.on('ready', () => {
-    console.log('✅ WhatsApp Bot siap tanpa scan ulang!');
+    console.log('✅ WhatsApp Bot ADS Motor siap tanpa scan ulang!');
 });
 
 client.on('message', async msg => {
-    const text = msg.body.toLowerCase();
+    const text = msg.body.trim().toLowerCase();
     const user = msg.from;
-    let reply = "";
 
     try {
-        // ✅ Greeting khusus "halo"
-        if (text.startsWith("halo")) {
-            reply =
-                "👋 Halo, selamat datang di *Boot MotoCore SYSTEM*!\n\n" +
-                "Ketik *mulai* untuk melihat layanan yang tersedia.";
+        // MENU UTAMA
+        if (["halo", "menu", "mulai", "hi", "hai"].includes(text)) {
+            const menuText =
+                `👋 *Selamat datang di ADS Motor!*
+
+Berikut layanan yang tersedia:
+1️⃣ Booking Service
+2️⃣ Cek Promo
+3️⃣ Beri Ulasan
+4️⃣ Hubungi Admin
+
+Ketik angka *1-4* untuk memilih menu.
+Contoh: *1* untuk Booking Service.`;
+
+            await msg.reply(menuText);
+            return;
         }
 
-        // ✅ Outlet
-        else if (text === "mulai") {
-            const response = await axios.get('https://adsmotor.id/api/bot/outlet');
+        // === Pilihan Menu ===
+        if (text === "1" || text.includes("booking")) {
+            await msg.reply(
+                `📅 *Booking Service*
 
-            if (response.data && response.data.length > 0) {
-                const outlets = response.data;
-                reply = "🏢 *Daftar Outlet:*\n";
-                outlets.forEach((outlet, index) => {
-                    reply += `${index + 1}. ${outlet.nama_outlet}\n`; // Bisa ditambah alamat juga
-                });
-                reply += "\n👉 Balas dengan nomor outlet untuk memilih.";
-                await msg.reply(reply);
+Silakan kirim data Anda dengan format berikut:
+*Nama - Plat Nomor - Tanggal Service (DD/MM/YYYY)*
 
-                // Simpan list outlet sementara untuk user
-                userOutletMap.set(user, { outlets, selected: null });
-                return; // Tunggu user pilih outlet
-            } else {
-                reply = "❌ Outlet tidak ditemukan.";
-            }
+Contoh:
+Budi - DD1234AB - 15/11/2025`
+            );
+            return;
         }
 
-        // ✅ Pilih outlet
-        else if (userOutletMap.has(user) && !userOutletMap.get(user).selected) {
-            const userData = userOutletMap.get(user);
-            const choice = parseInt(text);
+        if (text === "2" || text.includes("promo")) {
+            await msg.reply(
+                `🎉 *Promo Spesial Bulan Ini dari ADS Motor!*
 
-            if (!isNaN(choice) && choice > 0 && choice <= userData.outlets.length) {
-                const selectedOutlet = userData.outlets[choice - 1];
-                userData.selected = selectedOutlet; // simpan outlet terpilih
-                userOutletMap.set(user, userData);
+- 💧 Ganti oli gratis cuci motor
+- 🔧 Diskon 15% servis lengkap
+- 🛞 Gratis pengecekan rem & tekanan ban
 
-                reply = `✅ Outlet dipilih: *${selectedOutlet.nama_outlet}*\n\n` +
-                    "📌 Pilihan Layanan:\n" +
-                    "1️⃣ Cek Produk & Stok\n" +
-                    "2️⃣ Info Harga Servis\n" +
-                    "3️⃣ Jam & Alamat Bengkel\n" +
-                    "4️⃣ Promo Bengkel\n\n" +
-                    "👉 Balas dengan angka (1-4).";
-
-            } else {
-                reply = "❌ Pilihan tidak valid. Silakan pilih nomor outlet yang tersedia.";
-            }
+Ketik *menu* untuk kembali ke menu utama.`
+            );
+            return;
         }
 
-        // ✅ Pilihan angka menu
-        else if (text === "1") {
-            reply = "🔎 Silakan ketik nama produk dengan awalan *ada, stok, harga*, contoh: *ada oli ...*, *stok ban ...* atau *harga kampas ...*.";
-        } else if (text === "2") {
-            reply = "💰 Harga servis:\n- Ganti oli: Rp 50.000\n- Servis ringan: Rp 150.000\n- Servis besar: Rp 300.000";
-        } else if (text === "3") {
-            reply = "⏰ Jam operasional:\nSenin–Sabtu 08:00–17:00\nMinggu libur.\n\n📍 Alamat:\nJl. Sudirman No.123, Jakarta\nGoogle Maps: https://goo.gl/maps/xxxx";
-        } else if (text === "4") {
-            reply = "🔥 Promo bulan ini: *Ganti oli → Gratis cek rem*.";
+        if (text === "3" || text.includes("ulasan") || text.includes("review")) {
+            await msg.reply(
+                `⭐ Kami ingin tahu pengalaman Anda!
+Beri rating untuk layanan kami:
+
+Ketik angka:
+5️⃣ Sangat Puas
+4️⃣ Puas
+3️⃣ Cukup
+2️⃣ Kurang
+1️⃣ Buruk`
+            );
+            return;
         }
 
-        // ✅ Cari produk (via Laravel API) dengan uuid outlet
-        // ✅ Cari produk (via Laravel API) dengan uuid_user
-        else if ((text.includes("harga") || text.includes("stok") || text.includes("ada")) && userOutletMap.has(user)) {
-            const userData = userOutletMap.get(user);
-            if (!userData.selected) {
-                reply = "❌ Silakan pilih outlet terlebih dahulu dengan ketik *mulai*.";
-            } else {
-                const stopWords = ["ada", "stok", "harga", "apa", "tersedia"];
-                let queryWords = text.split(' ').filter(w => !stopWords.includes(w));
-                const query = queryWords.join(' ');
-
-                // Kirim request ke backend dengan uuid_user
-                const response = await axios.get(`https://adsmotor.id/api/bot/produk`, {
-                    params: {
-                        q: query,
-                        uuid_user: userData.selected.uuid_user // <-- ini dari outlet yang dipilih
-                    }
-                });
-
-                if (response.data && response.data.length > 0) {
-                    const formatRupiah = (number) => {
-                        return new Intl.NumberFormat('id-ID', {
-                            style: 'currency',
-                            currency: 'IDR',
-                            minimumFractionDigits: 0
-                        }).format(number);
-                    };
-
-                    // Loop semua produk dan gabungkan ke reply
-                    const replyProduk = response.data.map(p => {
-                        return `📦 *${p.nama}* (${p.merek})\n💰 Harga: ${formatRupiah(p.harga)}\n📊 Stok: ${p.stok}`;
-                    }).join('\n\n');
-
-                    // kirim pesan pertama (daftar produk)
-                    await msg.reply(replyProduk);
-
-                    // setelah 5 detik kirim menu lagi
-                    setTimeout(() => {
-                        msg.reply(
-                            `✅ Outlet dipilih: *${userData.selected.nama_outlet}*\n\n` +
-                            "📌 Pilihan Layanan:\n" +
-                            "1️⃣ Cek Produk & Stok\n" +
-                            "2️⃣ Info Harga Servis\n" +
-                            "3️⃣ Jam & Alamat Bengkel\n" +
-                            "4️⃣ Promo Bengkel\n\n" +
-                            "👉 Balas dengan angka (1-4)."
-                        );
-                    }, 5000);
-
-                } else {
-                    await msg.reply("❌ Produk tidak ditemukan di outlet ini.");
-                }
-            }
+        if (["1", "2", "3", "4", "5"].includes(text)) {
+            const ratingText = {
+                "5": "⭐️⭐️⭐️⭐️⭐️ Sangat Puas",
+                "4": "⭐️⭐️⭐️⭐️ Puas",
+                "3": "⭐️⭐️⭐️ Cukup",
+                "2": "⭐️⭐️ Kurang",
+                "1": "⭐️ Sangat Buruk"
+            };
+            await msg.reply(
+                `🙏 Terima kasih atas ulasan Anda: *${ratingText[text]}*.
+                Silakan tulis komentar tambahan (opsional),
+                atau ketik *menu* untuk kembali.`
+            );
+            return;
         }
 
-        // ✅ Default
-        else {
-            reply = "❓ Maaf, saya belum mengerti.\nKetik *mulai* untuk bantuan.";
+        if (text === "4" || text.includes("admin")) {
+            await msg.reply(
+                `📞 *Hubungi Admin ADS Motor*
+
+Anda dapat menghubungi kami di:
+📱 *0812-3456-7890* (Chat / Telepon)
+
+Atau ketik *menu* untuk kembali ke menu utama.`
+            );
+            return;
         }
 
-        if (reply) await msg.reply(reply);
+        // Format booking (nama - plat - tanggal)
+        if (text.includes("-") && text.split("-").length >= 3) {
+            await msg.reply(
+                `✅ Terima kasih! Data booking Anda sudah kami terima.
+Tim *ADS Motor* akan segera menghubungi Anda untuk konfirmasi jadwal service.
+
+🧾 Data Anda:
+${msg.body}
+
+Ketik *menu* untuk kembali ke menu utama.`
+            );
+            return;
+        }
+
+        // Komentar tambahan setelah review
+        if (text.length > 5 && !["menu", "halo"].includes(text)) {
+            await msg.reply(
+                `📩 Terima kasih atas feedback Anda!
+Kami akan terus meningkatkan pelayanan di *ADS Motor* 🚗💨
+
+Ketik *menu* untuk kembali.`
+            );
+            return;
+        }
 
     } catch (error) {
         const msgError = error.response ? JSON.stringify(error.response.data) : error.message;
         await msg.reply("⚠️ Terjadi kesalahan:\n" + msgError);
     }
-
 });
 
 client.initialize();
