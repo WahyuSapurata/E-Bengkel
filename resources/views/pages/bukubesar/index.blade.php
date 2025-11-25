@@ -176,10 +176,10 @@
                     }, {
                         data: 'saldo',
                         class: 'mb-kolom-tanggal text-left align-content-center',
-                        render: function(data, type, row) {
-                            // Format harga ke Rupiah
-                            return formatRupiah(data.toString());
-                        }
+                        // render: function(data, type, row) {
+                        //     // Format harga ke Rupiah
+                        //     return formatRupiah(data.toString());
+                        // }
                     }
                 ],
             });

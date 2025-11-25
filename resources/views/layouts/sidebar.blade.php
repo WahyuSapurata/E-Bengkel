@@ -157,7 +157,7 @@
                             </li>
                             @endcanView
 
-                            @canView('Gaji Karyawan')
+                            {{-- @canView('Gaji Karyawan')
                             <li class="nxl-item {{ isset($path[2]) && $path[2] === 'gaji' ? 'active' : '' }}">
                                 <a class="nxl-link" href="{{ route('superadmin.gaji') }}">Gaji Karyawan</a>
                             </li>
@@ -167,7 +167,17 @@
                             <li class="nxl-item {{ isset($path[2]) && $path[2] === 'biaya' ? 'active' : '' }}">
                                 <a class="nxl-link" href="{{ route('superadmin.biaya') }}">Biaya Lain-lain</a>
                             </li>
-                            @endcanView
+                            @endcanView --}}
+
+                            <li class="nxl-item {{ isset($path[2]) && $path[2] === 'pengeluaran' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.pengeluaran') }}">Pengeluaran</a>
+                            </li>
+
+                            <li
+                                class="nxl-item {{ isset($path[2]) && $path[2] === 'pemindahan-dana' ? 'active' : '' }}">
+                                <a class="nxl-link" href="{{ route('superadmin.pemindahan-dana') }}">Pemindahan
+                                    Dana</a>
+                            </li>
 
                             @canView('Jurnal Umum')
                             <li

@@ -176,8 +176,10 @@ class ReportController extends Controller
         // Tambah saldo berjalan
         $saldo = 0;
         $result = [];
+
         foreach ($data as $row) {
-            $saldo += ($row->debit - $row->kredit);
+            $saldo = $saldo + ($row->debit - $row->kredit); // saldo bisa minus
+
             $result[] = [
                 'tanggal'   => $row->tanggal,
                 'ref'       => $row->ref,
@@ -185,7 +187,7 @@ class ReportController extends Controller
                 'nama_akun' => $row->nama_akun,
                 'debit'     => $row->debit,
                 'kredit'    => $row->kredit,
-                'saldo'     => $saldo,
+                'saldo'     => $saldo < 0 ? "(-Rp " . number_format(abs($saldo), 0, ',', '.') . ")" : "Rp " . number_format($saldo, 0, ',', '.'),
             ];
         }
 

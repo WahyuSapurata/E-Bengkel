@@ -200,6 +200,20 @@ Route::group([
         Route::post('/biaya-update/{params}', [App\Http\Controllers\BiayaController::class, 'update'])->name('biaya-update');
         Route::delete('/biaya-delete/{params}', [App\Http\Controllers\BiayaController::class, 'delete'])->name('biaya-delete');
 
+        Route::get('/pengeluaran', [App\Http\Controllers\PengeluaranController::class, 'index'])->name('pengeluaran');
+        Route::get('/pengeluaran-get', [App\Http\Controllers\PengeluaranController::class, 'get'])->name('pengeluaran-get');
+        Route::post('/pengeluaran-store', [App\Http\Controllers\PengeluaranController::class, 'store'])->name('pengeluaran-store');
+        Route::get('/pengeluaran-edit/{params}', [App\Http\Controllers\PengeluaranController::class, 'edit'])->name('pengeluaran-edit');
+        Route::post('/pengeluaran-update/{params}', [App\Http\Controllers\PengeluaranController::class, 'update'])->name('pengeluaran-update');
+        Route::delete('/pengeluaran-delete/{params}', [App\Http\Controllers\PengeluaranController::class, 'delete'])->name('pengeluaran-delete');
+
+        Route::get('/pemindahan-dana', [App\Http\Controllers\PemindahanDanaController::class, 'index'])->name('pemindahan-dana');
+        Route::get('/pemindahan-dana-get', [App\Http\Controllers\PemindahanDanaController::class, 'get'])->name('pemindahan-dana-get');
+        Route::post('/pemindahan-dana-store', [App\Http\Controllers\PemindahanDanaController::class, 'store'])->name('pemindahan-dana-store');
+        Route::get('/pemindahan-dana-edit/{params}', [App\Http\Controllers\PemindahanDanaController::class, 'edit'])->name('pemindahan-dana-edit');
+        Route::post('/pemindahan-dana-update/{params}', [App\Http\Controllers\PemindahanDanaController::class, 'update'])->name('pemindahan-dana-update');
+        Route::delete('/pemindahan-dana-delete/{params}', [App\Http\Controllers\PemindahanDanaController::class, 'delete'])->name('pemindahan-dana-delete');
+
         Route::get('/vw-jurnal-umum', [App\Http\Controllers\ReportController::class, 'vw_jurnal_umum'])->name('vw-jurnal-umum');
         Route::get('/get-jurnal-umum', [App\Http\Controllers\ReportController::class, 'get_jurnal_umum'])->name('get-jurnal-umum');
 
