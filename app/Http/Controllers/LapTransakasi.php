@@ -155,13 +155,14 @@ class LapTransakasi extends Controller
         // ===== Header =====
         $headers = [
             'A1' => 'Tanggal',
-            'B1' => 'Nama Barang',
-            'C1' => 'Merek',
-            'D1' => 'Kategori',
-            'E1' => 'Sub Kategori',
-            'F1' => 'Suplier',
-            'G1' => 'Qty',
-            'H1' => 'Total Harga',
+            'B1' => 'No Bukti',
+            'C1' => 'Nama Barang',
+            'D1' => 'Merek',
+            'E1' => 'Kategori',
+            'F1' => 'Sub Kategori',
+            'G1' => 'Suplier',
+            'H1' => 'Qty',
+            'I1' => 'Total Harga',
         ];
         foreach ($headers as $col => $text) {
             $sheet->setCellValue($col, $text);
@@ -185,6 +186,7 @@ class LapTransakasi extends Controller
             ->leftJoin('kategoris as k', 'pr.uuid_kategori', '=', 'k.uuid')
             ->select(
                 'p.tanggal_transaksi',
+                'p.no_bukti',
                 'pr.nama_barang',
                 'pr.merek',
                 'k.nama_kategori',
@@ -213,6 +215,7 @@ class LapTransakasi extends Controller
             ->join('paket_hemats as ph', 'dpp.uuid_paket', '=', 'ph.uuid')
             ->select(
                 'p.tanggal_transaksi',
+                'p.no_bukti',
                 'ph.nama_paket as nama_barang',
                 DB::raw('"" as merek'),
                 DB::raw('"" as nama_kategori'),
@@ -236,19 +239,25 @@ class LapTransakasi extends Controller
         // Gabungkan
         $allDetails = $produkDetails->unionAll($paketDetails)->get();
 
+        // ==== SORT BY TANGGAL ====
+        $allDetails = $allDetails->sortBy(function ($item) {
+            return \Carbon\Carbon::createFromFormat('d-m-Y', $item->tanggal_transaksi);
+        })->values();
+
         // ===== Isi Excel =====
         $row = 2;
         foreach ($allDetails as $d) {
             $sheet->setCellValue('A' . $row, Carbon::createFromFormat('d-m-Y', $d->tanggal_transaksi)->format('d-m-Y'));
-            $sheet->setCellValue('B' . $row, $d->nama_barang);
-            $sheet->setCellValue('C' . $row, $d->merek);
-            $sheet->setCellValue('D' . $row, $d->nama_kategori);
-            $sheet->setCellValue('E' . $row, $d->sub_kategori);
-            $sheet->setCellValue('F' . $row, $d->nama_suplier);
-            $sheet->setCellValue('G' . $row, $d->qty);
-            $sheet->setCellValue('H' . $row, $d->total_harga);
+            $sheet->setCellValue('B' . $row, $d->no_bukti);
+            $sheet->setCellValue('C' . $row, $d->nama_barang);
+            $sheet->setCellValue('D' . $row, $d->merek);
+            $sheet->setCellValue('E' . $row, $d->nama_kategori);
+            $sheet->setCellValue('F' . $row, $d->sub_kategori);
+            $sheet->setCellValue('G' . $row, $d->nama_suplier);
+            $sheet->setCellValue('H' . $row, $d->qty);
+            $sheet->setCellValue('I' . $row, $d->total_harga);
 
-            $sheet->getStyle('H' . $row)
+            $sheet->getStyle('I' . $row)
                 ->getNumberFormat()
                 ->setFormatCode('"Rp" #,##0');
 
@@ -261,13 +270,64 @@ class LapTransakasi extends Controller
         }
 
         // Total
-        $sheet->mergeCells('A' . $row . ':G' . $row);
+        $sheet->mergeCells('A' . $row . ':H' . $row);
         $sheet->setCellValue('A' . $row, 'TOTAL');
-        $sheet->setCellValue('H' . $row, '=SUM(H2:H' . ($row - 1) . ')');
+        $sheet->setCellValue('I' . $row, '=SUM(I2:I' . ($row - 1) . ')');
 
-        $sheet->getStyle('A' . $row . ':H' . $row)
+        $sheet->getStyle('A' . $row . ':I' . $row)
             ->getNumberFormat()
             ->setFormatCode('"Rp" #,##0');
+
+        // Style Header
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF']
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical'   => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'color' => ['rgb' => '4F81BD'] // biru
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000']
+                ]
+            ]
+        ];
+
+        $sheet->getStyle('A1:I1')->applyFromArray($headerStyle);
+
+        // Style Footer Total
+        $footerStyle = [
+            'font' => ['bold' => true],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'color' => ['rgb' => 'D9D9D9'] // abu
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN
+                ]
+            ]
+        ];
+
+        $sheet->getStyle("A{$row}:I{$row}")->applyFromArray($footerStyle);
+
+        $dataLastRow = $row - 1;
+
+        $sheet->getStyle("A2:I{$dataLastRow}")
+            ->applyFromArray([
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN
+                    ]
+                ]
+            ]);
 
         // Download
         $fileName = 'penjualan-export.xlsx';
