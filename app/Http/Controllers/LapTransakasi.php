@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Outlet;
 use App\Models\Penjualan;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -26,6 +27,9 @@ class LapTransakasi extends Controller
 
     public function get(Request $request)
     {
+        $start = $request->tanggal_awal;
+        $end   = $request->tanggal_akhir;
+
         $columns = [
             'penjualans.no_bukti',
             'penjualans.tanggal_transaksi',
@@ -85,6 +89,17 @@ class LapTransakasi extends Controller
             $query->where('penjualans.uuid_outlet', $request->uuid_user);
         }
 
+        if ($request->filled('tanggal_awal') && $request->filled('tanggal_akhir')) {
+
+            $start = Carbon::createFromFormat('d-m-Y', $request->tanggal_awal)->format('Y-m-d');
+            $end   = Carbon::createFromFormat('d-m-Y', $request->tanggal_akhir)->format('Y-m-d');
+
+            $query->whereBetween(
+                DB::raw("STR_TO_DATE(penjualans.tanggal_transaksi, '%d-%m-%Y')"),
+                [$start, $end]
+            );
+        }
+
         // searching
         if (!empty($request->search['value'])) {
             $search = $request->search['value'];
@@ -96,9 +111,20 @@ class LapTransakasi extends Controller
         }
 
         // total filtered (tanpa groupBy)
+        // total filtered (tanpa groupBy)
         $totalFiltered = Penjualan::when($request->filled('uuid_user'), function ($q) use ($request) {
             $q->where('uuid_outlet', $request->uuid_user);
         })
+            ->when($request->filled('tanggal_awal') && $request->filled('tanggal_akhir'), function ($q) use ($request) {
+
+                $start = Carbon::createFromFormat('d-m-Y', $request->tanggal_awal)->format('Y-m-d');
+                $end   = Carbon::createFromFormat('d-m-Y', $request->tanggal_akhir)->format('Y-m-d');
+
+                $q->whereBetween(
+                    DB::raw("STR_TO_DATE(tanggal_transaksi, '%d-%m-%Y')"),
+                    [$start, $end]
+                );
+            })
             ->when(!empty($request->search['value']), function ($q) use ($request, $columns) {
                 $search = $request->search['value'];
                 $q->where(function ($q2) use ($search, $columns) {
@@ -108,6 +134,7 @@ class LapTransakasi extends Controller
                 });
             })
             ->count();
+
 
         // pagination
         $data = $query->skip($request->start)->take($request->length)->get();
@@ -120,7 +147,7 @@ class LapTransakasi extends Controller
         ]);
     }
 
-    public function export_excel($params = null)
+    public function export_excel(Request $request, $params = null)
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -140,6 +167,16 @@ class LapTransakasi extends Controller
             $sheet->setCellValue($col, $text);
         }
 
+        // ==== Ambil tanggal ====
+        $start = $request->tanggal_awal;
+        $end   = $request->tanggal_akhir;
+
+        if ($start && $end) {
+            // dari DD-MM-YYYY -> Y-m-d
+            $start = Carbon::createFromFormat('d-m-Y', $start)->format('Y-m-d');
+            $end   = Carbon::createFromFormat('d-m-Y', $end)->format('Y-m-d');
+        }
+
         // ===== Detail produk =====
         $produkDetails = DB::table('detail_penjualans as dp')
             ->join('penjualans as p', 'dp.uuid_penjualans', '=', 'p.uuid')
@@ -157,8 +194,17 @@ class LapTransakasi extends Controller
                 'dp.total_harga'
             );
 
+        // Filter berdasarkan outlet
         if ($params) {
             $produkDetails->where('p.uuid_outlet', $params);
+        }
+
+        // Filter tanggal
+        if ($start && $end) {
+            $produkDetails->whereBetween(
+                DB::raw("STR_TO_DATE(p.tanggal_transaksi, '%d-%m-%Y')"),
+                [$start, $end]
+            );
         }
 
         // ===== Detail paket hemat =====
@@ -180,13 +226,20 @@ class LapTransakasi extends Controller
             $paketDetails->where('p.uuid_outlet', $params);
         }
 
-        // Gabungkan produk + paket hemat
+        if ($start && $end) {
+            $paketDetails->whereBetween(
+                DB::raw("STR_TO_DATE(p.tanggal_transaksi, '%d-%m-%Y')"),
+                [$start, $end]
+            );
+        }
+
+        // Gabungkan
         $allDetails = $produkDetails->unionAll($paketDetails)->get();
 
-        // ===== Isi data ke Excel =====
+        // ===== Isi Excel =====
         $row = 2;
         foreach ($allDetails as $d) {
-            $sheet->setCellValue('A' . $row, \Carbon\Carbon::parse($d->tanggal_transaksi)->format('d-m-Y'));
+            $sheet->setCellValue('A' . $row, Carbon::createFromFormat('d-m-Y', $d->tanggal_transaksi)->format('d-m-Y'));
             $sheet->setCellValue('B' . $row, $d->nama_barang);
             $sheet->setCellValue('C' . $row, $d->merek);
             $sheet->setCellValue('D' . $row, $d->nama_kategori);
@@ -195,64 +248,28 @@ class LapTransakasi extends Controller
             $sheet->setCellValue('G' . $row, $d->qty);
             $sheet->setCellValue('H' . $row, $d->total_harga);
 
-            // Format rupiah (Rp #.##0,00)
             $sheet->getStyle('H' . $row)
                 ->getNumberFormat()
                 ->setFormatCode('"Rp" #,##0');
+
             $row++;
         }
 
-        // Auto width kolom
+        // Auto width
         foreach (range('A', 'H') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        // ==== Styling Header ====
-        $headerStyle = [
-            'font' => ['bold' => true],
-            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
-            'borders' => [
-                'allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN],
-            ],
-            'fill' => [
-                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                'color' => ['rgb' => 'D9E1F2'], // biru muda
-            ],
-        ];
-        $sheet->getStyle('A1:H1')->applyFromArray($headerStyle);
-
-        // ==== Border untuk semua data (A1:H terakhir) ====
-        $sheet->getStyle('A1:H' . ($row - 1))->applyFromArray([
-            'borders' => [
-                'allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN],
-            ],
-        ]);
-
-        // ==== Total di paling bawah ====
-        $sheet->mergeCells('A' . $row . ':G' . $row); // merge kolom A-G
+        // Total
+        $sheet->mergeCells('A' . $row . ':G' . $row);
         $sheet->setCellValue('A' . $row, 'TOTAL');
         $sheet->setCellValue('H' . $row, '=SUM(H2:H' . ($row - 1) . ')');
 
-        // Styling total
-        $totalStyle = [
-            'font' => ['bold' => true],
-            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
-            'borders' => [
-                'allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN],
-            ],
-            'fill' => [
-                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                'color' => ['rgb' => 'FCE4D6'], // oranye muda
-            ],
-        ];
-        $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray($totalStyle);
-
-        // Format H (total) jadi Rupiah
-        $sheet->getStyle('H' . $row)
+        $sheet->getStyle('A' . $row . ':H' . $row)
             ->getNumberFormat()
             ->setFormatCode('"Rp" #,##0');
 
-        // ===== Download =====
+        // Download
         $fileName = 'penjualan-export.xlsx';
         $writer = new Xlsx($spreadsheet);
 

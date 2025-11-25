@@ -60,8 +60,13 @@
                             </div>
                         </div>
                         <div class="card-body custom-card-action p-0">
-                            <button class="btn btn-success m-3" id="export-excel"><i
-                                    class="fa-solid fa-file-excel me-2"></i> Export</button>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button class="btn btn-success m-3" id="export-excel"><i
+                                        class="fa-solid fa-file-excel me-2"></i> Export</button>
+                                <div>
+                                    <input type="text" class="form-control" id="reportrange">
+                                </div>
+                            </div>
                             <div class="table-responsive">
                                 <table style="width: 100%" id="dataTables" class="table table-hover mb-0">
                                     <thead>
@@ -107,7 +112,14 @@
                 ajax: {
                     url: "{{ route('superadmin.get-lap-transaksi') }}",
                     data: function(d) {
+                        let tanggal = $('#reportrange').val().split(' - ');
+
                         d.uuid_user = $('#filter-outlet').val();
+
+                        if (tanggal.length === 2) {
+                            d.tanggal_awal = moment(tanggal[0], 'MM/DD/YYYY').format('DD-MM-YYYY');
+                            d.tanggal_akhir = moment(tanggal[1], 'MM/DD/YYYY').format('DD-MM-YYYY');
+                        }
                     },
                 },
                 columns: [{
@@ -171,12 +183,37 @@
                 $('#dataTables').DataTable().ajax.reload();
             });
 
+            // Refresh datatable tiap kali tanggal berubah
+            $('#reportrange').on('apply.daterangepicker', function(ev, picker) {
+                $('#dataTables').DataTable().ajax.reload();
+            });
+
             // Event tombol export (ambil nilai filter saat diklik)
             $('#export-excel').on('click', function(e) {
                 e.preventDefault();
 
+                let tanggal = $('#reportrange').val().split(' - ');
+
+                let tanggal_awal = '';
+                let tanggal_akhir = '';
+
+                if (tanggal.length === 2) {
+                    // dari MM/DD/YYYY -> DD-MM-YYYY
+                    tanggal_awal = moment(tanggal[0], 'MM/DD/YYYY').format('DD-MM-YYYY');
+                    tanggal_akhir = moment(tanggal[1], 'MM/DD/YYYY').format('DD-MM-YYYY');
+                }
+
                 let outlet = $('#filter-outlet').val() ? $('#filter-outlet').val() : '';
-                let url = '/superadmin/accounting/export-excel' + (outlet ? '/' + outlet : '');
+
+                // Kirim ke controller
+                let url = `/superadmin/accounting/export-excel` +
+                    `?tanggal_awal=${tanggal_awal}` +
+                    `&tanggal_akhir=${tanggal_akhir}`;
+
+                if (outlet) {
+                    url += `&uuid_outlet=${outlet}`;
+                }
+
                 window.open(url, '_blank');
             });
 
