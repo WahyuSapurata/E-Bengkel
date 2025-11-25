@@ -29,7 +29,7 @@ class KirimEmailHarian extends Command
     public function handle()
     {
         $tanggalHariIni = Carbon::now()->format('d-m-Y');
-        // $tanggalHariIni = '22-11-2025';
+        $tanggalHariIni = '24-11-2025';
 
         // Ambil semua outlet
         $outlets = Outlet::all();
