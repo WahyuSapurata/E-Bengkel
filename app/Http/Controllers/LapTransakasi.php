@@ -196,9 +196,9 @@ class LapTransakasi extends Controller
                 'dp.total_harga'
             );
 
-        // Filter berdasarkan outlet
-        if ($params) {
-            $produkDetails->where('p.uuid_outlet', $params);
+        // filter outlet
+        if ($request->uuid_outlet) {
+            $produkDetails->where('p.uuid_outlet', $request->uuid_outlet);
         }
 
         // Filter tanggal
@@ -225,8 +225,8 @@ class LapTransakasi extends Controller
                 'dpp.total_harga'
             );
 
-        if ($params) {
-            $paketDetails->where('p.uuid_outlet', $params);
+        if ($request->uuid_outlet) {
+            $produkDetails->where('p.uuid_outlet', $request->uuid_outlet);
         }
 
         if ($start && $end) {
@@ -240,7 +240,7 @@ class LapTransakasi extends Controller
         $allDetails = $produkDetails->unionAll($paketDetails)->get();
 
         // ==== SORT BY TANGGAL ====
-        $allDetails = $allDetails->sortBy(function ($item) {
+        $allDetails = $allDetails->sortByDesc(function ($item) {
             return \Carbon\Carbon::createFromFormat('d-m-Y', $item->tanggal_transaksi);
         })->values();
 
