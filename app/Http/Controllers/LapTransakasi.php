@@ -172,13 +172,15 @@ class LapTransakasi extends Controller
         $start = $request->tanggal_awal;
         $end   = $request->tanggal_akhir;
 
+        // Konversi tanggal dari d-m-Y ke Y-m-d
         if ($start && $end) {
-            // dari DD-MM-YYYY -> Y-m-d
             $start = Carbon::createFromFormat('d-m-Y', $start)->format('Y-m-d');
             $end   = Carbon::createFromFormat('d-m-Y', $end)->format('Y-m-d');
         }
 
-        // ===== Detail produk =====
+        /* ===========================
+   DETAIL PRODUK
+=========================== */
         $produkDetails = DB::table('detail_penjualans as dp')
             ->join('penjualans as p', 'dp.uuid_penjualans', '=', 'p.uuid')
             ->join('produks as pr', 'dp.uuid_produk', '=', 'pr.uuid')
@@ -196,7 +198,7 @@ class LapTransakasi extends Controller
                 'dp.total_harga'
             );
 
-        // filter outlet
+        // Filter outlet
         if ($request->uuid_outlet) {
             $produkDetails->where('p.uuid_outlet', $request->uuid_outlet);
         }
@@ -209,7 +211,9 @@ class LapTransakasi extends Controller
             );
         }
 
-        // ===== Detail paket hemat =====
+        /* ===========================
+   DETAIL PAKET
+=========================== */
         $paketDetails = DB::table('detail_penjualan_pakets as dpp')
             ->join('penjualans as p', 'dpp.uuid_penjualans', '=', 'p.uuid')
             ->join('paket_hemats as ph', 'dpp.uuid_paket', '=', 'ph.uuid')
@@ -225,10 +229,12 @@ class LapTransakasi extends Controller
                 'dpp.total_harga'
             );
 
+        // Filter outlet (PERBAIKAN — sebelumnya salah)
         if ($request->uuid_outlet) {
-            $produkDetails->where('p.uuid_outlet', $request->uuid_outlet);
+            $paketDetails->where('p.uuid_outlet', $request->uuid_outlet);
         }
 
+        // Filter tanggal
         if ($start && $end) {
             $paketDetails->whereBetween(
                 DB::raw("STR_TO_DATE(p.tanggal_transaksi, '%d-%m-%Y')"),
@@ -236,12 +242,25 @@ class LapTransakasi extends Controller
             );
         }
 
-        // Gabungkan
+        /* ===========================
+   GABUNGKAN & SORT
+=========================== */
         $allDetails = $produkDetails->unionAll($paketDetails)->get();
 
-        // ==== SORT BY TANGGAL ====
-        $allDetails = $allDetails->sortByDesc(function ($item) {
-            return \Carbon\Carbon::createFromFormat('d-m-Y', $item->tanggal_transaksi);
+        // Sort by tanggal terbaru
+        $allDetails = $allDetails->sort(function ($a, $b) {
+
+            // 1. SORT TANGGAL DESC
+            $dateA = Carbon::createFromFormat('d-m-Y', $a->tanggal_transaksi);
+            $dateB = Carbon::createFromFormat('d-m-Y', $b->tanggal_transaksi);
+
+            if ($dateA->eq($dateB)) {
+                // 2. Kalau tanggal sama → SORT NO BUKTI ASC
+                return strcmp($b->no_bukti, $a->no_bukti);
+            }
+
+            // tanggal DESC (baru di atas)
+            return $dateB <=> $dateA;
         })->values();
 
         // ===== Isi Excel =====
