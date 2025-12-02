@@ -147,6 +147,62 @@ class LapTransakasi extends Controller
         ]);
     }
 
+    public function detail($params)
+    {
+        // ============================
+        // DETAIL PRODUK
+        // ============================
+        $produkDetails = DB::table('detail_penjualans as dp')
+            ->join('penjualans as p', 'dp.uuid_penjualans', '=', 'p.uuid')
+            ->join('produks as pr', 'dp.uuid_produk', '=', 'pr.uuid')
+            ->leftJoin('suplayers as s', 'pr.uuid_suplayer', '=', 's.uuid')
+            ->leftJoin('kategoris as k', 'pr.uuid_kategori', '=', 'k.uuid')
+            ->where('dp.uuid_penjualans', $params)   // <=== WAJIB
+            ->select(
+                'p.tanggal_transaksi',
+                'p.no_bukti',
+                'pr.nama_barang',
+                'pr.merek',
+                'k.nama_kategori',
+                'pr.sub_kategori',
+                's.nama as nama_suplier',
+                'dp.qty',
+                'dp.total_harga'
+            );
+
+        // ============================
+        // DETAIL PAKET
+        // ============================
+        $paketDetails = DB::table('detail_penjualan_pakets as dpp')
+            ->join('penjualans as p', 'dpp.uuid_penjualans', '=', 'p.uuid')
+            ->join('paket_hemats as ph', 'dpp.uuid_paket', '=', 'ph.uuid')
+            ->where('dpp.uuid_penjualans', $params)   // <=== WAJIB
+            ->select(
+                'p.tanggal_transaksi',
+                'p.no_bukti',
+                'ph.nama_paket as nama_barang',
+                DB::raw('"" as merek'),
+                DB::raw('"" as nama_kategori'),
+                DB::raw('"" as sub_kategori'),
+                DB::raw('"" as nama_suplier'),
+                'dpp.qty',
+                'dpp.total_harga'
+            );
+
+        // ============================
+        // GABUNGKAN & SORT BY NAMA BARANG
+        // ============================
+        $allDetails = $produkDetails
+            ->unionAll($paketDetails)
+            ->orderBy('nama_barang', 'asc')
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'data'   => $allDetails
+        ]);
+    }
+
     public function export_excel(Request $request, $params = null)
     {
         $spreadsheet = new Spreadsheet();

@@ -78,6 +78,7 @@
                                             <th class="text-capitalize">created by</th>
                                             <th class="text-capitalize">jasa</th>
                                             <th class="text-capitalize">total penjualan</th>
+                                            <th class="text-capitalize">action</th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -89,6 +90,43 @@
         </div>
     </div>
 @endsection
+@section('modals')
+    <!-- Modal Form -->
+    <div class="modal fade" id="modal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
+        aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <form id="form">
+                <input type="hidden" name="uuid" id="uuid">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Form {{ $module }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                    </div>
+                    <div class="modal-body">
+                        <table class="table table-bordered" id="detailTable">
+                            <thead>
+                                <tr>
+                                    <th>Nama Barang</th>
+                                    <th>Merek</th>
+                                    <th>Kategori</th>
+                                    <th>Sub</th>
+                                    <th>Supplier</th>
+                                    <th>Qty</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                            <tfoot></tfoot>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">close</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+@endsection
 @push('scripts')
     <script>
         function formatRupiah(angka) {
@@ -97,6 +135,60 @@
                 currency: 'IDR'
             }).format(angka);
         }
+
+        // Edit
+        $('#dataTables').on('click', '.edit', function() {
+
+            $('#modal').modal('show');
+
+            let uuid = $(this).data('uuid');
+            let editUrl = `{{ route('superadmin.detail-penjualan', ':uuid') }}`;
+            editUrl = editUrl.replace(':uuid', uuid);
+
+            $.get(editUrl, function(res) {
+
+                console.log(res);
+
+                let tbody = $('#detailTable tbody');
+                let tfoot = $('#detailTable tfoot');
+
+                tbody.empty();
+                tfoot.empty();
+
+                let totalHarga = 0;
+
+                $.each(res.data, function(i, item) {
+
+                    let harga = parseInt(item.total_harga) || 0;
+                    totalHarga += harga;
+
+                    let row = `
+            <tr>
+                <td>${item.nama_barang}</td>
+                <td>${item.merek}</td>
+                <td>${item.nama_kategori}</td>
+                <td>${item.sub_kategori}</td>
+                <td>${item.nama_suplier}</td>
+                <td>${item.qty}</td>
+                <td>${formatRupiah(harga)}</td>
+            </tr>
+        `;
+
+                    tbody.append(row);
+                });
+
+                // Masukkan total ke tfoot
+                let totalRow = `
+        <tr>
+            <th colspan="6" class="text-end">TOTAL</th>
+            <th>${formatRupiah(totalHarga)}</th>
+        </tr>
+    `;
+
+                tfoot.append(totalRow);
+
+            });
+        });
 
         const initDatatable = () => {
             // Destroy existing DataTable if it exists
@@ -172,8 +264,26 @@
                         render: function(data, type, row, meta) {
                             return formatRupiah(data);
                         }
+                    }, {
+                        data: 'uuid', // akan diganti di columnDefs
+                        orderable: false,
+                        searchable: false
                     }
                 ],
+                columnDefs: [{
+                    targets: -1, // kolom terakhir
+                    title: 'Aksi',
+                    class: 'mb-kolom-aksi text-end',
+                    render: function(data, type, row) {
+                        return `
+                                <div class="hstack gap-2 justify-content-end">
+                                    <a href="#" class="btn btn-info btn-sm edit" data-uuid="${data}">
+                                        Detail Transaksi
+                                    </a>
+                                </div>
+                    `;
+                    }
+                }]
             });
         };
 
